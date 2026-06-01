@@ -699,21 +699,34 @@ El campo "correcta" es el índice (0=A, 1=B, 2=C, 3=D). Genera exactamente ${n} 
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 4000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('API HTTP error:', resp.status, errText);
+      showApiError(resp.status, errText);
+      return [];
+    }
     const data = await resp.json();
-    if (data.error) { console.error('API error:', data.error); return []; }
+    if (data.error) { console.error('API error:', data.error); showApiError(0, JSON.stringify(data.error)); return []; }
     const text = data.content.map(c => c.text || '').join('');
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
     return parsed.map(q => ({ ...q, source: 'ia' }));
   } catch(e) {
     console.error('Error generando preguntas:', e);
+    showApiError(-1, e.message);
     return [];
   }
+}
+
+function showApiError(status, msg) {
+  const hints = { 401: "API key incorrecta o no válida. Ve a Ajustes y comprueba que la has copiado completa.", 403: "API key sin permisos o sin saldo. Comprueba en console.anthropic.com.", 429: "Demasiadas peticiones. Espera un momento.", "-1": "Error de red. Asegúrate de abrir la app desde la URL de GitHub Pages." };
+  const hint = hints[status] || hints["-1"];
+  document.getElementById("test-body").innerHTML = `<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:36px;color:var(--fail);display:block;margin-bottom:12px"></i><strong>${hint}</strong><br><span style="font-size:11px;color:var(--text3);margin-top:8px;display:block;font-family:monospace">Código: ${status} — ${msg}</span><br><button class="btn btn-secondary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button> <button class="btn btn-secondary" onclick="showScreen('home')" style="margin-top:1rem">Volver</button></div>`;
 }
 
 function getBancoQuestions(temaNum, max) {
