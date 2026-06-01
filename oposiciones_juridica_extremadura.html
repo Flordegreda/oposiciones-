@@ -2,7 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Oposiciones JEX">
 <title>Oposiciones Jurídica — Junta de Extremadura</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
 <style>
@@ -10,143 +13,191 @@
 :root{
   --bg:#fff;--bg2:#f5f5f3;--bg3:#eeede9;
   --text:#1a1a18;--text2:#6b6b68;--text3:#9b9b97;
-  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
   --accent:#185FA5;--accent-light:#E6F1FB;--accent-mid:#378ADD;
   --ok:#3B6D11;--ok-light:#EAF3DE;
   --fail:#A32D2D;--fail-light:#FCEBEB;
   --warn:#BA7517;--warn-light:#FFF8E6;
+  --doubt:#7c4f00;--doubt-light:#FFF3CD;
+  --fav:#8B1A1A;--fav-light:#FFE8E8;
   --radius:8px;--radius-lg:12px;
 }
-@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252522;--bg3:#2e2e2b;--text:#f0efe9;--text2:#a0a09c;--text3:#6b6b68;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--accent-light:#0c2d4a}}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
-.shell{max-width:780px;margin:0 auto;padding:1.5rem 1rem}
-.header{display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:0.5px solid var(--border)}
-.logo{width:44px;height:44px;background:var(--accent);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0}
-.header-text h1{font-size:18px;font-weight:600;color:var(--text)}
-.header-text p{font-size:13px;color:var(--text2);margin-top:2px}
-.nav{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
-.nav-btn{padding:7px 14px;border:0.5px solid var(--border2);background:var(--bg);border-radius:20px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252522;--bg3:#2e2e2b;--text:#f0efe9;--text2:#a0a09c;--text3:#6b6b68;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);--accent-light:#0c2d4a;--warn-light:#2a1f00;--doubt-light:#2a1800;--fav-light:#2a0808}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent}
+.shell{max-width:780px;margin:0 auto;padding:1rem}
+/* HEADER */
+.header{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border)}
+.logo{width:40px;height:40px;background:var(--accent);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0}
+.header-text h1{font-size:16px;font-weight:600;color:var(--text)}
+.header-text p{font-size:12px;color:var(--text2);margin-top:1px}
+.racha-badge{margin-left:auto;display:flex;align-items:center;gap:5px;background:var(--warn-light);color:var(--warn);padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;flex-shrink:0}
+/* NAV */
+.nav{display:flex;gap:5px;margin-bottom:1.25rem;flex-wrap:wrap}
+.nav-btn{padding:6px 12px;border:0.5px solid var(--border2);background:var(--bg);border-radius:20px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .nav-btn:hover{background:var(--bg2);color:var(--text)}
 .nav-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .screen{display:none}.screen.visible{display:block}
+/* CARDS & LAYOUT */
 .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
-.section-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:.875rem}
-.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
-@media(max-width:600px){.mode-grid{grid-template-columns:1fr}}
-.mode-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;cursor:pointer;transition:all .15s}
-.mode-card:hover{border-color:var(--accent-mid);background:var(--bg2);transform:translateY(-1px)}
-.mode-card .icon{font-size:26px;color:var(--accent);margin-bottom:10px}
-.mode-card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px}
-.mode-card p{font-size:12px;color:var(--text2);line-height:1.55}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
-@media(max-width:500px){.stats-row{grid-template-columns:repeat(2,1fr)}}
-.stat-card{background:var(--bg2);border-radius:var(--radius);padding:.875rem 1rem}
-.stat-card .label{font-size:12px;color:var(--text2);margin-bottom:4px}
-.stat-card .value{font-size:24px;font-weight:600;color:var(--text)}
+.section-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:.75rem}
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+@media(max-width:580px){.mode-grid{grid-template-columns:1fr;gap:8px}}
+.mode-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem;cursor:pointer;transition:all .15s;display:flex;flex-direction:column}
+.mode-card:hover{border-color:var(--accent-mid);background:var(--bg2)}
+.mode-card:active{transform:scale(.98)}
+.mode-card .icon{font-size:22px;color:var(--accent);margin-bottom:8px}
+.mode-card h3{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.mode-card p{font-size:12px;color:var(--text2);line-height:1.5}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
+@media(max-width:480px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--bg2);border-radius:var(--radius);padding:.75rem .875rem}
+.stat-card .label{font-size:11px;color:var(--text2);margin-bottom:3px}
+.stat-card .value{font-size:22px;font-weight:700;color:var(--text)}
 .info-box{padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-size:13px;color:var(--text2);line-height:1.6;display:flex;gap:8px;align-items:flex-start}
 .info-box i{margin-top:1px;flex-shrink:0;color:var(--accent)}
-.btn{padding:9px 18px;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px}
+/* BTNS */
+.btn{padding:9px 16px;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:active{transform:scale(.97)}
 .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.88}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
 .btn-secondary{background:var(--bg);color:var(--text);border:0.5px solid var(--border2)}.btn-secondary:hover{background:var(--bg2)}
-.btn-danger{background:var(--fail-light);color:var(--fail);border:0.5px solid rgba(163,45,45,.2)}.btn-danger:hover{opacity:.85}
-.btn-sm{padding:5px 11px;font-size:12px}
-.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem}
-.config-row{display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.btn-danger{background:var(--fail-light);color:var(--fail);border:0.5px solid rgba(163,45,45,.2)}
+.btn-warn{background:var(--doubt-light);color:var(--doubt);border:0.5px solid rgba(124,79,0,.2)}
+.btn-fav{background:var(--fav-light);color:var(--fav);border:0.5px solid rgba(139,26,26,.2)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem;align-items:center}
+/* CONFIG */
+.config-row{display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
 .config-row label{font-size:13px;color:var(--text2)}
 .config-row select{font-size:13px;padding:6px 10px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer}
-.tema-list{display:flex;flex-direction:column;gap:3px;max-height:400px;overflow-y:auto;margin-bottom:1rem;padding-right:4px}
-.tema-list::-webkit-scrollbar{width:4px}.tema-list::-webkit-scrollbar-track{background:var(--bg2)}.tema-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.tema-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;transition:background .1s;font-size:13px;color:var(--text);border:0.5px solid transparent}
+/* TEMA LIST */
+.tema-list{display:flex;flex-direction:column;gap:3px;max-height:380px;overflow-y:auto;margin-bottom:1rem}
+.tema-list::-webkit-scrollbar{width:4px}.tema-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tema-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text);border:0.5px solid transparent;transition:background .1s}
 .tema-item:hover{background:var(--bg2)}.tema-item.selected{background:var(--accent-light);color:var(--accent);border-color:rgba(24,95,165,.2)}
-.tema-num{min-width:30px;font-size:11px;color:var(--text3);font-weight:600}
-.tema-acc{display:flex;gap:4px;margin-left:auto;align-items:center;flex-shrink:0}
-.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
+.tema-num{min-width:28px;font-size:11px;color:var(--text3);font-weight:600}
+.tema-acc{display:flex;gap:3px;margin-left:auto;align-items:center;flex-shrink:0}
+.badge{font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600}
 .badge-ok{background:var(--ok-light);color:var(--ok)}.badge-fail{background:var(--fail-light);color:var(--fail)}
 /* TEST */
-.test-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--border);gap:8px;flex-wrap:wrap}
-.test-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.test-info{font-size:13px;color:var(--text2);font-weight:500}
-.test-timer{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg2);border-radius:20px}
+.test-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.875rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--border);gap:6px;flex-wrap:wrap}
+.test-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.test-info{font-size:13px;color:var(--text2);font-weight:600}
+.test-timer{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--bg2);border-radius:16px}
 .test-timer.warning{color:var(--fail);background:var(--fail-light)}
-.progress-bar{height:4px;background:var(--bg3);border-radius:2px;margin-bottom:1.25rem;overflow:hidden}
-.progress-fill{height:4px;background:var(--accent);border-radius:2px;transition:width .4s ease}
-.question-block{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1rem}
-.question-tag{font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.tag{background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:500}
-.question-text{font-size:15px;color:var(--text);line-height:1.65;margin-bottom:1.25rem;font-weight:500}
-.options-list{display:flex;flex-direction:column;gap:8px}
-.option-btn{display:flex;align-items:flex-start;gap:12px;padding:11px 16px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;text-align:left;font-size:13px;color:var(--text);transition:all .15s;width:100%;line-height:1.5}
+.progress-bar{height:4px;background:var(--bg3);border-radius:2px;margin-bottom:1rem;overflow:hidden}
+.progress-fill{height:4px;background:var(--accent);border-radius:2px;transition:width .3s ease}
+/* MAPA DE PREGUNTAS */
+.qmap{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem;padding:10px 12px;background:var(--bg2);border-radius:var(--radius)}
+.qmap-btn{width:30px;height:30px;border-radius:6px;border:0.5px solid var(--border2);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text2);position:relative}
+.qmap-btn.current{border-color:var(--accent);background:var(--accent);color:#fff}
+.qmap-btn.answered-ok{background:var(--ok-light);border-color:var(--ok);color:var(--ok)}
+.qmap-btn.answered-fail{background:var(--fail-light);border-color:var(--fail);color:var(--fail)}
+.qmap-btn.answered-any{background:var(--bg3);border-color:var(--border2);color:var(--text3)}
+.qmap-btn.flagged::after{content:'';position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+/* PREGUNTA */
+.question-block{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:.875rem}
+.question-tag{font-size:11px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tag{background:var(--accent-light);color:var(--accent);padding:2px 9px;border-radius:8px;font-size:11px;font-weight:500}
+.question-num{font-size:12px;color:var(--text3)}
+.question-text{font-size:15px;color:var(--text);line-height:1.65;margin-bottom:1.1rem;font-weight:500}
+.options-list{display:flex;flex-direction:column;gap:7px}
+.option-btn{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;text-align:left;font-size:13px;color:var(--text);transition:all .15s;width:100%;line-height:1.5}
 .option-btn:hover:not(.locked){border-color:var(--accent-mid);background:var(--accent-light)}
+.option-btn:active:not(.locked){transform:scale(.99)}
 .option-btn.correct{border-color:var(--ok);background:var(--ok-light);color:var(--ok)}
 .option-btn.wrong{border-color:var(--fail);background:var(--fail-light);color:var(--fail)}
-.option-btn.selected-pending{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
-.option-letter{min-width:24px;height:24px;border-radius:50%;border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+.option-btn.selected-exam{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
+.option-letter{min-width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
 .option-btn.correct .option-letter{background:var(--ok);border-color:var(--ok);color:#fff}
 .option-btn.wrong .option-letter{background:var(--fail);border-color:var(--fail);color:#fff}
-.option-btn.selected-pending .option-letter{background:var(--accent);border-color:var(--accent);color:#fff}
-.explanation{margin-top:14px;padding:12px 16px;background:var(--bg2);border-radius:var(--radius);font-size:13px;color:var(--text2);line-height:1.65;border-left:3px solid var(--accent)}
-.test-actions{display:flex;justify-content:space-between;align-items:center;margin-top:.875rem;gap:8px;flex-wrap:wrap}
-.test-nav-right{display:flex;gap:8px}
-.loading-q{text-align:center;padding:3rem 1rem;color:var(--text2);font-size:14px}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:-5px}
-@keyframes spin{to{transform:rotate(360deg)}}
+.option-btn.selected-exam .option-letter{background:var(--accent);border-color:var(--accent);color:#fff}
+.explanation{margin-top:12px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-size:13px;color:var(--text2);line-height:1.6;border-left:3px solid var(--accent)}
+/* BOTONERA TEST */
+.test-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.test-actions-left{display:flex;gap:6px;align-items:center}
+.test-actions-right{display:flex;gap:6px;align-items:center}
 /* RESULTADOS */
-.result-hero{text-align:center;padding:2rem 1rem;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1.25rem}
-.result-score{font-size:64px;font-weight:700;line-height:1}
-.result-label{font-size:15px;color:var(--text2);margin-top:8px}
-.result-nota{font-size:13px;margin-top:6px;padding:4px 14px;border-radius:10px;display:inline-block}
-.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
-.breakdown-list{display:flex;flex-direction:column;margin-bottom:1.25rem;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;max-height:320px;overflow-y:auto}
-.breakdown-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:10px 14px;border-bottom:0.5px solid var(--border);background:var(--bg)}
+.result-hero{text-align:center;padding:1.75rem 1rem;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1rem}
+.result-score{font-size:60px;font-weight:700;line-height:1}
+.result-label{font-size:14px;color:var(--text2);margin-top:6px}
+.result-nota{font-size:13px;margin-top:6px;padding:4px 14px;border-radius:10px;display:inline-block;font-weight:600}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.breakdown-list{display:flex;flex-direction:column;margin-bottom:1rem;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;max-height:300px;overflow-y:auto}
+.breakdown-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;padding:9px 12px;border-bottom:0.5px solid var(--border);background:var(--bg)}
 .breakdown-item:last-child{border-bottom:none}
-.b-num{min-width:22px;color:var(--text3);font-size:12px;padding-top:1px}
+.b-num{min-width:20px;color:var(--text3);font-size:11px;padding-top:1px;font-weight:600}
 .b-text{flex:1;color:var(--text);line-height:1.5}
 .b-icon{font-size:16px;flex-shrink:0;padding-top:1px}
 /* SIMULACRO */
-.sim-option{display:flex;align-items:center;gap:14px;padding:1.1rem 1.25rem;border:0.5px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .15s;background:var(--bg);margin-bottom:10px}
+.sim-option{display:flex;align-items:center;gap:12px;padding:1rem 1.1rem;border:0.5px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .15s;background:var(--bg);margin-bottom:8px}
 .sim-option:hover{border-color:var(--accent-mid)}.sim-option.selected{border-color:var(--accent);background:var(--accent-light)}
-.sim-option .so-icon{font-size:26px;color:var(--accent);flex-shrink:0}
-.sim-option h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.sim-option .so-icon{font-size:24px;color:var(--accent);flex-shrink:0}
+.sim-option h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
 .sim-option p{font-size:12px;color:var(--text2)}
+.sim-toggle{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);margin-top:.75rem;cursor:pointer}
+.sim-toggle input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--accent)}
+.sim-toggle label{font-size:13px;color:var(--text);cursor:pointer;flex:1}
+.sim-toggle span{font-size:12px;color:var(--text2)}
 /* FUENTES */
-.tab-row{display:flex;border:0.5px solid var(--border2);border-radius:var(--radius);overflow:hidden;width:fit-content;margin-bottom:1.25rem}
-.tab-btn{padding:7px 18px;font-size:13px;background:var(--bg);border:none;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:500}
+.tab-row{display:flex;border:0.5px solid var(--border2);border-radius:var(--radius);overflow:hidden;width:fit-content;margin-bottom:1rem}
+.tab-btn{padding:6px 14px;font-size:13px;background:var(--bg);border:none;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:500}
 .tab-btn:hover{background:var(--bg2)}.tab-btn.active{background:var(--accent);color:#fff}
-.fuente-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
-.fuente-card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:.5rem;display:flex;align-items:center;gap:8px}
-.fuente-card p{font-size:13px;color:var(--text2);margin-bottom:.875rem;line-height:1.6}
+.fuente-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem;margin-bottom:.875rem}
+.fuente-card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:.4rem;display:flex;align-items:center;gap:7px}
+.fuente-card p{font-size:13px;color:var(--text2);margin-bottom:.75rem;line-height:1.55}
 .fuente-list{display:flex;flex-direction:column;gap:6px}
-.fuente-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-size:13px}
-.fuente-item .f-title{font-weight:500;color:var(--text)}
+.fuente-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg2);border-radius:var(--radius);font-size:13px}
+.fuente-item .f-info{flex:1;min-width:0}
+.fuente-item .f-title{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fuente-item .f-sub{font-size:11px;color:var(--text3)}
-.fuente-item .f-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px 4px;border-radius:4px}
+.fuente-item .f-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px;border-radius:4px;flex-shrink:0}
 .fuente-item .f-del:hover{color:var(--fail)}
-.fuente-item .f-use{background:var(--accent-light);color:var(--accent);border:none;border-radius:var(--radius);padding:4px 10px;font-size:12px;cursor:pointer;font-weight:500}
+.fuente-item .f-use{background:var(--accent-light);color:var(--accent);border:none;border-radius:var(--radius);padding:4px 9px;font-size:12px;cursor:pointer;font-weight:600;flex-shrink:0}
 /* BANCO */
-.banco-instructions{font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:1rem;padding:12px 16px;background:var(--bg2);border-radius:var(--radius);font-family:monospace;white-space:pre-line}
-.textarea-q{width:100%;min-height:160px;padding:12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:monospace;color:var(--text);background:var(--bg);resize:vertical;margin-bottom:.875rem;line-height:1.6}
+.banco-instructions{font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:.875rem;padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-family:monospace;white-space:pre-line}
+.textarea-q{width:100%;min-height:150px;padding:10px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:monospace;color:var(--text);background:var(--bg);resize:vertical;margin-bottom:.75rem;line-height:1.6}
 .textarea-q:focus{outline:none;border-color:var(--accent)}
-.input-field{width:100%;padding:8px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;color:var(--text);background:var(--bg);margin-bottom:.75rem}
+.input-field{width:100%;padding:8px 11px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;color:var(--text);background:var(--bg);margin-bottom:.625rem}
 .input-field:focus{outline:none;border-color:var(--accent)}
-.upload-area{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:2rem;text-align:center;margin-bottom:1rem;color:var(--text2);font-size:14px;cursor:pointer;transition:all .15s;display:block}
+.upload-area{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;margin-bottom:.875rem;color:var(--text2);font-size:13px;cursor:pointer;transition:all .15s;display:block}
 .upload-area:hover{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
-.banco-list{display:flex;flex-direction:column;gap:6px}
-.banco-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-size:13px}
-.banco-item .b-title{flex:1;font-weight:500;color:var(--text)}.banco-item .b-count{font-size:12px;color:var(--text2)}
-.banco-item .b-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px 4px;border-radius:4px}.banco-item .b-del:hover{color:var(--fail)}
+.banco-list{display:flex;flex-direction:column;gap:5px}
+.banco-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg2);border-radius:var(--radius);font-size:13px}
+.banco-item .b-title{flex:1;font-weight:600;color:var(--text)}.banco-item .b-count{font-size:11px;color:var(--text2)}
+.banco-item .b-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px;border-radius:4px}.banco-item .b-del:hover{color:var(--fail)}
 /* STATS */
-.stat-bar-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:0.5px solid var(--border);font-size:13px}
+.stat-bar-item{display:flex;align-items:center;gap:7px;padding:9px 12px;border-bottom:0.5px solid var(--border);font-size:12px}
 .stat-bar-item:last-child{border-bottom:none}
-.stat-bar-wrap{min-width:60px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
-.stat-bar-fill{height:6px;border-radius:3px;transition:width .5s ease}
-.empty-state{text-align:center;padding:3rem 1rem;color:var(--text2);font-size:14px}
-.empty-state i{font-size:40px;color:var(--text3);display:block;margin-bottom:12px}
+.stat-bar-wrap{min-width:50px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.stat-bar-fill{height:5px;border-radius:3px;transition:width .5s ease}
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text2);font-size:14px}
+.empty-state i{font-size:36px;color:var(--text3);display:block;margin-bottom:10px}
+/* FAVORITOS */
+.fav-list{display:flex;flex-direction:column;gap:0;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1rem}
+.fav-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-bottom:0.5px solid var(--border);background:var(--bg);font-size:13px}
+.fav-item:last-child{border-bottom:none}
+.fav-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:1px 3px;flex-shrink:0;margin-top:1px}
+.fav-del:hover{color:var(--fail)}
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
-.modal-box{background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;max-width:400px;width:100%;border:0.5px solid var(--border)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.modal-box{background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;max-width:380px;width:100%;border:0.5px solid var(--border)}
 .modal-box h3{font-size:16px;font-weight:600;margin-bottom:.5rem}
 .modal-box p{font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.6}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+/* LOADING */
+.loading-q{text-align:center;padding:2.5rem 1rem;color:var(--text2);font-size:14px}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:7px;vertical-align:-4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* MOBILE FIXES */
+@media(max-width:480px){
+  .shell{padding:.75rem}
+  .test-actions{gap:5px}
+  .btn{padding:8px 12px;font-size:13px}
+  .btn-sm{padding:5px 9px;font-size:11px}
+  .question-text{font-size:14px}
+  .option-btn{font-size:12px;padding:9px 11px}
+  .qmap-btn{width:26px;height:26px;font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -154,17 +205,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <div class="header">
     <div class="logo"><i class="ti ti-scale"></i></div>
     <div class="header-text">
-      <h1>Oposiciones Jurídica — Junta de Extremadura</h1>
+      <h1>Oposiciones Jurídica — JEX</h1>
       <p>Titulados Superiores · Especialidad Jurídica · 75 temas</p>
     </div>
+    <div class="racha-badge" id="racha-badge" style="display:none"><i class="ti ti-flame"></i> <span id="racha-num">0</span> días</div>
   </div>
+
   <div class="nav">
     <button class="nav-btn active" onclick="showScreen('home')"><i class="ti ti-home"></i> Inicio</button>
     <button class="nav-btn" onclick="showScreen('temas')"><i class="ti ti-book"></i> Por temas</button>
     <button class="nav-btn" onclick="showScreen('simulacro')"><i class="ti ti-clock"></i> Simulacro</button>
     <button class="nav-btn" onclick="showScreen('fuentes')"><i class="ti ti-link"></i> Fuentes</button>
     <button class="nav-btn" onclick="showScreen('banco')"><i class="ti ti-database"></i> Mis bancos</button>
-    <button class="nav-btn" onclick="showScreen('estadisticas')"><i class="ti ti-chart-bar"></i> Estadísticas</button>
+    <button class="nav-btn" onclick="showScreen('favoritos')"><i class="ti ti-heart"></i> Favoritos</button>
+    <button class="nav-btn" onclick="showScreen('estadisticas')"><i class="ti ti-chart-bar"></i> Stats</button>
     <button class="nav-btn" onclick="showScreen('ajustes')"><i class="ti ti-settings"></i> Ajustes</button>
   </div>
 
@@ -178,11 +232,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     </div>
     <div class="section-title">Elige un modo</div>
     <div class="mode-grid">
-      <div class="mode-card" onclick="showScreen('temas')"><div class="icon"><i class="ti ti-book-2"></i></div><h3>Por temas</h3><p>Elige un tema y practica con preguntas de IA sobre esa materia</p></div>
-      <div class="mode-card" onclick="startAleatorio()"><div class="icon"><i class="ti ti-refresh"></i></div><h3>Test aleatorio</h3><p>10 preguntas de temas variados para un repaso rápido</p></div>
-      <div class="mode-card" onclick="showScreen('simulacro')"><div class="icon"><i class="ti ti-clipboard-list"></i></div><h3>Simulacro</h3><p>Examen completo con cronómetro y penalización real</p></div>
+      <div class="mode-card" onclick="showScreen('temas')"><div class="icon"><i class="ti ti-book-2"></i></div><h3>Por temas</h3><p>Elige un tema y practica con IA</p></div>
+      <div class="mode-card" onclick="startAleatorio()"><div class="icon"><i class="ti ti-refresh"></i></div><h3>Test aleatorio</h3><p>10 preguntas de temas variados</p></div>
+      <div class="mode-card" onclick="showScreen('simulacro')"><div class="icon"><i class="ti ti-clipboard-list"></i></div><h3>Simulacro</h3><p>Examen completo con cronómetro</p></div>
+      <div class="mode-card" onclick="startRepasoFallos()"><div class="icon"><i class="ti ti-target-arrow"></i></div><h3>Repaso de fallos</h3><p>Solo los temas que peor llevas</p></div>
+      <div class="mode-card" onclick="startFavoritos()"><div class="icon"><i class="ti ti-heart"></i></div><h3>Test de favoritas</h3><p>Preguntas que guardaste</p></div>
+      <div class="mode-card" onclick="showScreen('fuentes')"><div class="icon"><i class="ti ti-link"></i></div><h3>Desde el BOE</h3><p>Preguntas literales de la ley</p></div>
     </div>
-    <div class="info-box"><i class="ti ti-info-circle"></i><span>Las preguntas se generan con IA. En <strong>Fuentes</strong> puedes añadir URLs del BOE o texto legal para preguntas 100% literales y actualizadas.</span></div>
+    <div class="info-box"><i class="ti ti-info-circle"></i><span>Añade tu API key en <strong>Ajustes</strong> para generar preguntas con IA. En <strong>Fuentes</strong> puedes añadir URLs del BOE para preguntas literales.</span></div>
   </div>
 
   <!-- TEMAS -->
@@ -193,8 +250,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
       <select id="num-preguntas"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
       <label>Fuente:</label>
       <select id="fuente-preguntas">
-        <option value="ia">IA (temario general)</option>
-        <option value="fuentes">Mis fuentes oficiales</option>
+        <option value="ia">IA (temario)</option>
+        <option value="fuentes">Fuentes BOE</option>
         <option value="banco">Mis bancos</option>
         <option value="mixto">Todo mezclado</option>
       </select>
@@ -212,14 +269,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
         <div class="test-info" id="test-info">Pregunta 1 de 10</div>
         <div class="test-timer" id="test-timer" style="display:none"><i class="ti ti-clock"></i> <span id="timer-display">--:--</span></div>
       </div>
-      <button class="btn btn-sm btn-danger" onclick="confirmAbandonar()"><i class="ti ti-x"></i> Abandonar</button>
+      <button class="btn btn-sm btn-danger" onclick="confirmAbandonar()"><i class="ti ti-x"></i> Salir</button>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:5%"></div></div>
+    <div class="qmap" id="qmap"></div>
     <div id="test-body"></div>
-    <div class="test-actions" id="test-actions" style="display:none">
-      <button class="btn btn-secondary btn-sm" onclick="prevQuestion()" id="btn-prev"><i class="ti ti-arrow-left"></i> Anterior</button>
-      <div class="test-nav-right">
-        <button class="btn btn-secondary btn-sm" onclick="confirmTerminar()"><i class="ti ti-flag"></i> Terminar</button>
+    <div class="test-actions" id="test-actions">
+      <div class="test-actions-left">
+        <button class="btn btn-secondary btn-sm" onclick="prevQuestion()" id="btn-prev" disabled><i class="ti ti-arrow-left"></i> Anterior</button>
+        <button class="btn btn-warn btn-sm" onclick="toggleFlag()" id="btn-flag" title="Marcar como dudosa"><i class="ti ti-flag"></i></button>
+        <button class="btn btn-fav btn-sm" onclick="toggleFav()" id="btn-fav" title="Guardar en favoritos"><i class="ti ti-heart"></i></button>
+      </div>
+      <div class="test-actions-right">
+        <button class="btn btn-secondary btn-sm" onclick="confirmTerminar()"><i class="ti ti-flag-3"></i> Terminar</button>
         <button class="btn btn-primary btn-sm" onclick="nextQuestion()" id="btn-next">Siguiente <i class="ti ti-arrow-right"></i></button>
       </div>
     </div>
@@ -231,6 +293,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
       <div class="result-score" id="result-score">—</div>
       <div class="result-label" id="result-label"></div>
       <div class="result-nota" id="result-nota"></div>
+    </div>
+    <div id="result-dudosas-section" style="display:none;margin-bottom:1rem">
+      <div class="info-box" style="background:var(--doubt-light);border-left:3px solid var(--warn)">
+        <i class="ti ti-flag" style="color:var(--warn)"></i>
+        <span id="result-dudosas-text"></span>
+        <button class="btn btn-sm btn-warn" onclick="repassDudosas()" style="margin-left:auto;flex-shrink:0">Repasar</button>
+      </div>
     </div>
     <div class="result-grid">
       <div class="stat-card"><div class="label">Correctas</div><div class="value" id="r-ok" style="color:var(--ok)">0</div></div>
@@ -248,17 +317,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <!-- SIMULACRO -->
   <div id="screen-simulacro" class="screen">
     <div class="section-title">Configura el simulacro</div>
-    <div class="sim-option selected" id="sim-opt-1" onclick="selectSim(1)"><div class="so-icon"><i class="ti ti-file-text"></i></div><div><h4>Teórico completo</h4><p>80 preguntas · todos los temas · 90 minutos</p></div></div>
-    <div class="sim-option" id="sim-opt-2" onclick="selectSim(2)"><div class="so-icon"><i class="ti ti-clipboard-list"></i></div><div><h4>Examen oficial completo</h4><p>80 teóricas + 20 prácticas · 120 minutos</p></div></div>
-    <div class="sim-option" id="sim-opt-3" onclick="selectSim(3)"><div class="so-icon"><i class="ti ti-zap"></i></div><div><h4>Mini simulacro</h4><p>20 preguntas · aleatorio · 25 minutos</p></div></div>
-    <div class="info-box" style="margin-top:1rem"><i class="ti ti-info-circle"></i><span>Las preguntas erróneas penalizan 0,25 puntos. El cronómetro arranca cuando las preguntas estén listas.</span></div>
+    <div class="sim-option selected" id="sim-opt-1" onclick="selectSim(1)"><div class="so-icon"><i class="ti ti-file-text"></i></div><div><h4>Teórico completo</h4><p>80 preguntas · 90 minutos</p></div></div>
+    <div class="sim-option" id="sim-opt-2" onclick="selectSim(2)"><div class="so-icon"><i class="ti ti-clipboard-list"></i></div><div><h4>Examen oficial</h4><p>80 teóricas + 20 prácticas · 120 min</p></div></div>
+    <div class="sim-option" id="sim-opt-3" onclick="selectSim(3)"><div class="so-icon"><i class="ti ti-zap"></i></div><div><h4>Mini simulacro</h4><p>20 preguntas · 25 minutos</p></div></div>
+    <label class="sim-toggle" for="modo-examen">
+      <input type="checkbox" id="modo-examen">
+      <label for="modo-examen" style="cursor:pointer;flex:1"><strong>Modo examen real</strong> — Sin corrección inmediata. Ves los resultados al terminar, como en el examen real.</label>
+    </label>
+    <div class="info-box" style="margin-top:.75rem"><i class="ti ti-info-circle"></i><span>Las preguntas erróneas penalizan 0,25 puntos. El cronómetro arranca cuando las preguntas estén listas.</span></div>
     <div class="btn-row"><button class="btn btn-primary" onclick="startSimulacro()"><i class="ti ti-player-play"></i> Iniciar simulacro</button></div>
   </div>
 
   <!-- FUENTES -->
   <div id="screen-fuentes" class="screen">
     <div class="section-title">Fuentes oficiales</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.6">Añade URLs del BOE o pega texto de legislación oficial. La IA generará preguntas directamente del articulado con referencias literales a artículos concretos.</p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6">Añade URLs del BOE o pega texto legal. La IA generará preguntas directamente del articulado con referencias a artículos concretos.</p>
     <div class="tab-row">
       <button class="tab-btn active" onclick="setFuenteTab('url')"><i class="ti ti-link"></i> URL del BOE</button>
       <button class="tab-btn" onclick="setFuenteTab('texto')"><i class="ti ti-file-text"></i> Pegar texto</button>
@@ -266,23 +339,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
     <div id="fuente-url-panel">
       <div class="fuente-card">
         <h3><i class="ti ti-link" style="color:var(--accent)"></i> Añadir URL del BOE</h3>
-        <p>Pega la URL de cualquier ley en boe.es o en el portal de legislación de Extremadura. La app intentará descargar el texto automáticamente.</p>
+        <p>Pega la URL de cualquier ley en boe.es o en el portal de legislación de Extremadura.</p>
         <input class="input-field" type="url" id="fuente-url" placeholder="https://www.boe.es/buscar/act.php?id=BOE-A-...">
-        <input class="input-field" type="text" id="fuente-url-nombre" placeholder="Nombre descriptivo (ej: Estatuto de los Trabajadores)">
-        <div id="fuente-url-status" style="font-size:12px;color:var(--text2);margin-bottom:.75rem;min-height:20px"></div>
+        <input class="input-field" type="text" id="fuente-url-nombre" placeholder="Nombre (ej: Estatuto de los Trabajadores)">
+        <div id="fuente-url-status" style="font-size:12px;color:var(--text2);margin-bottom:.625rem;min-height:18px"></div>
         <button class="btn btn-primary" onclick="agregarFuenteURL()"><i class="ti ti-download"></i> Descargar y añadir</button>
       </div>
     </div>
     <div id="fuente-texto-panel" style="display:none">
       <div class="fuente-card">
         <h3><i class="ti ti-file-text" style="color:var(--accent)"></i> Pegar texto oficial</h3>
-        <p>Copia y pega el articulado directamente desde el BOE, el BOJA u otra fuente oficial. Puedes pegar artículos sueltos o bloques completos.</p>
-        <input class="input-field" type="text" id="fuente-texto-nombre" placeholder="Nombre descriptivo (ej: ET — Título I, art. 1-14)">
-        <textarea class="textarea-q" id="fuente-texto-contenido" placeholder="Pega aquí el texto legal oficial..."></textarea>
+        <p>Copia el articulado directamente del BOE u otra fuente oficial.</p>
+        <input class="input-field" type="text" id="fuente-texto-nombre" placeholder="Nombre (ej: ET — art. 1-14)">
+        <textarea class="textarea-q" id="fuente-texto-contenido" placeholder="Pega aquí el texto legal..."></textarea>
         <button class="btn btn-primary" onclick="agregarFuenteTexto()"><i class="ti ti-plus"></i> Añadir fuente</button>
       </div>
     </div>
-    <div id="fuentes-lista-section" style="margin-top:1.5rem;display:none">
+    <div id="fuentes-lista-section" style="margin-top:1.25rem;display:none">
       <div class="section-title">Fuentes guardadas</div>
       <div class="fuente-list" id="fuentes-list"></div>
     </div>
@@ -291,7 +364,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <!-- BANCO -->
   <div id="screen-banco" class="screen">
     <div class="section-title">Mis bancos de preguntas</div>
-    <div class="banco-instructions">Formato para importar:
+    <div class="banco-instructions">Formato:
 
 P: ¿Cuántos magistrados tiene el Tribunal Constitucional?
 A) Ocho
@@ -302,34 +375,43 @@ R: B
 E: Según el art. 159 CE el TC se compone de 12 magistrados</div>
     <div class="tab-row">
       <button class="tab-btn active" onclick="setBancoTab('pegar')">Pegar texto</button>
-      <button class="tab-btn" onclick="setBancoTab('archivo')">Subir archivo .txt</button>
+      <button class="tab-btn" onclick="setBancoTab('archivo')">Subir .txt</button>
     </div>
     <div id="banco-pegar">
-      <div style="display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap">
+      <div style="display:flex;gap:7px;margin-bottom:.625rem;flex-wrap:wrap">
         <input class="input-field" type="text" id="banco-nombre" placeholder="Nombre del banco (ej: Examen 2022)" style="flex:1;margin:0">
-        <select id="banco-tema-asoc" style="padding:8px 10px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)"><option value="">Todos los temas</option></select>
+        <select id="banco-tema-asoc" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)"><option value="">Todos los temas</option></select>
       </div>
-      <textarea class="textarea-q" id="banco-texto" placeholder="Pega aquí tus preguntas en el formato indicado arriba..."></textarea>
+      <textarea class="textarea-q" id="banco-texto" placeholder="Pega aquí tus preguntas..."></textarea>
       <button class="btn btn-primary" onclick="importarBanco()"><i class="ti ti-upload"></i> Importar preguntas</button>
     </div>
     <div id="banco-archivo" style="display:none">
-      <label class="upload-area" for="file-input"><i class="ti ti-file-upload" style="font-size:36px;margin-bottom:10px;display:block"></i>Haz clic para seleccionar un archivo .txt</label>
+      <label class="upload-area" for="file-input"><i class="ti ti-file-upload" style="font-size:32px;margin-bottom:8px;display:block"></i>Haz clic para seleccionar un archivo .txt</label>
       <input type="file" id="file-input" accept=".txt" style="display:none" onchange="loadFile(event)">
       <input class="input-field" type="text" id="banco-nombre-f" placeholder="Nombre del banco">
-      <div id="file-preview" style="font-size:12px;color:var(--text2);margin-bottom:.75rem"></div>
+      <div id="file-preview" style="font-size:12px;color:var(--text2);margin-bottom:.625rem"></div>
       <button class="btn btn-primary" onclick="importarBancoArchivo()"><i class="ti ti-upload"></i> Importar</button>
     </div>
-    <div id="banco-lista-section" style="margin-top:1.75rem;display:none">
+    <div id="banco-lista-section" style="margin-top:1.5rem;display:none">
       <div class="section-title">Bancos importados</div>
       <div class="banco-list" id="banco-list"></div>
     </div>
   </div>
 
+  <!-- FAVORITOS -->
+  <div id="screen-favoritos" class="screen">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+      <div class="section-title" style="margin:0">Preguntas favoritas</div>
+      <button class="btn btn-sm btn-primary" onclick="startFavoritos()" id="btn-test-favs" disabled><i class="ti ti-player-play"></i> Test de favoritas</button>
+    </div>
+    <div id="favoritos-body"></div>
+  </div>
+
   <!-- ESTADÍSTICAS -->
   <div id="screen-estadisticas" class="screen">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.875rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
       <div class="section-title" style="margin:0">Rendimiento por tema</div>
-      <button class="btn btn-sm btn-danger" onclick="confirmClearStats()"><i class="ti ti-trash"></i> Resetear todo</button>
+      <button class="btn btn-sm btn-danger" onclick="confirmClearStats()"><i class="ti ti-trash"></i> Resetear</button>
     </div>
     <div id="stats-body"></div>
   </div>
@@ -337,18 +419,18 @@ E: Según el art. 159 CE el TC se compone de 12 magistrados</div>
   <!-- AJUSTES -->
   <div id="screen-ajustes" class="screen">
     <div class="section-title">Ajustes</div>
-    <div class="card" style="margin-bottom:1rem">
-      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px"><i class="ti ti-key" style="margin-right:6px"></i>API Key de Anthropic</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">Necesaria para generar preguntas con IA. Obtén la tuya en <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>. Se guarda solo en tu navegador.</p>
-      <div style="display:flex;gap:8px">
+    <div class="card" style="margin-bottom:.875rem">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px"><i class="ti ti-key" style="margin-right:5px"></i>API Key de Anthropic</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.6">Necesaria para generar preguntas con IA. Obtén la tuya en <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>. Se guarda solo en tu navegador.</p>
+      <div style="display:flex;gap:7px">
         <input type="password" id="api-key-input" class="input-field" style="margin:0;flex:1;font-family:monospace" placeholder="sk-ant-api03-...">
         <button class="btn btn-primary" onclick="saveApiKey()">Guardar</button>
       </div>
-      <div id="api-key-status" style="font-size:12px;margin-top:8px;color:var(--text2)"></div>
+      <div id="api-key-status" style="font-size:12px;margin-top:7px;color:var(--text2)"></div>
     </div>
     <div class="card">
-      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px"><i class="ti ti-trash" style="margin-right:6px"></i>Zona de peligro</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Elimina todos los datos guardados (estadísticas, bancos, fuentes y API key).</p>
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px"><i class="ti ti-trash" style="margin-right:5px"></i>Zona de peligro</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Elimina todos los datos guardados.</p>
       <button class="btn btn-danger" onclick="confirmResetAll()"><i class="ti ti-trash"></i> Borrar todos los datos</button>
     </div>
   </div>
@@ -357,8 +439,7 @@ E: Según el art. 159 CE el TC se compone de 12 magistrados</div>
 <!-- MODAL -->
 <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
-    <h3 id="modal-title"></h3>
-    <p id="modal-body"></p>
+    <h3 id="modal-title"></h3><p id="modal-body"></p>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-danger" id="modal-confirm-btn">Confirmar</button>
@@ -382,7 +463,7 @@ const TEMAS=[
   {n:12,t:"Comisión Jurídica y Consejo Económico y Social de Extremadura"},
   {n:13,t:"Administración Local (I): El municipio"},
   {n:14,t:"Administración Local (II): La provincia"},
-  {n:15,t:"Administración Local (III): Entidades locales y autonomía municipal de Extremadura"},
+  {n:15,t:"Administración Local (III): Entidades locales y autonomía municipal"},
   {n:16,t:"Libertad sindical"},
   {n:17,t:"Colegios y Consejos de Colegios Profesionales en Extremadura"},
   {n:18,t:"Tasas y Precios Públicos de la Comunidad Autónoma de Extremadura"},
@@ -408,49 +489,84 @@ const TEMAS=[
   {n:38,t:"Estatuto Básico del Empleado Público (I): Derechos y carrera profesional"},
   {n:39,t:"Estatuto Básico del Empleado Público (II): Negociación, jornada y deberes"},
   {n:40,t:"Estatuto Básico del Empleado Público (III): Acceso, pérdida y movilidad"},
-  {n:41,t:"Función Pública de Extremadura (IV): Objeto, principios y órganos competentes"},
-  {n:42,t:"Función Pública de Extremadura (V): Adquisición, acceso y situaciones administrativas"},
-  {n:43,t:"Función Pública de Extremadura (VI): Derechos, jornada, retribuciones y movilidad"},
+  {n:41,t:"Función Pública de Extremadura (IV): Objeto, principios y órganos"},
+  {n:42,t:"Función Pública de Extremadura (V): Adquisición, acceso y situaciones"},
+  {n:43,t:"Función Pública de Extremadura (VI): Derechos, jornada, retribuciones"},
   {n:44,t:"Estatuto de los Trabajadores (I): Contrato de trabajo y modalidades"},
   {n:45,t:"Estatuto de los Trabajadores (II): Contenido del contrato de trabajo"},
   {n:46,t:"Estatuto de los Trabajadores (III): Modificación, suspensión y extinción"},
-  {n:47,t:"Estatuto de los Trabajadores (IV): Negociación colectiva y convenios colectivos"},
-  {n:48,t:"Personal Laboral de la Junta de Extremadura (I): Clasificación y retribuciones"},
-  {n:49,t:"Personal Laboral de la Junta de Extremadura (II): Movilidad, provisión y jornada"},
-  {n:50,t:"Personal Laboral de la Junta de Extremadura (III): Vacaciones, permisos y excedencias"},
+  {n:47,t:"Estatuto de los Trabajadores (IV): Negociación colectiva y convenios"},
+  {n:48,t:"Personal Laboral Junta de Extremadura (I): Clasificación y retribuciones"},
+  {n:49,t:"Personal Laboral Junta de Extremadura (II): Movilidad, provisión y jornada"},
+  {n:50,t:"Personal Laboral Junta de Extremadura (III): Vacaciones, permisos, excedencias"},
   {n:51,t:"Régimen disciplinario del personal funcionario y laboral de la Junta"},
-  {n:52,t:"Régimen de incompatibilidades del personal al servicio de las Administraciones Públicas"},
-  {n:53,t:"Régimen Jurídico del Sector Público (I): Disposiciones generales y principios"},
+  {n:52,t:"Régimen de incompatibilidades del personal de las Administraciones Públicas"},
+  {n:53,t:"Régimen Jurídico del Sector Público (I): Disposiciones generales"},
   {n:54,t:"Régimen Jurídico del Sector Público (II): Órganos, convenios e interadministrativas"},
-  {n:55,t:"Régimen Jurídico del Sector Público (III): Potestad sancionadora y responsabilidad patrimonial"},
+  {n:55,t:"Régimen Jurídico del Sector Público (III): Potestad sancionadora y responsabilidad"},
   {n:56,t:"Procedimiento Administrativo Común (I): Disposiciones generales"},
-  {n:57,t:"Procedimiento Administrativo Común (II): Los interesados en el procedimiento"},
-  {n:58,t:"Procedimiento Administrativo Común (III): Actividad de las AAPP y actos administrativos"},
-  {n:59,t:"Procedimiento Administrativo Común (IV): Procedimiento y revisión en vía administrativa"},
+  {n:57,t:"Procedimiento Administrativo Común (II): Los interesados"},
+  {n:58,t:"Procedimiento Administrativo Común (III): Actividad de las AAPP y actos"},
+  {n:59,t:"Procedimiento Administrativo Común (IV): Procedimiento y revisión"},
   {n:60,t:"Procedimiento Administrativo Común (V): Potestad reglamentaria"},
   {n:61,t:"Administración Electrónica de la Comunidad Autónoma de Extremadura"},
   {n:62,t:"Directrices de técnica normativa"},
   {n:63,t:"Servicios Jurídicos de la Comunidad Autónoma de Extremadura"},
   {n:64,t:"Jurisdicción Contencioso-Administrativa (I): Ámbito, órganos y competencias"},
-  {n:65,t:"Jurisdicción Contencioso-Administrativa (II): Partes, objeto y ejecución de sentencias"},
+  {n:65,t:"Jurisdicción Contencioso-Administrativa (II): Partes, objeto y ejecución"},
   {n:66,t:"Jurisdicción Contencioso-Administrativa (III): Procedimientos"},
-  {n:67,t:"Jurisdicción Social (I): Ámbito, capacidad y agotamiento de la vía administrativa"},
+  {n:67,t:"Jurisdicción Social (I): Ámbito, capacidad y vía administrativa"},
   {n:68,t:"Jurisdicción Social (II): Proceso ordinario"},
-  {n:69,t:"Jurisdicción Social (III): Ejecución de sentencias frente a entes públicos"},
-  {n:70,t:"Tramitación administrativa en la ejecución de resoluciones judiciales"},
+  {n:69,t:"Jurisdicción Social (III): Ejecución de sentencias"},
+  {n:70,t:"Tramitación administrativa en ejecución de resoluciones judiciales"},
   {n:71,t:"Ley de Prevención de Riesgos Laborales"},
-  {n:72,t:"Ley de Gobierno Abierto de Extremadura (I): Ámbito y administración abierta"},
-  {n:73,t:"Ley de Gobierno Abierto de Extremadura (II): Buen gobierno y participación ciudadana"},
-  {n:74,t:"Ley de Igualdad entre Mujeres y Hombres de Extremadura y violencia de género"},
+  {n:72,t:"Ley de Gobierno Abierto de Extremadura (I)"},
+  {n:73,t:"Ley de Gobierno Abierto de Extremadura (II)"},
+  {n:74,t:"Ley de Igualdad entre Mujeres y Hombres de Extremadura"},
   {n:75,t:"Protección de Datos de Carácter Personal: Principios y derechos"}
 ];
 
-let state={selectedTema:null,questions:[],currentQ:0,answers:[],testMode:'',timerInterval:null,timerSeconds:0,simType:1,bancos:[],stats:{},apiKey:'',fuentes:[]};
+let state={
+  selectedTema:null,questions:[],currentQ:0,answers:[],flags:[],
+  modoExamen:false,testMode:'',
+  timerInterval:null,timerSeconds:0,simType:1,
+  bancos:[],stats:{},apiKey:'',fuentes:[],favoritos:[],
+  racha:0,ultimoDia:''
+};
 
-function loadState(){try{const s=localStorage.getItem('opo_jex_v3');if(s){const p=JSON.parse(s);state.stats=p.stats||{};state.bancos=p.bancos||[];state.apiKey=p.apiKey||'';state.fuentes=p.fuentes||[];}}catch(e){}}
-function saveState(){try{localStorage.setItem('opo_jex_v3',JSON.stringify({stats:state.stats,bancos:state.bancos,apiKey:state.apiKey,fuentes:state.fuentes}));}catch(e){}}
+function loadState(){
+  try{
+    const s=localStorage.getItem('opo_jex_v4');
+    if(s){
+      const p=JSON.parse(s);
+      state.stats=p.stats||{};state.bancos=p.bancos||[];
+      state.apiKey=p.apiKey||'';state.fuentes=p.fuentes||[];
+      state.favoritos=p.favoritos||[];
+      state.racha=p.racha||0;state.ultimoDia=p.ultimoDia||'';
+    }
+  }catch(e){}
+}
+function saveState(){
+  try{localStorage.setItem('opo_jex_v4',JSON.stringify({stats:state.stats,bancos:state.bancos,apiKey:state.apiKey,fuentes:state.fuentes,favoritos:state.favoritos,racha:state.racha,ultimoDia:state.ultimoDia}));}catch(e){}
+}
 loadState();
 
+// RACHA
+function checkRacha(){
+  const hoy=new Date().toDateString();
+  if(state.ultimoDia===hoy)return;
+  const ayer=new Date(Date.now()-86400000).toDateString();
+  if(state.ultimoDia===ayer)state.racha++;
+  else state.racha=1;
+  state.ultimoDia=hoy;saveState();
+}
+function renderRacha(){
+  const el=document.getElementById('racha-badge');
+  if(state.racha>0){el.style.display='flex';document.getElementById('racha-num').textContent=state.racha;}
+  else el.style.display='none';
+}
+
+// MODAL
 function showModal(title,body,onConfirm,label='Confirmar',danger=true){
   document.getElementById('modal-title').textContent=title;
   document.getElementById('modal-body').textContent=body;
@@ -461,15 +577,17 @@ function showModal(title,body,onConfirm,label='Confirmar',danger=true){
 }
 function closeModal(){document.getElementById('modal').style.display='none';}
 
+// NAV
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('visible'));
   document.getElementById('screen-'+id).classList.add('visible');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const map={home:0,temas:1,simulacro:2,fuentes:3,banco:4,estadisticas:5,ajustes:6};
+  const map={home:0,temas:1,simulacro:2,fuentes:3,banco:4,favoritos:5,estadisticas:6,ajustes:7};
   if(map[id]!==undefined)document.querySelectorAll('.nav-btn')[map[id]].classList.add('active');
-  ({home:updateHomeStats,temas:renderTemas,banco:renderBancos,estadisticas:renderStats,ajustes:renderAjustes,fuentes:renderFuentes}[id]||function(){})();
+  ({home:updateHomeStats,temas:renderTemas,banco:renderBancos,estadisticas:renderStats,ajustes:renderAjustes,fuentes:renderFuentes,favoritos:renderFavoritos}[id]||function(){})();
 }
 
+// HOME
 function updateHomeStats(){
   let total=0,ok=0,fail=0;
   Object.values(state.stats).forEach(v=>{total+=v.total||0;ok+=v.ok||0;fail+=v.fail||0;});
@@ -477,8 +595,10 @@ function updateHomeStats(){
   document.getElementById('stat-ok').textContent=ok;
   document.getElementById('stat-fail').textContent=fail;
   document.getElementById('stat-pct').textContent=total>0?Math.round(ok/total*100)+'%':'—';
+  renderRacha();
 }
 
+// TEMAS
 function renderTemas(){
   const list=document.getElementById('tema-list');
   const sel=document.getElementById('banco-tema-asoc');
@@ -498,40 +618,60 @@ function selectTema(n){
   document.getElementById('btn-start-tema').disabled=false;
 }
 
+// ARRANQUE
 async function startTema(){
   if(!state.selectedTema)return;
   const n=parseInt(document.getElementById('num-preguntas').value);
   const fuente=document.getElementById('fuente-preguntas').value;
   const tema=TEMAS.find(t=>t.n===state.selectedTema);
-  state.testMode='tema';
+  state.testMode='tema';state.modoExamen=false;
   await startTest(n,tema,fuente,false);
 }
 async function startAleatorio(){
-  state.testMode='aleatorio';
+  state.testMode='aleatorio';state.modoExamen=false;
   const temas=[...TEMAS].sort(()=>Math.random()-.5).slice(0,5);
   await startTest(10,null,'ia',false,temas);
+}
+async function startRepasoFallos(){
+  const temasConFallos=TEMAS.filter(t=>{const s=state.stats['t'+t.n];return s&&s.total>0&&s.ok/s.total<0.6;})
+    .sort((a,b)=>{const sa=state.stats['t'+a.n],sb=state.stats['t'+b.n];return(sa.ok/sa.total)-(sb.ok/sb.total);})
+    .slice(0,5);
+  if(temasConFallos.length===0){alert('Aún no tienes suficientes datos de fallos. Haz algún test primero.');return;}
+  state.testMode='fallos';state.modoExamen=false;
+  await startTest(10,null,'ia',false,temasConFallos);
+}
+async function startFavoritos(){
+  if(state.favoritos.length===0){alert('No tienes preguntas favoritas todavía.\nDurante un test, pulsa el corazón ♥ para guardar preguntas.');return;}
+  state.testMode='favoritos';state.modoExamen=false;
+  showScreen('test');
+  state.questions=[...state.favoritos].sort(()=>Math.random()-.5).slice(0,Math.min(20,state.favoritos.length));
+  state.currentQ=0;state.answers=[];state.flags=[];
+  if(state.timerInterval)clearInterval(state.timerInterval);
+  document.getElementById('test-timer').style.display='none';
+  renderQuestion();renderQmap();
 }
 function selectSim(n){state.simType=n;[1,2,3].forEach(i=>document.getElementById('sim-opt-'+i).classList.toggle('selected',i===n));}
 async function startSimulacro(){
   const configs={1:{n:80,time:90*60},2:{n:100,time:120*60},3:{n:20,time:25*60}};
   const c=configs[state.simType];
   state.testMode='simulacro';
+  state.modoExamen=document.getElementById('modo-examen').checked;
   await startTest(c.n,null,'ia',true,null,c.time);
 }
 
 async function startTest(numQ,tema,fuente,timed,temas=null,timerSecs=0){
   showScreen('test');
-  state.questions=[];state.currentQ=0;state.answers=[];
+  state.questions=[];state.currentQ=0;state.answers=[];state.flags=[];
   state.timerSeconds=timerSecs;
   if(state.timerInterval)clearInterval(state.timerInterval);
   const timerEl=document.getElementById('test-timer');
   timerEl.style.display='none';timerEl.classList.remove('warning');
-  document.getElementById('test-actions').style.display='none';
   document.getElementById('progress-fill').style.width='5%';
+  document.getElementById('qmap').innerHTML='';
   document.getElementById('test-body').innerHTML=`<div class="loading-q"><span class="spinner"></span>Generando preguntas con IA…<br><span style="font-size:12px;margin-top:6px;display:block;color:var(--text3)">Esto tarda unos segundos</span></div>`;
 
   if(!state.apiKey&&fuente!=='banco'){
-    document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-key" style="font-size:36px;color:var(--warn);display:block;margin-bottom:12px"></i><strong>Necesitas configurar tu API key</strong><br><span style="font-size:13px">Ve a Ajustes e introduce tu API key de Anthropic.</span><br><button class="btn btn-primary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button></div>`;
+    document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-key" style="font-size:34px;color:var(--warn);display:block;margin-bottom:10px"></i><strong>Necesitas configurar tu API key</strong><br><span style="font-size:13px">Ve a Ajustes.</span><br><button class="btn btn-primary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button></div>`;
     return;
   }
 
@@ -541,28 +681,24 @@ async function startTest(numQ,tema,fuente,timed,temas=null,timerSecs=0){
   const iaNeeded=fuente==='ia'?numQ:Math.max(0,numQ-qs.length);
   if(iaNeeded>0){
     const desc=tema?`Tema ${tema.n}: ${tema.t}`:(temas?temas.map(t=>`Tema ${t.n}: ${t.t}`).join('; '):'temas variados del temario de titulados superiores especialidad jurídica Junta de Extremadura');
-    const nqs=await generateQuestionsIA(iaNeeded,desc,null);
-    qs=[...qs,...nqs];
+    qs=[...qs,...(await generateQuestionsIA(iaNeeded,desc,null))];
   }
   qs=qs.sort(()=>Math.random()-.5).slice(0,numQ);
   state.questions=qs;
-
   if(qs.length===0){
-    document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:36px;color:var(--fail);display:block;margin-bottom:12px"></i><strong>No se pudieron generar preguntas</strong><br><span style="font-size:13px;color:var(--text3)">Comprueba tu API key en Ajustes y la conexión a internet.</span><br><button class="btn btn-secondary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button></div>`;
+    document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:34px;color:var(--fail);display:block;margin-bottom:10px"></i><strong>No se pudieron generar preguntas</strong><br><span style="font-size:12px;color:var(--text3)">Comprueba tu API key y la conexión.</span><br><button class="btn btn-secondary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ajustes</button></div>`;
     return;
   }
-
-  // Cronómetro arranca SOLO cuando las preguntas ya están listas
+  checkRacha();
   if(timed&&timerSecs>0){
-    timerEl.style.display='flex';
-    updateTimerDisplay();
+    timerEl.style.display='flex';updateTimerDisplay();
     state.timerInterval=setInterval(()=>{
       state.timerSeconds--;updateTimerDisplay();
       if(state.timerSeconds<=300)timerEl.classList.add('warning');
       if(state.timerSeconds<=0){clearInterval(state.timerInterval);endTest();}
     },1000);
   }
-  renderQuestion();
+  renderQuestion();renderQmap();
 }
 
 function updateTimerDisplay(){
@@ -570,24 +706,24 @@ function updateTimerDisplay(){
   document.getElementById('timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
+// GENERAR IA
 async function generateQuestionsIA(n,temaDesc,textoFuente){
   const prompt=textoFuente
-    ?`Eres un experto en oposiciones de la Administración pública española. Genera exactamente ${n} preguntas tipo test basadas EXCLUSIVAMENTE en este texto oficial, con referencias literales a artículos:\n\n${textoFuente.slice(0,8000)}\n\nResponde SOLO con JSON array sin texto ni backticks:\n[{"pregunta":"texto","opciones":["A) texto","B) texto","C) texto","D) texto"],"correcta":0,"explicacion":"cita el artículo concreto","tema":"${temaDesc.slice(0,60)}"}]\nGenera exactamente ${n} objetos.`
-    :`Eres un experto en oposiciones de la Administración pública española. Genera exactamente ${n} preguntas tipo test sobre: ${temaDesc}. Las preguntas deben ser rigurosas, con referencias a artículos, plazos, órganos y procedimientos concretos.\nResponde SOLO con JSON array sin texto ni backticks:\n[{"pregunta":"texto","opciones":["A) texto","B) texto","C) texto","D) texto"],"correcta":0,"explicacion":"breve explicación con referencia legal","tema":"${temaDesc.slice(0,60)}"}]\nGenera exactamente ${n} objetos.`;
+    ?`Eres experto en oposiciones de la Administración pública española. Genera exactamente ${n} preguntas tipo test basadas EXCLUSIVAMENTE en este texto oficial con referencias literales a artículos:\n\n${textoFuente.slice(0,8000)}\n\nResponde SOLO con JSON array sin texto ni backticks:\n[{"pregunta":"texto","opciones":["A) texto","B) texto","C) texto","D) texto"],"correcta":0,"explicacion":"cita el artículo","tema":"${temaDesc.slice(0,60)}"}]\nGenera exactamente ${n} objetos.`
+    :`Eres experto en oposiciones de la Administración pública española. Genera exactamente ${n} preguntas tipo test sobre: ${temaDesc}. Preguntas rigurosas con referencias a artículos, plazos y procedimientos.\nResponde SOLO con JSON array sin texto ni backticks:\n[{"pregunta":"texto","opciones":["A) texto","B) texto","C) texto","D) texto"],"correcta":0,"explicacion":"referencia legal","tema":"${temaDesc.slice(0,60)}"}]\nGenera exactamente ${n} objetos.`;
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':state.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4000,messages:[{role:'user',content:prompt}]})});
-    if(!resp.ok){console.error('API error',resp.status,await resp.text());return[];}
+    if(!resp.ok){console.error('API',resp.status,await resp.text());return[];}
     const data=await resp.json();
-    if(data.error){console.error('API error',data.error);return[];}
+    if(data.error){console.error(data.error);return[];}
     const text=data.content.map(c=>c.text||'').join('');
     return JSON.parse(text.replace(/```json|```/g,'').trim()).map(q=>({...q,source:'ia'}));
-  }catch(e){console.error('Error IA:',e);return[];}
+  }catch(e){console.error(e);return[];}
 }
-
 async function generateFromFuentes(tema,max){
-  const relevantes=tema?state.fuentes.filter(f=>!f.tema||f.tema===tema.n):state.fuentes;
-  if(relevantes.length===0)return[];
-  const f=relevantes[Math.floor(Math.random()*relevantes.length)];
+  const rel=tema?state.fuentes.filter(f=>!f.tema||f.tema===tema.n):state.fuentes;
+  if(!rel.length)return[];
+  const f=rel[Math.floor(Math.random()*rel.length)];
   return(await generateQuestionsIA(max,f.nombre,f.contenido)).map(q=>({...q,source:'fuente'}));
 }
 function getBancoQuestions(temaNum,max){
@@ -595,71 +731,171 @@ function getBancoQuestions(temaNum,max){
   return qs.sort(()=>Math.random()-.5).slice(0,max);
 }
 
+// MAPA DE PREGUNTAS
+function renderQmap(){
+  const total=state.questions.length;
+  document.getElementById('qmap').innerHTML=state.questions.map((_,i)=>{
+    let cls='qmap-btn';
+    if(i===state.currentQ)cls+=' current';
+    else if(state.answers[i]!==undefined){
+      if(!state.modoExamen){
+        cls+=state.answers[i]===state.questions[i].correcta?' answered-ok':' answered-fail';
+      } else cls+=' answered-any';
+    }
+    if(state.flags[i])cls+=' flagged';
+    return `<button class="${cls}" onclick="jumpTo(${i})">${i+1}</button>`;
+  }).join('');
+}
+function jumpTo(idx){state.currentQ=idx;renderQuestion();renderQmap();}
+
+// RENDER PREGUNTA
 function renderQuestion(){
   const q=state.questions[state.currentQ];if(!q){endTest();return;}
   const total=state.questions.length,idx=state.currentQ;
   document.getElementById('test-info').textContent=`Pregunta ${idx+1} de ${total}`;
   document.getElementById('progress-fill').style.width=`${Math.round((idx+1)/total*100)}%`;
   const answered=state.answers[idx]!==undefined;
+  const showCorrection=answered&&!state.modoExamen;
+
   const opts=q.opciones.map((o,i)=>{
     const letter=String.fromCharCode(65+i);
     let cls='option-btn';
-    if(answered){cls+=' locked';if(i===q.correcta)cls+=' correct';else if(i===state.answers[idx]&&state.answers[idx]!==q.correcta)cls+=' wrong';}
+    if(showCorrection){
+      cls+=' locked';
+      if(i===q.correcta)cls+=' correct';
+      else if(i===state.answers[idx]&&i!==q.correcta)cls+=' wrong';
+    } else if(answered&&i===state.answers[idx]){
+      cls+=' locked selected-exam';
+    }
     return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-letter">${letter}</span><span>${o.replace(/^[A-D]\)\s*/,'')}</span></button>`;
   }).join('');
-  const expHtml=answered&&q.explicacion?`<div class="explanation"><i class="ti ti-bulb"></i> ${q.explicacion}</div>`:'';
-  const sourceBadge=q.source==='banco'?'<span style="font-size:11px;color:var(--text2)"><i class="ti ti-database" style="font-size:12px"></i> Tu banco</span>':q.source==='fuente'?'<span style="font-size:11px;color:var(--ok)"><i class="ti ti-link" style="font-size:12px"></i> Fuente oficial</span>':'';
-  document.getElementById('test-body').innerHTML=`<div class="question-block"><div class="question-tag"><span class="tag">${q.tema||'Temario'}</span>${sourceBadge}</div><div class="question-text">${q.pregunta}</div><div class="options-list">${opts}</div>${expHtml}</div>`;
-  const actEl=document.getElementById('test-actions');
-  actEl.style.display=answered?'flex':'none';
+
+  const expHtml=showCorrection&&q.explicacion?`<div class="explanation"><i class="ti ti-bulb"></i> ${q.explicacion}</div>`:'';
+  const sourceBadge=q.source==='banco'?'<span style="font-size:11px;color:var(--text2)"><i class="ti ti-database" style="font-size:12px"></i> Banco</span>':q.source==='fuente'?'<span style="font-size:11px;color:var(--ok)"><i class="ti ti-link" style="font-size:12px"></i> Fuente oficial</span>':'';
+
+  document.getElementById('test-body').innerHTML=`<div class="question-block">
+    <div class="question-tag"><span class="tag">${q.tema||'Temario'}</span>${sourceBadge}<span class="question-num">${idx+1}/${total}</span></div>
+    <div class="question-text">${q.pregunta}</div>
+    <div class="options-list">${opts}</div>${expHtml}
+  </div>`;
+
+  // Botonera siempre visible
   document.getElementById('btn-prev').disabled=idx===0;
   const isLast=idx>=total-1;
   document.getElementById('btn-next').innerHTML=isLast?'Ver resultados <i class="ti ti-chart-bar"></i>':'Siguiente <i class="ti ti-arrow-right"></i>';
+  // Flag y fav
+  const flagBtn=document.getElementById('btn-flag');
+  flagBtn.style.background=state.flags[idx]?'var(--warn)':'';
+  flagBtn.style.color=state.flags[idx]?'#fff':'';
+  const isFav=state.favoritos.some(f=>f.pregunta===q.pregunta);
+  const favBtn=document.getElementById('btn-fav');
+  favBtn.style.background=isFav?'var(--fav)':'';
+  favBtn.style.color=isFav?'#fff':'';
 }
 
 function selectOption(idx){
   if(state.answers[state.currentQ]!==undefined)return;
   state.answers[state.currentQ]=idx;
   const q=state.questions[state.currentQ];
-  const tKey='t'+(extractTemaNum(q.tema)||0);
-  if(!state.stats[tKey])state.stats[tKey]={total:0,ok:0,fail:0};
-  state.stats[tKey].total++;
-  if(idx===q.correcta)state.stats[tKey].ok++;else state.stats[tKey].fail++;
+  if(!state.modoExamen){
+    const tKey='t'+(extractTemaNum(q.tema)||0);
+    if(!state.stats[tKey])state.stats[tKey]={total:0,ok:0,fail:0};
+    state.stats[tKey].total++;
+    if(idx===q.correcta)state.stats[tKey].ok++;else state.stats[tKey].fail++;
+    saveState();
+  }
+  renderQuestion();renderQmap();
+}
+
+function toggleFlag(){
+  state.flags[state.currentQ]=!state.flags[state.currentQ];
+  renderQuestion();renderQmap();
+}
+function toggleFav(){
+  const q=state.questions[state.currentQ];
+  const idx=state.favoritos.findIndex(f=>f.pregunta===q.pregunta);
+  if(idx>=0)state.favoritos.splice(idx,1);
+  else state.favoritos.push({...q});
   saveState();renderQuestion();
 }
-function prevQuestion(){if(state.currentQ>0){state.currentQ--;renderQuestion();}}
-function nextQuestion(){if(state.currentQ>=state.questions.length-1){endTest();return;}state.currentQ++;renderQuestion();}
-function confirmAbandonar(){showModal('¿Abandonar el test?','Perderás el progreso de este test pero se guardarán las estadísticas de las preguntas ya respondidas.',()=>{if(state.timerInterval)clearInterval(state.timerInterval);showScreen('home');});}
+
+function prevQuestion(){if(state.currentQ>0){state.currentQ--;renderQuestion();renderQmap();}}
+function nextQuestion(){
+  if(state.currentQ>=state.questions.length-1){endTest();return;}
+  state.currentQ++;renderQuestion();renderQmap();
+}
+function confirmAbandonar(){
+  showModal('¿Salir del test?','Las estadísticas de las preguntas ya respondidas se guardarán.',()=>{
+    if(state.timerInterval)clearInterval(state.timerInterval);
+    if(state.modoExamen)saveStatsFromTest();
+    showScreen('home');
+  });
+}
 function confirmTerminar(){
   const pending=state.questions.length-state.answers.filter(a=>a!==undefined).length;
-  if(pending>0)showModal('¿Terminar el test?',`Tienes ${pending} pregunta${pending>1?'s':''} sin responder. Las preguntas sin responder no puntúan ni penalizan.`,endTest,'Terminar y ver resultados');
+  if(pending>0)showModal('¿Terminar el test?',`Tienes ${pending} pregunta${pending>1?'s':''} sin responder. No puntúan ni penalizan.`,endTest,'Terminar y ver resultados');
   else endTest();
+}
+
+function saveStatsFromTest(){
+  state.questions.forEach((q,i)=>{
+    if(state.answers[i]===undefined)return;
+    const tKey='t'+(extractTemaNum(q.tema)||0);
+    if(!state.stats[tKey])state.stats[tKey]={total:0,ok:0,fail:0};
+    state.stats[tKey].total++;
+    if(state.answers[i]===q.correcta)state.stats[tKey].ok++;else state.stats[tKey].fail++;
+  });
+  saveState();
 }
 
 function endTest(){
   if(state.timerInterval)clearInterval(state.timerInterval);
+  if(state.modoExamen)saveStatsFromTest();
   showScreen('result');
   const total=state.questions.length;
   const answered=state.answers.filter(a=>a!==undefined).length;
   const ok=state.answers.filter((a,i)=>a!==undefined&&a===state.questions[i]?.correcta).length;
   const fail=answered-ok,skip=total-answered;
   const pct=answered>0?Math.round(ok/answered*100):0;
-  const nota=(ok-(fail*0.25)).toFixed(2);
+  const nota=(ok-fail*0.25).toFixed(2);
   const color=pct>=60?'var(--ok)':'var(--fail)';
   document.getElementById('result-score').textContent=pct+'%';
   document.getElementById('result-score').style.color=color;
   document.getElementById('result-label').textContent=`${ok} correctas de ${answered} respondidas`;
   document.getElementById('result-nota').textContent=`Nota con penalización: ${nota} / ${total}`;
-  document.getElementById('result-nota').style.cssText=`background:${pct>=60?'var(--ok-light)':'var(--fail-light)'};color:${color};padding:4px 14px;border-radius:10px;font-size:13px;font-weight:500;display:inline-block`;
-  document.getElementById('r-ok').textContent=ok;document.getElementById('r-fail').textContent=fail;document.getElementById('r-skip').textContent=skip;
+  document.getElementById('result-nota').style.cssText=`background:${pct>=60?'var(--ok-light)':'var(--fail-light)'};color:${color};padding:4px 14px;border-radius:10px;font-size:13px;font-weight:600;display:inline-block`;
+  document.getElementById('r-ok').textContent=ok;
+  document.getElementById('r-fail').textContent=fail;
+  document.getElementById('r-skip').textContent=skip;
+  // Dudosas
+  const dudosas=state.flags.map((f,i)=>f?i:-1).filter(i=>i>=0);
+  const dudSec=document.getElementById('result-dudosas-section');
+  if(dudosas.length>0){
+    dudSec.style.display='block';
+    document.getElementById('result-dudosas-text').textContent=`Tienes ${dudosas.length} pregunta${dudosas.length>1?'s':''} marcada${dudosas.length>1?'s':''} como dudosa${dudosas.length>1?'s':''}. ¿Quieres repasarlas?`;
+  } else dudSec.style.display='none';
+  // Breakdown
   document.getElementById('breakdown-list').innerHTML=state.questions.map((q,i)=>{
     const ans=state.answers[i],isOk=ans===q.correcta;
     const icon=ans===undefined?'<i class="ti ti-minus b-icon" style="color:var(--text3)"></i>':isOk?'<i class="ti ti-check b-icon" style="color:var(--ok)"></i>':'<i class="ti ti-x b-icon" style="color:var(--fail)"></i>';
     const fix=!isOk&&ans!==undefined&&q.opciones[q.correcta]?`<br><span style="font-size:11px;color:var(--ok)">✓ ${q.opciones[q.correcta].replace(/^[A-D]\)\s*/,'')}</span>`:'';
-    return `<div class="breakdown-item">${icon}<span class="b-num">${i+1}.</span><span class="b-text">${q.pregunta.length>90?q.pregunta.slice(0,90)+'…':q.pregunta}${fix}</span></div>`;
+    const flagIcon=state.flags[i]?'<i class="ti ti-flag" style="color:var(--warn);font-size:12px;margin-right:3px"></i>':'';
+    return `<div class="breakdown-item">${icon}<span class="b-num">${i+1}.</span><span class="b-text">${flagIcon}${q.pregunta.length>85?q.pregunta.slice(0,85)+'…':q.pregunta}${fix}</span></div>`;
   }).join('');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  updateHomeStats();
 }
+
+function repassDudosas(){
+  const dudosas=state.flags.map((f,i)=>f?state.questions[i]:null).filter(Boolean);
+  if(!dudosas.length)return;
+  state.questions=dudosas;state.currentQ=0;state.answers=[];state.flags=[];
+  state.modoExamen=false;
+  showScreen('test');renderQuestion();renderQmap();
+  document.getElementById('test-timer').style.display='none';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+}
+
 function extractTemaNum(s){if(!s)return 0;const m=s.match(/\d+/);return m?parseInt(m[0]):0;}
 
 // FUENTES
@@ -676,36 +912,35 @@ async function agregarFuenteURL(){
   status.innerHTML='<span class="spinner"></span> Descargando…';
   try{
     const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const resp=await fetch(proxy);
-    const data=await resp.json();
+    const data=await(await fetch(proxy)).json();
     if(!data.contents)throw new Error('No se pudo obtener el contenido');
     const doc=new DOMParser().parseFromString(data.contents,'text/html');
     let contenido='';
-    for(const sel of['#textoxslt','#texto','article','.documento','main']){const el=doc.querySelector(sel);if(el&&el.innerText&&el.innerText.length>200){contenido=el.innerText.trim();break;}}
+    for(const sel of['#textoxslt','#texto','article','.documento','main']){const el=doc.querySelector(sel);if(el?.innerText?.length>200){contenido=el.innerText.trim();break;}}
     if(!contenido){['script','style','nav','header','footer'].forEach(t=>doc.body.querySelectorAll(t).forEach(e=>e.remove()));contenido=doc.body?.innerText?.trim()||'';}
     if(contenido.length<200)throw new Error('Contenido demasiado corto. Prueba pegando el texto manualmente.');
     state.fuentes.push({id:Date.now(),nombre,url,contenido,tipo:'url',fecha:new Date().toLocaleDateString('es-ES')});
     saveState();renderFuentes();
     document.getElementById('fuente-url').value='';document.getElementById('fuente-url-nombre').value='';
-    status.innerHTML=`<span style="color:var(--ok)">✓ Añadida (${Math.round(contenido.length/1000)}KB de texto)</span>`;
+    status.innerHTML=`<span style="color:var(--ok)">✓ Añadida (${Math.round(contenido.length/1000)}KB)</span>`;
   }catch(e){status.innerHTML=`<span style="color:var(--fail)">✗ ${e.message}</span>`;}
 }
 function agregarFuenteTexto(){
   const nombre=document.getElementById('fuente-texto-nombre').value.trim();
   const contenido=document.getElementById('fuente-texto-contenido').value.trim();
-  if(!nombre||contenido.length<100){alert('Rellena el nombre y añade al menos 100 caracteres de texto');return;}
+  if(!nombre||contenido.length<100){alert('Rellena el nombre y añade al menos 100 caracteres');return;}
   state.fuentes.push({id:Date.now(),nombre,contenido,tipo:'texto',fecha:new Date().toLocaleDateString('es-ES')});
   saveState();renderFuentes();
   document.getElementById('fuente-texto-nombre').value='';document.getElementById('fuente-texto-contenido').value='';
-  alert(`✓ Fuente "${nombre}" añadida (${Math.round(contenido.length/1000)}KB)`);
+  alert(`✓ Fuente "${nombre}" añadida`);
 }
 function renderFuentes(){
   const sec=document.getElementById('fuentes-lista-section');
-  if(state.fuentes.length===0){sec.style.display='none';return;}
+  if(!state.fuentes.length){sec.style.display='none';return;}
   sec.style.display='block';
   document.getElementById('fuentes-list').innerHTML=state.fuentes.map(f=>`<div class="fuente-item">
     <i class="ti ti-${f.tipo==='url'?'link':'file-text'}" style="color:var(--accent)"></i>
-    <div style="flex:1"><div class="f-title">${f.nombre}</div><div class="f-sub">${f.fecha} · ${Math.round(f.contenido.length/1000)}KB · ${f.tipo==='url'?f.url.slice(0,45)+'…':'texto pegado'}</div></div>
+    <div class="f-info"><div class="f-title">${f.nombre}</div><div class="f-sub">${f.fecha} · ${Math.round(f.contenido.length/1000)}KB</div></div>
     <button class="f-use" onclick="testDesdeFuente(${f.id})"><i class="ti ti-player-play"></i> Test</button>
     <button class="f-del" onclick="deleteFuente(${f.id})"><i class="ti ti-trash"></i></button>
   </div>`).join('');
@@ -713,24 +948,25 @@ function renderFuentes(){
 async function testDesdeFuente(id){
   const f=state.fuentes.find(x=>x.id===id);if(!f)return;
   if(!state.apiKey){showScreen('ajustes');return;}
-  showScreen('test');state.questions=[];state.currentQ=0;state.answers=[];
+  showScreen('test');state.questions=[];state.currentQ=0;state.answers=[];state.flags=[];
   if(state.timerInterval)clearInterval(state.timerInterval);
   document.getElementById('test-timer').style.display='none';
-  document.getElementById('test-actions').style.display='none';
+  document.getElementById('qmap').innerHTML='';
   document.getElementById('test-body').innerHTML=`<div class="loading-q"><span class="spinner"></span>Generando preguntas desde "${f.nombre}"…</div>`;
   const qs=(await generateQuestionsIA(10,f.nombre,f.contenido)).map(q=>({...q,source:'fuente'}));
-  if(qs.length===0){document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:36px;color:var(--fail);display:block;margin-bottom:12px"></i>No se pudieron generar preguntas.</div>`;return;}
-  state.questions=qs;renderQuestion();
+  if(!qs.length){document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:34px;color:var(--fail);display:block;margin-bottom:10px"></i>No se pudieron generar preguntas.</div>`;return;}
+  state.questions=qs;state.modoExamen=false;
+  renderQuestion();renderQmap();
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
 }
-function deleteFuente(id){showModal('¿Eliminar fuente?','Esta acción no se puede deshacer.',()=>{state.fuentes=state.fuentes.filter(f=>f.id!==id);saveState();renderFuentes();});}
+function deleteFuente(id){showModal('¿Eliminar fuente?','No se puede deshacer.',()=>{state.fuentes=state.fuentes.filter(f=>f.id!==id);saveState();renderFuentes();});}
 
 // BANCO
 function renderBancos(){
   const sec=document.getElementById('banco-lista-section');
-  if(state.bancos.length===0){sec.style.display='none';return;}
+  if(!state.bancos.length){sec.style.display='none';return;}
   sec.style.display='block';
-  document.getElementById('banco-list').innerHTML=state.bancos.map((b,i)=>`<div class="banco-item"><i class="ti ti-database"></i><span class="b-title">${b.nombre}</span><span class="b-count">${b.preguntas.length} preguntas</span><button class="b-del" onclick="deleteBanco(${i})"><i class="ti ti-trash"></i></button></div>`).join('');
+  document.getElementById('banco-list').innerHTML=state.bancos.map((b,i)=>`<div class="banco-item"><i class="ti ti-database"></i><span class="b-title">${b.nombre}</span><span class="b-count">${b.preguntas.length}p</span><button class="b-del" onclick="deleteBanco(${i})"><i class="ti ti-trash"></i></button></div>`).join('');
 }
 function setBancoTab(tab){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===(tab==='pegar'?0:1)));
@@ -754,10 +990,10 @@ function importarBanco(){
   const temaNum=document.getElementById('banco-tema-asoc').value;
   if(!texto){alert('Pega el texto primero');return;}
   const qs=parseBancoText(texto);
-  if(qs.length===0){alert('No se encontraron preguntas con el formato correcto.');return;}
+  if(!qs.length){alert('No se encontraron preguntas con el formato correcto.');return;}
   state.bancos.push({nombre,preguntas:qs,tema:temaNum?parseInt(temaNum):null});
   saveState();document.getElementById('banco-texto').value='';document.getElementById('banco-nombre').value='';
-  renderBancos();alert(`Importadas ${qs.length} preguntas en "${nombre}"`);
+  renderBancos();alert(`✓ Importadas ${qs.length} preguntas en "${nombre}"`);
 }
 let fileText='';
 function loadFile(e){
@@ -770,50 +1006,65 @@ function importarBancoArchivo(){
   if(!fileText){alert('Selecciona un archivo primero');return;}
   const nombre=document.getElementById('banco-nombre-f').value.trim()||'Banco archivo';
   const qs=parseBancoText(fileText);
-  if(qs.length===0){alert('No se encontraron preguntas con el formato correcto.');return;}
+  if(!qs.length){alert('Formato incorrecto.');return;}
   state.bancos.push({nombre,preguntas:qs,tema:null});
   saveState();fileText='';document.getElementById('file-preview').textContent='';
-  renderBancos();alert(`Importadas ${qs.length} preguntas en "${nombre}"`);
+  renderBancos();alert(`✓ Importadas ${qs.length} preguntas`);
 }
-function deleteBanco(i){showModal(`¿Eliminar "${state.bancos[i].nombre}"?`,'Esta acción no se puede deshacer.',()=>{state.bancos.splice(i,1);saveState();renderBancos();});}
+function deleteBanco(i){showModal(`¿Eliminar "${state.bancos[i].nombre}"?`,'No se puede deshacer.',()=>{state.bancos.splice(i,1);saveState();renderBancos();});}
 
-// ESTADÍSTICAS
+// FAVORITOS
+function renderFavoritos(){
+  const body=document.getElementById('favoritos-body');
+  const btn=document.getElementById('btn-test-favs');
+  btn.disabled=state.favoritos.length===0;
+  if(!state.favoritos.length){body.innerHTML='<div class="empty-state"><i class="ti ti-heart"></i>No tienes preguntas favoritas.<br>Durante un test pulsa el corazón ♥ para guardar.</div>';return;}
+  body.innerHTML=`<div class="fav-list">`+state.favoritos.map((q,i)=>`<div class="fav-item">
+    <span style="min-width:20px;color:var(--text3);font-size:11px;font-weight:600">${i+1}</span>
+    <span style="flex:1;color:var(--text);font-size:13px;line-height:1.5">${q.pregunta}<br><span style="font-size:11px;color:var(--text3)">${q.tema||''}</span></span>
+    <button class="fav-del" onclick="deleteFav(${i})"><i class="ti ti-trash"></i></button>
+  </div>`).join('')+'</div>';
+}
+function deleteFav(i){state.favoritos.splice(i,1);saveState();renderFavoritos();}
+
+// STATS
 function renderStats(){
   const body=document.getElementById('stats-body');
   const con=TEMAS.filter(t=>state.stats['t'+t.n]);
-  if(con.length===0){body.innerHTML='<div class="empty-state"><i class="ti ti-chart-bar"></i>Aún no tienes estadísticas.<br>Haz tu primer test.</div>';return;}
+  if(!con.length){body.innerHTML='<div class="empty-state"><i class="ti ti-chart-bar"></i>Aún no tienes estadísticas.</div>';return;}
   const sorted=[...con].sort((a,b)=>{const sa=state.stats['t'+a.n],sb=state.stats['t'+b.n];return(sa.total>0?sa.ok/sa.total:0)-(sb.total>0?sb.ok/sb.total:0);});
-  body.innerHTML=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:0 1.25rem">`+sorted.map(t=>{
+  body.innerHTML=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:0 1rem">`+sorted.map(t=>{
     const s=state.stats['t'+t.n],pct=s.total>0?Math.round(s.ok/s.total*100):0;
     const c=pct>=70?'var(--ok)':pct>=50?'var(--warn)':'var(--fail)';
     return `<div class="stat-bar-item">
-      <span style="min-width:26px;color:var(--text3);font-size:11px;font-weight:600">${t.n}</span>
-      <span style="flex:1;color:var(--text)">${t.t.length>58?t.t.slice(0,58)+'…':t.t}</span>
-      <span style="min-width:44px;text-align:right;color:${c};font-weight:600">${pct}%</span>
-      <span style="min-width:32px;text-align:right;font-size:11px;color:var(--text3)">${s.total}p</span>
+      <span style="min-width:24px;color:var(--text3);font-size:11px;font-weight:700">${t.n}</span>
+      <span style="flex:1;color:var(--text)">${t.t.length>55?t.t.slice(0,55)+'…':t.t}</span>
+      <span style="min-width:40px;text-align:right;color:${c};font-weight:700">${pct}%</span>
+      <span style="min-width:28px;text-align:right;font-size:11px;color:var(--text3)">${s.total}p</span>
       <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${pct}%;background:${c}"></div></div>
-      <button class="btn btn-sm btn-danger" style="padding:3px 7px" onclick="clearStatTema(${t.n})" title="Resetear tema ${t.n}"><i class="ti ti-trash"></i></button>
+      <button class="btn btn-sm btn-danger" style="padding:3px 6px" onclick="clearStatTema(${t.n})"><i class="ti ti-trash"></i></button>
     </div>`;
   }).join('')+'</div>';
 }
-function clearStatTema(n){showModal(`¿Resetear estadísticas del tema ${n}?`,'Se borrarán los datos de aciertos y fallos de este tema.',()=>{delete state.stats['t'+n];saveState();renderStats();updateHomeStats();});}
-function confirmClearStats(){showModal('¿Resetear todas las estadísticas?','Se borrarán todos los datos de rendimiento.',()=>{state.stats={};saveState();renderStats();updateHomeStats();});}
+function clearStatTema(n){showModal(`¿Resetear tema ${n}?`,'Se borran los datos de aciertos y fallos.',()=>{delete state.stats['t'+n];saveState();renderStats();updateHomeStats();});}
+function confirmClearStats(){showModal('¿Resetear todas las estadísticas?','Se borran todos los datos.',()=>{state.stats={};saveState();renderStats();updateHomeStats();});}
 
 // AJUSTES
 function renderAjustes(){
   const input=document.getElementById('api-key-input'),st=document.getElementById('api-key-status');
   if(state.apiKey){input.value=state.apiKey;st.textContent='✓ API key guardada';st.style.color='var(--ok)';}
-  else{st.textContent='Sin API key configurada';st.style.color='var(--text3)';}
+  else{st.textContent='Sin API key';st.style.color='var(--text3)';}
 }
 function saveApiKey(){
   const key=document.getElementById('api-key-input').value.trim();
   if(!key){alert('Introduce una API key válida');return;}
   state.apiKey=key;saveState();
-  document.getElementById('api-key-status').textContent='✓ API key guardada';
+  document.getElementById('api-key-status').textContent='✓ Guardada';
   document.getElementById('api-key-status').style.color='var(--ok)';
 }
-function confirmResetAll(){showModal('¿Borrar TODOS los datos?','Se eliminarán estadísticas, bancos, fuentes y API key.',()=>{localStorage.removeItem('opo_jex_v3');state.stats={};state.bancos=[];state.apiKey='';state.fuentes=[];renderAjustes();updateHomeStats();alert('Datos borrados.');});}
+function confirmResetAll(){showModal('¿Borrar TODOS los datos?','Estadísticas, bancos, fuentes, favoritos y API key.',()=>{localStorage.removeItem('opo_jex_v4');state.stats={};state.bancos=[];state.apiKey='';state.fuentes=[];state.favoritos=[];state.racha=0;state.ultimoDia='';renderAjustes();updateHomeStats();});}
 
+// INIT
 updateHomeStats();renderTemas();
 </script>
 </body>
