@@ -6,185 +6,151 @@
 <title>Oposiciones Jurídica — Junta de Extremadura</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #ffffff;
-    --bg2: #f5f5f3;
-    --bg3: #eeede9;
-    --text: #1a1a18;
-    --text2: #6b6b68;
-    --text3: #9b9b97;
-    --border: rgba(0,0,0,0.12);
-    --border2: rgba(0,0,0,0.2);
-    --accent: #185FA5;
-    --accent-light: #E6F1FB;
-    --accent-mid: #378ADD;
-    --ok: #3B6D11;
-    --ok-light: #EAF3DE;
-    --fail: #A32D2D;
-    --fail-light: #FCEBEB;
-    --warn: #BA7517;
-    --radius: 8px;
-    --radius-lg: 12px;
-    font-size: 16px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1c1c1a;
-      --bg2: #252522;
-      --bg3: #2e2e2b;
-      --text: #f0efe9;
-      --text2: #a0a09c;
-      --text3: #6b6b68;
-      --border: rgba(255,255,255,0.1);
-      --border2: rgba(255,255,255,0.18);
-      --accent-light: #0c2d4a;
-    }
-  }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
-  .shell { max-width: 780px; margin: 0 auto; padding: 1.5rem 1rem; }
-  .header { display: flex; align-items: center; gap: 14px; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); }
-  .logo { width: 44px; height: 44px; background: var(--accent); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; flex-shrink: 0; }
-  .header-text h1 { font-size: 18px; font-weight: 600; color: var(--text); }
-  .header-text p { font-size: 13px; color: var(--text2); margin-top: 2px; }
-  .nav { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .nav-btn { padding: 7px 16px; border: 0.5px solid var(--border2); background: var(--bg); border-radius: 20px; font-size: 13px; cursor: pointer; color: var(--text2); transition: all .15s; display: flex; align-items: center; gap: 6px; }
-  .nav-btn:hover { background: var(--bg2); color: var(--text); }
-  .nav-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-  .screen { display: none; }
-  .screen.visible { display: block; }
-
-  /* Cards & layout */
-  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
-  .section-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: .875rem; }
-  .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
-  @media(max-width:600px){ .mode-grid { grid-template-columns: 1fr; } }
-  .mode-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; cursor: pointer; transition: all .15s; }
-  .mode-card:hover { border-color: var(--accent-mid); background: var(--bg2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.07); }
-  .mode-card .icon { font-size: 26px; color: var(--accent); margin-bottom: 10px; }
-  .mode-card h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
-  .mode-card p { font-size: 12px; color: var(--text2); line-height: 1.55; }
-  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
-  @media(max-width:500px){ .stats-row { grid-template-columns: repeat(2,1fr); } }
-  .stat-card { background: var(--bg2); border-radius: var(--radius); padding: .875rem 1rem; }
-  .stat-card .label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
-  .stat-card .value { font-size: 24px; font-weight: 600; color: var(--text); }
-  .info-box { padding: 10px 14px; background: var(--bg2); border-radius: var(--radius); font-size: 13px; color: var(--text2); line-height: 1.6; display: flex; gap: 8px; align-items: flex-start; }
-  .info-box i { margin-top: 1px; flex-shrink: 0; color: var(--accent); }
-
-  /* Buttons */
-  .btn { padding: 9px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; transition: all .15s; border: none; }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { opacity: .88; }
-  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
-  .btn-secondary { background: var(--bg); color: var(--text); border: 0.5px solid var(--border2); }
-  .btn-secondary:hover { background: var(--bg2); }
-  .btn-danger { background: var(--fail-light); color: var(--fail); border: 0.5px solid rgba(163,45,45,.2); }
-  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem; }
-
-  /* Temas */
-  .config-row { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
-  .config-row label { font-size: 13px; color: var(--text2); }
-  .config-row select { font-size: 13px; padding: 6px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; }
-  .tema-list { display: flex; flex-direction: column; gap: 3px; max-height: 400px; overflow-y: auto; margin-bottom: 1rem; padding-right: 4px; }
-  .tema-list::-webkit-scrollbar { width: 4px; }
-  .tema-list::-webkit-scrollbar-track { background: var(--bg2); border-radius: 2px; }
-  .tema-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-  .tema-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--radius); cursor: pointer; transition: background .1s; font-size: 13px; color: var(--text); border: 0.5px solid transparent; }
-  .tema-item:hover { background: var(--bg2); }
-  .tema-item.selected { background: var(--accent-light); color: var(--accent); border-color: rgba(24,95,165,.2); }
-  .tema-num { min-width: 30px; font-size: 11px; color: var(--text3); font-weight: 600; }
-  .tema-acc { display: flex; gap: 4px; margin-left: auto; align-items: center; flex-shrink: 0; }
-  .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
-  .badge-ok { background: var(--ok-light); color: var(--ok); }
-  .badge-fail { background: var(--fail-light); color: var(--fail); }
-
-  /* Test */
-  .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: .75rem; border-bottom: 0.5px solid var(--border); }
-  .test-info { font-size: 13px; color: var(--text2); font-weight: 500; }
-  .test-timer { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--bg2); border-radius: 20px; }
-  .test-timer.warning { color: var(--fail); background: var(--fail-light); }
-  .progress-bar { height: 4px; background: var(--bg3); border-radius: 2px; margin-bottom: 1.25rem; overflow: hidden; }
-  .progress-fill { height: 4px; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
-  .question-block { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1rem; }
-  .question-tag { font-size: 11px; color: var(--text2); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .tag { background: var(--accent-light); color: var(--accent); padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 500; }
-  .question-text { font-size: 15px; color: var(--text); line-height: 1.65; margin-bottom: 1.25rem; font-weight: 500; }
-  .options-list { display: flex; flex-direction: column; gap: 8px; }
-  .option-btn { display: flex; align-items: flex-start; gap: 12px; padding: 11px 16px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); cursor: pointer; text-align: left; font-size: 13px; color: var(--text); transition: all .15s; width: 100%; line-height: 1.5; }
-  .option-btn:hover:not(.locked) { border-color: var(--accent-mid); background: var(--accent-light); }
-  .option-btn.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
-  .option-btn.correct { border-color: var(--ok); background: var(--ok-light); color: var(--ok); }
-  .option-btn.wrong { border-color: var(--fail); background: var(--fail-light); color: var(--fail); }
-  .option-letter { min-width: 24px; height: 24px; border-radius: 50%; border: 0.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
-  .option-btn.correct .option-letter { background: var(--ok); border-color: var(--ok); color: white; }
-  .option-btn.wrong .option-letter { background: var(--fail); border-color: var(--fail); color: white; }
-  .option-btn.selected .option-letter { background: var(--accent); border-color: var(--accent); color: white; }
-  .explanation { margin-top: 14px; padding: 12px 16px; background: var(--bg2); border-radius: var(--radius); font-size: 13px; color: var(--text2); line-height: 1.65; border-left: 3px solid var(--accent); }
-  .test-actions { display: flex; justify-content: space-between; align-items: center; margin-top: .75rem; }
-  .loading-q { text-align: center; padding: 3rem 1rem; color: var(--text2); font-size: 14px; }
-  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: -5px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Resultados */
-  .result-hero { text-align: center; padding: 2rem 1rem; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 1.25rem; }
-  .result-score { font-size: 64px; font-weight: 700; color: var(--accent); line-height: 1; }
-  .result-label { font-size: 15px; color: var(--text2); margin-top: 8px; }
-  .result-nota { font-size: 13px; margin-top: 6px; padding: 4px 14px; border-radius: 10px; display: inline-block; }
-  .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
-  .breakdown-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 1.25rem; max-height: 320px; overflow-y: auto; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-  .breakdown-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; padding: 10px 14px; border-bottom: 0.5px solid var(--border); background: var(--bg); }
-  .breakdown-item:last-child { border-bottom: none; }
-  .b-num { min-width: 22px; color: var(--text3); font-size: 12px; padding-top: 1px; }
-  .b-text { flex: 1; color: var(--text); line-height: 1.5; }
-  .b-icon { font-size: 16px; flex-shrink: 0; padding-top: 1px; }
-
-  /* Simulacro */
-  .sim-option { display: flex; align-items: center; gap: 14px; padding: 1.1rem 1.25rem; border: 0.5px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: all .15s; background: var(--bg); margin-bottom: 10px; }
-  .sim-option:hover { border-color: var(--accent-mid); }
-  .sim-option.selected { border-color: var(--accent); background: var(--accent-light); }
-  .sim-option .so-icon { font-size: 26px; color: var(--accent); flex-shrink: 0; }
-  .sim-option h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-  .sim-option p { font-size: 12px; color: var(--text2); }
-
-  /* Banco */
-  .tab-row { display: flex; gap: 0; margin-bottom: 1rem; border: 0.5px solid var(--border2); border-radius: var(--radius); overflow: hidden; width: fit-content; }
-  .tab-btn { padding: 7px 18px; font-size: 13px; background: var(--bg); border: none; color: var(--text2); cursor: pointer; transition: all .15s; font-weight: 500; }
-  .tab-btn:hover { background: var(--bg2); }
-  .tab-btn.active { background: var(--accent); color: white; }
-  .banco-instructions { font-size: 12px; color: var(--text2); line-height: 1.8; margin-bottom: 1rem; padding: 12px 16px; background: var(--bg2); border-radius: var(--radius); font-family: monospace; white-space: pre-line; }
-  .textarea-q { width: 100%; min-height: 200px; padding: 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; font-family: monospace; color: var(--text); background: var(--bg); resize: vertical; margin-bottom: .875rem; line-height: 1.6; }
-  .textarea-q:focus { outline: none; border-color: var(--accent); }
-  .input-field { width: 100%; padding: 8px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; color: var(--text); background: var(--bg); margin-bottom: .75rem; }
-  .input-field:focus { outline: none; border-color: var(--accent); }
-  .upload-area { border: 1.5px dashed var(--border2); border-radius: var(--radius-lg); padding: 2rem; text-align: center; margin-bottom: 1rem; color: var(--text2); font-size: 14px; cursor: pointer; transition: all .15s; display: block; }
-  .upload-area:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
-  .banco-list { display: flex; flex-direction: column; gap: 6px; }
-  .banco-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg2); border-radius: var(--radius); font-size: 13px; }
-  .banco-item .b-title { flex: 1; font-weight: 500; color: var(--text); }
-  .banco-item .b-count { font-size: 12px; color: var(--text2); }
-  .banco-item .b-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; padding: 2px 4px; border-radius: 4px; transition: color .1s; }
-  .banco-item .b-del:hover { color: var(--fail); }
-
-  /* Stats */
-  .stat-bar-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
-  .stat-bar-item:last-child { border-bottom: none; }
-  .stat-bar-wrap { min-width: 80px; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
-  .stat-bar-fill { height: 6px; border-radius: 3px; transition: width .5s ease; }
-
-  /* API key */
-  .api-key-banner { background: #FFF8E6; border: 0.5px solid #FAC775; border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: #633806; margin-bottom: 1rem; display: flex; gap: 8px; align-items: flex-start; }
-  .api-key-banner i { flex-shrink: 0; margin-top: 1px; }
-  .api-key-row { display: flex; gap: 8px; margin-top: 10px; }
-  .api-key-input { flex: 1; padding: 7px 10px; border: 0.5px solid #FAC775; border-radius: var(--radius); font-size: 13px; background: white; color: var(--text); font-family: monospace; }
-
-  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text2); font-size: 14px; }
-  .empty-state i { font-size: 40px; color: var(--text3); display: block; margin-bottom: 12px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#eeede9;
+  --text:#1a1a18;--text2:#6b6b68;--text3:#9b9b97;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --accent:#185FA5;--accent-light:#E6F1FB;--accent-mid:#378ADD;
+  --ok:#3B6D11;--ok-light:#EAF3DE;
+  --fail:#A32D2D;--fail-light:#FCEBEB;
+  --warn:#BA7517;--warn-light:#FFF8E6;
+  --radius:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252522;--bg3:#2e2e2b;--text:#f0efe9;--text2:#a0a09c;--text3:#6b6b68;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--accent-light:#0c2d4a}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
+.shell{max-width:780px;margin:0 auto;padding:1.5rem 1rem}
+.header{display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:0.5px solid var(--border)}
+.logo{width:44px;height:44px;background:var(--accent);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0}
+.header-text h1{font-size:18px;font-weight:600;color:var(--text)}
+.header-text p{font-size:13px;color:var(--text2);margin-top:2px}
+.nav{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
+.nav-btn{padding:7px 14px;border:0.5px solid var(--border2);background:var(--bg);border-radius:20px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px}
+.nav-btn:hover{background:var(--bg2);color:var(--text)}
+.nav-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.screen{display:none}.screen.visible{display:block}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+.section-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:.875rem}
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+@media(max-width:600px){.mode-grid{grid-template-columns:1fr}}
+.mode-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;cursor:pointer;transition:all .15s}
+.mode-card:hover{border-color:var(--accent-mid);background:var(--bg2);transform:translateY(-1px)}
+.mode-card .icon{font-size:26px;color:var(--accent);margin-bottom:10px}
+.mode-card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px}
+.mode-card p{font-size:12px;color:var(--text2);line-height:1.55}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+@media(max-width:500px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--bg2);border-radius:var(--radius);padding:.875rem 1rem}
+.stat-card .label{font-size:12px;color:var(--text2);margin-bottom:4px}
+.stat-card .value{font-size:24px;font-weight:600;color:var(--text)}
+.info-box{padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-size:13px;color:var(--text2);line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.info-box i{margin-top:1px;flex-shrink:0;color:var(--accent)}
+.btn{padding:9px 18px;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.88}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{background:var(--bg);color:var(--text);border:0.5px solid var(--border2)}.btn-secondary:hover{background:var(--bg2)}
+.btn-danger{background:var(--fail-light);color:var(--fail);border:0.5px solid rgba(163,45,45,.2)}.btn-danger:hover{opacity:.85}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem}
+.config-row{display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.config-row label{font-size:13px;color:var(--text2)}
+.config-row select{font-size:13px;padding:6px 10px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer}
+.tema-list{display:flex;flex-direction:column;gap:3px;max-height:400px;overflow-y:auto;margin-bottom:1rem;padding-right:4px}
+.tema-list::-webkit-scrollbar{width:4px}.tema-list::-webkit-scrollbar-track{background:var(--bg2)}.tema-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tema-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;transition:background .1s;font-size:13px;color:var(--text);border:0.5px solid transparent}
+.tema-item:hover{background:var(--bg2)}.tema-item.selected{background:var(--accent-light);color:var(--accent);border-color:rgba(24,95,165,.2)}
+.tema-num{min-width:30px;font-size:11px;color:var(--text3);font-weight:600}
+.tema-acc{display:flex;gap:4px;margin-left:auto;align-items:center;flex-shrink:0}
+.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
+.badge-ok{background:var(--ok-light);color:var(--ok)}.badge-fail{background:var(--fail-light);color:var(--fail)}
+/* TEST */
+.test-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--border);gap:8px;flex-wrap:wrap}
+.test-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.test-info{font-size:13px;color:var(--text2);font-weight:500}
+.test-timer{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg2);border-radius:20px}
+.test-timer.warning{color:var(--fail);background:var(--fail-light)}
+.progress-bar{height:4px;background:var(--bg3);border-radius:2px;margin-bottom:1.25rem;overflow:hidden}
+.progress-fill{height:4px;background:var(--accent);border-radius:2px;transition:width .4s ease}
+.question-block{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1rem}
+.question-tag{font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:500}
+.question-text{font-size:15px;color:var(--text);line-height:1.65;margin-bottom:1.25rem;font-weight:500}
+.options-list{display:flex;flex-direction:column;gap:8px}
+.option-btn{display:flex;align-items:flex-start;gap:12px;padding:11px 16px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;text-align:left;font-size:13px;color:var(--text);transition:all .15s;width:100%;line-height:1.5}
+.option-btn:hover:not(.locked){border-color:var(--accent-mid);background:var(--accent-light)}
+.option-btn.correct{border-color:var(--ok);background:var(--ok-light);color:var(--ok)}
+.option-btn.wrong{border-color:var(--fail);background:var(--fail-light);color:var(--fail)}
+.option-btn.selected-pending{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
+.option-letter{min-width:24px;height:24px;border-radius:50%;border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+.option-btn.correct .option-letter{background:var(--ok);border-color:var(--ok);color:#fff}
+.option-btn.wrong .option-letter{background:var(--fail);border-color:var(--fail);color:#fff}
+.option-btn.selected-pending .option-letter{background:var(--accent);border-color:var(--accent);color:#fff}
+.explanation{margin-top:14px;padding:12px 16px;background:var(--bg2);border-radius:var(--radius);font-size:13px;color:var(--text2);line-height:1.65;border-left:3px solid var(--accent)}
+.test-actions{display:flex;justify-content:space-between;align-items:center;margin-top:.875rem;gap:8px;flex-wrap:wrap}
+.test-nav-right{display:flex;gap:8px}
+.loading-q{text-align:center;padding:3rem 1rem;color:var(--text2);font-size:14px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:-5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* RESULTADOS */
+.result-hero{text-align:center;padding:2rem 1rem;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1.25rem}
+.result-score{font-size:64px;font-weight:700;line-height:1}
+.result-label{font-size:15px;color:var(--text2);margin-top:8px}
+.result-nota{font-size:13px;margin-top:6px;padding:4px 14px;border-radius:10px;display:inline-block}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+.breakdown-list{display:flex;flex-direction:column;margin-bottom:1.25rem;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;max-height:320px;overflow-y:auto}
+.breakdown-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:10px 14px;border-bottom:0.5px solid var(--border);background:var(--bg)}
+.breakdown-item:last-child{border-bottom:none}
+.b-num{min-width:22px;color:var(--text3);font-size:12px;padding-top:1px}
+.b-text{flex:1;color:var(--text);line-height:1.5}
+.b-icon{font-size:16px;flex-shrink:0;padding-top:1px}
+/* SIMULACRO */
+.sim-option{display:flex;align-items:center;gap:14px;padding:1.1rem 1.25rem;border:0.5px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .15s;background:var(--bg);margin-bottom:10px}
+.sim-option:hover{border-color:var(--accent-mid)}.sim-option.selected{border-color:var(--accent);background:var(--accent-light)}
+.sim-option .so-icon{font-size:26px;color:var(--accent);flex-shrink:0}
+.sim-option h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.sim-option p{font-size:12px;color:var(--text2)}
+/* FUENTES */
+.tab-row{display:flex;border:0.5px solid var(--border2);border-radius:var(--radius);overflow:hidden;width:fit-content;margin-bottom:1.25rem}
+.tab-btn{padding:7px 18px;font-size:13px;background:var(--bg);border:none;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:500}
+.tab-btn:hover{background:var(--bg2)}.tab-btn.active{background:var(--accent);color:#fff}
+.fuente-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.fuente-card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:.5rem;display:flex;align-items:center;gap:8px}
+.fuente-card p{font-size:13px;color:var(--text2);margin-bottom:.875rem;line-height:1.6}
+.fuente-list{display:flex;flex-direction:column;gap:6px}
+.fuente-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-size:13px}
+.fuente-item .f-title{font-weight:500;color:var(--text)}
+.fuente-item .f-sub{font-size:11px;color:var(--text3)}
+.fuente-item .f-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px 4px;border-radius:4px}
+.fuente-item .f-del:hover{color:var(--fail)}
+.fuente-item .f-use{background:var(--accent-light);color:var(--accent);border:none;border-radius:var(--radius);padding:4px 10px;font-size:12px;cursor:pointer;font-weight:500}
+/* BANCO */
+.banco-instructions{font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:1rem;padding:12px 16px;background:var(--bg2);border-radius:var(--radius);font-family:monospace;white-space:pre-line}
+.textarea-q{width:100%;min-height:160px;padding:12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:monospace;color:var(--text);background:var(--bg);resize:vertical;margin-bottom:.875rem;line-height:1.6}
+.textarea-q:focus{outline:none;border-color:var(--accent)}
+.input-field{width:100%;padding:8px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;color:var(--text);background:var(--bg);margin-bottom:.75rem}
+.input-field:focus{outline:none;border-color:var(--accent)}
+.upload-area{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:2rem;text-align:center;margin-bottom:1rem;color:var(--text2);font-size:14px;cursor:pointer;transition:all .15s;display:block}
+.upload-area:hover{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
+.banco-list{display:flex;flex-direction:column;gap:6px}
+.banco-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius);font-size:13px}
+.banco-item .b-title{flex:1;font-weight:500;color:var(--text)}.banco-item .b-count{font-size:12px;color:var(--text2)}
+.banco-item .b-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px 4px;border-radius:4px}.banco-item .b-del:hover{color:var(--fail)}
+/* STATS */
+.stat-bar-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:0.5px solid var(--border);font-size:13px}
+.stat-bar-item:last-child{border-bottom:none}
+.stat-bar-wrap{min-width:60px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.stat-bar-fill{height:6px;border-radius:3px;transition:width .5s ease}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text2);font-size:14px}
+.empty-state i{font-size:40px;color:var(--text3);display:block;margin-bottom:12px}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.modal-box{background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;max-width:400px;width:100%;border:0.5px solid var(--border)}
+.modal-box h3{font-size:16px;font-weight:600;margin-bottom:.5rem}
+.modal-box p{font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.6}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body>
 <div class="shell">
-
   <div class="header">
     <div class="logo"><i class="ti ti-scale"></i></div>
     <div class="header-text">
@@ -192,11 +158,11 @@
       <p>Titulados Superiores · Especialidad Jurídica · 75 temas</p>
     </div>
   </div>
-
   <div class="nav">
     <button class="nav-btn active" onclick="showScreen('home')"><i class="ti ti-home"></i> Inicio</button>
     <button class="nav-btn" onclick="showScreen('temas')"><i class="ti ti-book"></i> Por temas</button>
     <button class="nav-btn" onclick="showScreen('simulacro')"><i class="ti ti-clock"></i> Simulacro</button>
+    <button class="nav-btn" onclick="showScreen('fuentes')"><i class="ti ti-link"></i> Fuentes</button>
     <button class="nav-btn" onclick="showScreen('banco')"><i class="ti ti-database"></i> Mis bancos</button>
     <button class="nav-btn" onclick="showScreen('estadisticas')"><i class="ti ti-chart-bar"></i> Estadísticas</button>
     <button class="nav-btn" onclick="showScreen('ajustes')"><i class="ti ti-settings"></i> Ajustes</button>
@@ -204,75 +170,58 @@
 
   <!-- HOME -->
   <div id="screen-home" class="screen visible">
-    <div class="stats-row" id="home-stats">
-      <div class="stat-card"><div class="label">Preguntas respondidas</div><div class="value" id="stat-total">0</div></div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Respondidas</div><div class="value" id="stat-total">0</div></div>
       <div class="stat-card"><div class="label">Aciertos</div><div class="value" id="stat-ok" style="color:var(--ok)">0</div></div>
       <div class="stat-card"><div class="label">Fallos</div><div class="value" id="stat-fail" style="color:var(--fail)">0</div></div>
       <div class="stat-card"><div class="label">% acierto</div><div class="value" id="stat-pct">—</div></div>
     </div>
     <div class="section-title">Elige un modo</div>
     <div class="mode-grid">
-      <div class="mode-card" onclick="showScreen('temas')">
-        <div class="icon"><i class="ti ti-book-2"></i></div>
-        <h3>Estudio por temas</h3>
-        <p>Elige un tema concreto y practica con preguntas generadas por IA sobre esa materia</p>
-      </div>
-      <div class="mode-card" onclick="startAleatorio()">
-        <div class="icon"><i class="ti ti-refresh"></i></div>
-        <h3>Test aleatorio</h3>
-        <p>10 preguntas de temas variados del temario. Ideal para repasar sin preparación</p>
-      </div>
-      <div class="mode-card" onclick="showScreen('simulacro')">
-        <div class="icon"><i class="ti ti-clipboard-list"></i></div>
-        <h3>Simulacro de examen</h3>
-        <p>80 preguntas teóricas + 20 prácticas con cronómetro. Condiciones reales de examen</p>
-      </div>
+      <div class="mode-card" onclick="showScreen('temas')"><div class="icon"><i class="ti ti-book-2"></i></div><h3>Por temas</h3><p>Elige un tema y practica con preguntas de IA sobre esa materia</p></div>
+      <div class="mode-card" onclick="startAleatorio()"><div class="icon"><i class="ti ti-refresh"></i></div><h3>Test aleatorio</h3><p>10 preguntas de temas variados para un repaso rápido</p></div>
+      <div class="mode-card" onclick="showScreen('simulacro')"><div class="icon"><i class="ti ti-clipboard-list"></i></div><h3>Simulacro</h3><p>Examen completo con cronómetro y penalización real</p></div>
     </div>
-    <div class="info-box">
-      <i class="ti ti-info-circle"></i>
-      <span>Las preguntas las genera la IA de Anthropic en tiempo real basándose en el temario oficial. En «Mis bancos» puedes añadir tus propias preguntas de exámenes anteriores. Necesitas una API key de Anthropic para el modo IA (es gratuita con límites generosos). Configúrala en <strong>Ajustes</strong>.</span>
-    </div>
+    <div class="info-box"><i class="ti ti-info-circle"></i><span>Las preguntas se generan con IA. En <strong>Fuentes</strong> puedes añadir URLs del BOE o texto legal para preguntas 100% literales y actualizadas.</span></div>
   </div>
 
   <!-- TEMAS -->
   <div id="screen-temas" class="screen">
     <div class="section-title">Selecciona un tema</div>
     <div class="config-row">
-      <label>Nº de preguntas:</label>
-      <select id="num-preguntas">
-        <option value="5">5 preguntas</option>
-        <option value="10" selected>10 preguntas</option>
-        <option value="20">20 preguntas</option>
-        <option value="30">30 preguntas</option>
-      </select>
+      <label>Preguntas:</label>
+      <select id="num-preguntas"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
       <label>Fuente:</label>
       <select id="fuente-preguntas">
-        <option value="ia">IA (genera al momento)</option>
+        <option value="ia">IA (temario general)</option>
+        <option value="fuentes">Mis fuentes oficiales</option>
         <option value="banco">Mis bancos</option>
-        <option value="ambas">Ambas</option>
+        <option value="mixto">Todo mezclado</option>
       </select>
     </div>
     <div class="tema-list" id="tema-list"></div>
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="startTema()" id="btn-start-tema" disabled>
-        <i class="ti ti-player-play"></i> Empezar test del tema seleccionado
-      </button>
+      <button class="btn btn-primary" onclick="startTema()" id="btn-start-tema" disabled><i class="ti ti-player-play"></i> Empezar test</button>
     </div>
   </div>
 
-  <!-- TEST ACTIVO -->
+  <!-- TEST -->
   <div id="screen-test" class="screen">
     <div class="test-header">
-      <div class="test-info" id="test-info">Pregunta 1 de 10</div>
-      <div class="test-timer" id="test-timer" style="display:none">
-        <i class="ti ti-clock"></i> <span id="timer-display">--:--</span>
+      <div class="test-meta">
+        <div class="test-info" id="test-info">Pregunta 1 de 10</div>
+        <div class="test-timer" id="test-timer" style="display:none"><i class="ti ti-clock"></i> <span id="timer-display">--:--</span></div>
       </div>
+      <button class="btn btn-sm btn-danger" onclick="confirmAbandonar()"><i class="ti ti-x"></i> Abandonar</button>
     </div>
-    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:5%"></div></div>
     <div id="test-body"></div>
     <div class="test-actions" id="test-actions" style="display:none">
-      <button class="btn btn-secondary" onclick="endTest()"><i class="ti ti-x"></i> Terminar</button>
-      <button class="btn btn-primary" onclick="nextQuestion()" id="btn-next">Siguiente <i class="ti ti-arrow-right"></i></button>
+      <button class="btn btn-secondary btn-sm" onclick="prevQuestion()" id="btn-prev"><i class="ti ti-arrow-left"></i> Anterior</button>
+      <div class="test-nav-right">
+        <button class="btn btn-secondary btn-sm" onclick="confirmTerminar()"><i class="ti ti-flag"></i> Terminar</button>
+        <button class="btn btn-primary btn-sm" onclick="nextQuestion()" id="btn-next">Siguiente <i class="ti ti-arrow-right"></i></button>
+      </div>
     </div>
   </div>
 
@@ -299,31 +248,50 @@
   <!-- SIMULACRO -->
   <div id="screen-simulacro" class="screen">
     <div class="section-title">Configura el simulacro</div>
-    <div class="sim-option selected" id="sim-opt-1" onclick="selectSim(1)">
-      <div class="so-icon"><i class="ti ti-file-text"></i></div>
-      <div><h4>Teórico completo</h4><p>80 preguntas · todos los temas · 90 minutos</p></div>
+    <div class="sim-option selected" id="sim-opt-1" onclick="selectSim(1)"><div class="so-icon"><i class="ti ti-file-text"></i></div><div><h4>Teórico completo</h4><p>80 preguntas · todos los temas · 90 minutos</p></div></div>
+    <div class="sim-option" id="sim-opt-2" onclick="selectSim(2)"><div class="so-icon"><i class="ti ti-clipboard-list"></i></div><div><h4>Examen oficial completo</h4><p>80 teóricas + 20 prácticas · 120 minutos</p></div></div>
+    <div class="sim-option" id="sim-opt-3" onclick="selectSim(3)"><div class="so-icon"><i class="ti ti-zap"></i></div><div><h4>Mini simulacro</h4><p>20 preguntas · aleatorio · 25 minutos</p></div></div>
+    <div class="info-box" style="margin-top:1rem"><i class="ti ti-info-circle"></i><span>Las preguntas erróneas penalizan 0,25 puntos. El cronómetro arranca cuando las preguntas estén listas.</span></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="startSimulacro()"><i class="ti ti-player-play"></i> Iniciar simulacro</button></div>
+  </div>
+
+  <!-- FUENTES -->
+  <div id="screen-fuentes" class="screen">
+    <div class="section-title">Fuentes oficiales</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.6">Añade URLs del BOE o pega texto de legislación oficial. La IA generará preguntas directamente del articulado con referencias literales a artículos concretos.</p>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="setFuenteTab('url')"><i class="ti ti-link"></i> URL del BOE</button>
+      <button class="tab-btn" onclick="setFuenteTab('texto')"><i class="ti ti-file-text"></i> Pegar texto</button>
     </div>
-    <div class="sim-option" id="sim-opt-2" onclick="selectSim(2)">
-      <div class="so-icon"><i class="ti ti-clipboard-list"></i></div>
-      <div><h4>Examen oficial completo</h4><p>80 teóricas + 20 prácticas · 120 minutos</p></div>
+    <div id="fuente-url-panel">
+      <div class="fuente-card">
+        <h3><i class="ti ti-link" style="color:var(--accent)"></i> Añadir URL del BOE</h3>
+        <p>Pega la URL de cualquier ley en boe.es o en el portal de legislación de Extremadura. La app intentará descargar el texto automáticamente.</p>
+        <input class="input-field" type="url" id="fuente-url" placeholder="https://www.boe.es/buscar/act.php?id=BOE-A-...">
+        <input class="input-field" type="text" id="fuente-url-nombre" placeholder="Nombre descriptivo (ej: Estatuto de los Trabajadores)">
+        <div id="fuente-url-status" style="font-size:12px;color:var(--text2);margin-bottom:.75rem;min-height:20px"></div>
+        <button class="btn btn-primary" onclick="agregarFuenteURL()"><i class="ti ti-download"></i> Descargar y añadir</button>
+      </div>
     </div>
-    <div class="sim-option" id="sim-opt-3" onclick="selectSim(3)">
-      <div class="so-icon"><i class="ti ti-zap"></i></div>
-      <div><h4>Mini simulacro</h4><p>20 preguntas · aleatorio · 25 minutos</p></div>
+    <div id="fuente-texto-panel" style="display:none">
+      <div class="fuente-card">
+        <h3><i class="ti ti-file-text" style="color:var(--accent)"></i> Pegar texto oficial</h3>
+        <p>Copia y pega el articulado directamente desde el BOE, el BOJA u otra fuente oficial. Puedes pegar artículos sueltos o bloques completos.</p>
+        <input class="input-field" type="text" id="fuente-texto-nombre" placeholder="Nombre descriptivo (ej: ET — Título I, art. 1-14)">
+        <textarea class="textarea-q" id="fuente-texto-contenido" placeholder="Pega aquí el texto legal oficial..."></textarea>
+        <button class="btn btn-primary" onclick="agregarFuenteTexto()"><i class="ti ti-plus"></i> Añadir fuente</button>
+      </div>
     </div>
-    <div class="info-box" style="margin-top:1rem">
-      <i class="ti ti-info-circle"></i>
-      <span>Las preguntas erróneas penalizan 0,25 puntos como en el examen real. Las no respondidas no penalizan.</span>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="startSimulacro()"><i class="ti ti-player-play"></i> Iniciar simulacro</button>
+    <div id="fuentes-lista-section" style="margin-top:1.5rem;display:none">
+      <div class="section-title">Fuentes guardadas</div>
+      <div class="fuente-list" id="fuentes-list"></div>
     </div>
   </div>
 
   <!-- BANCO -->
   <div id="screen-banco" class="screen">
     <div class="section-title">Mis bancos de preguntas</div>
-    <div class="banco-instructions">Formato para importar preguntas:
+    <div class="banco-instructions">Formato para importar:
 
 P: ¿Cuántos magistrados tiene el Tribunal Constitucional?
 A) Ocho
@@ -331,41 +299,29 @@ B) Doce
 C) Catorce
 D) Dieciséis
 R: B
-E: El TC se compone de 12 magistrados según el art. 159 CE (la E: es opcional)</div>
+E: Según el art. 159 CE el TC se compone de 12 magistrados</div>
     <div class="tab-row">
       <button class="tab-btn active" onclick="setBancoTab('pegar')">Pegar texto</button>
       <button class="tab-btn" onclick="setBancoTab('archivo')">Subir archivo .txt</button>
     </div>
-
     <div id="banco-pegar">
       <div style="display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap">
-        <input class="input-field" type="text" id="banco-nombre" placeholder="Nombre del banco (ej: Examen convocatoria 2022)" style="flex:1;margin:0">
-        <select id="banco-tema-asoc" style="padding:8px 10px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)">
-          <option value="">Todos los temas</option>
-        </select>
+        <input class="input-field" type="text" id="banco-nombre" placeholder="Nombre del banco (ej: Examen 2022)" style="flex:1;margin:0">
+        <select id="banco-tema-asoc" style="padding:8px 10px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)"><option value="">Todos los temas</option></select>
       </div>
       <textarea class="textarea-q" id="banco-texto" placeholder="Pega aquí tus preguntas en el formato indicado arriba..."></textarea>
       <button class="btn btn-primary" onclick="importarBanco()"><i class="ti ti-upload"></i> Importar preguntas</button>
     </div>
-
     <div id="banco-archivo" style="display:none">
-      <label class="upload-area" for="file-input">
-        <i class="ti ti-file-upload" style="font-size:36px;margin-bottom:10px;display:block"></i>
-        Haz clic para seleccionar un archivo .txt<br>
-        <span style="font-size:12px;color:var(--text3)">Solo archivos de texto plano con el formato indicado</span>
-      </label>
+      <label class="upload-area" for="file-input"><i class="ti ti-file-upload" style="font-size:36px;margin-bottom:10px;display:block"></i>Haz clic para seleccionar un archivo .txt</label>
       <input type="file" id="file-input" accept=".txt" style="display:none" onchange="loadFile(event)">
       <input class="input-field" type="text" id="banco-nombre-f" placeholder="Nombre del banco">
       <div id="file-preview" style="font-size:12px;color:var(--text2);margin-bottom:.75rem"></div>
       <button class="btn btn-primary" onclick="importarBancoArchivo()"><i class="ti ti-upload"></i> Importar</button>
     </div>
-
     <div id="banco-lista-section" style="margin-top:1.75rem;display:none">
       <div class="section-title">Bancos importados</div>
       <div class="banco-list" id="banco-list"></div>
-      <div style="margin-top:1rem">
-        <button class="btn btn-danger" onclick="clearAllBancos()"><i class="ti ti-trash"></i> Eliminar todos</button>
-      </div>
     </div>
   </div>
 
@@ -373,7 +329,7 @@ E: El TC se compone de 12 magistrados según el art. 159 CE (la E: es opcional)<
   <div id="screen-estadisticas" class="screen">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.875rem">
       <div class="section-title" style="margin:0">Rendimiento por tema</div>
-      <button class="btn btn-danger" onclick="clearStats()" style="font-size:12px;padding:5px 12px"><i class="ti ti-trash"></i> Resetear</button>
+      <button class="btn btn-sm btn-danger" onclick="confirmClearStats()"><i class="ti ti-trash"></i> Resetear todo</button>
     </div>
     <div id="stats-body"></div>
   </div>
@@ -383,36 +339,35 @@ E: El TC se compone de 12 magistrados según el art. 159 CE (la E: es opcional)<
     <div class="section-title">Ajustes</div>
     <div class="card" style="margin-bottom:1rem">
       <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px"><i class="ti ti-key" style="margin-right:6px"></i>API Key de Anthropic</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">
-        Para generar preguntas con IA necesitas una API key de Anthropic. Puedes obtenerla gratis en
-        <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>.
-        Se guarda solo en tu navegador (localStorage), nunca se envía a ningún servidor nuestro.
-      </p>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">Necesaria para generar preguntas con IA. Obtén la tuya en <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>. Se guarda solo en tu navegador.</p>
       <div style="display:flex;gap:8px">
         <input type="password" id="api-key-input" class="input-field" style="margin:0;flex:1;font-family:monospace" placeholder="sk-ant-api03-...">
         <button class="btn btn-primary" onclick="saveApiKey()">Guardar</button>
       </div>
       <div id="api-key-status" style="font-size:12px;margin-top:8px;color:var(--text2)"></div>
     </div>
-    <div class="card" style="margin-bottom:1rem">
-      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px"><i class="ti ti-info-circle" style="margin-right:6px"></i>Sobre esta aplicación</div>
-      <p style="font-size:13px;color:var(--text2);line-height:1.7">
-        Aplicación de preparación de oposiciones para el cuerpo de Titulados Superiores de la Junta de Extremadura, especialidad jurídica.<br><br>
-        El examen consta de <strong>80 preguntas teóricas</strong> y <strong>20 prácticas</strong>. Las preguntas erróneas penalizan 0,25 puntos. El temario cubre 75 temas de derecho público, administrativo, laboral e institucional.<br><br>
-        Las preguntas se generan en tiempo real mediante la API de Claude (Anthropic). Los datos se guardan en tu navegador.
-      </p>
-    </div>
     <div class="card">
       <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px"><i class="ti ti-trash" style="margin-right:6px"></i>Zona de peligro</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Elimina todos los datos guardados (estadísticas, bancos de preguntas y API key).</p>
-      <button class="btn btn-danger" onclick="resetAll()"><i class="ti ti-trash"></i> Borrar todos los datos</button>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Elimina todos los datos guardados (estadísticas, bancos, fuentes y API key).</p>
+      <button class="btn btn-danger" onclick="confirmResetAll()"><i class="ti ti-trash"></i> Borrar todos los datos</button>
     </div>
   </div>
+</div>
 
+<!-- MODAL -->
+<div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <h3 id="modal-title"></h3>
+    <p id="modal-body"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" id="modal-confirm-btn">Confirmar</button>
+    </div>
+  </div>
 </div>
 
 <script>
-const TEMAS = [
+const TEMAS=[
   {n:1,t:"Instituciones UE (I): Parlamento, Consejo Europeo, Consejo, Comisión, TJUE"},
   {n:2,t:"Instituciones UE (II): BCE, Tribunal de Cuentas, Comités, BEI"},
   {n:3,t:"Tribunal Constitucional (I): Organización y magistrados"},
@@ -435,7 +390,7 @@ const TEMAS = [
   {n:20,t:"Contratación del sector público (II): Partes, precio y garantías"},
   {n:21,t:"Contratación del sector público (III): Preparación y adjudicación"},
   {n:22,t:"Contratación del sector público (IV): Efectos, cumplimiento y extinción"},
-  {n:23,t:"Contratación del sector público (V): Racionalización y contratación centralizada en Extremadura"},
+  {n:23,t:"Contratación del sector público (V): Racionalización y contratación centralizada"},
   {n:24,t:"Contratación del sector público (VI): Tipos de contratos administrativos"},
   {n:25,t:"Contratación del sector público (VII): Órganos competentes y registros"},
   {n:26,t:"Ley de contratación pública socialmente responsable de Extremadura"},
@@ -490,538 +445,376 @@ const TEMAS = [
   {n:75,t:"Protección de Datos de Carácter Personal: Principios y derechos"}
 ];
 
-let state = {
-  selectedTema: null,
-  questions: [],
-  currentQ: 0,
-  answers: [],
-  testMode: '',
-  timerInterval: null,
-  timerSeconds: 0,
-  simType: 1,
-  bancos: [],
-  stats: {},
-  apiKey: ''
-};
+let state={selectedTema:null,questions:[],currentQ:0,answers:[],testMode:'',timerInterval:null,timerSeconds:0,simType:1,bancos:[],stats:{},apiKey:'',fuentes:[]};
 
-function loadState() {
-  try {
-    const s = localStorage.getItem('opo_jex_v2');
-    if (s) {
-      const p = JSON.parse(s);
-      state.stats = p.stats || {};
-      state.bancos = p.bancos || [];
-      state.apiKey = p.apiKey || '';
-    }
-  } catch(e) {}
-}
-
-function saveState() {
-  try {
-    localStorage.setItem('opo_jex_v2', JSON.stringify({
-      stats: state.stats,
-      bancos: state.bancos,
-      apiKey: state.apiKey
-    }));
-  } catch(e) {}
-}
-
+function loadState(){try{const s=localStorage.getItem('opo_jex_v3');if(s){const p=JSON.parse(s);state.stats=p.stats||{};state.bancos=p.bancos||[];state.apiKey=p.apiKey||'';state.fuentes=p.fuentes||[];}}catch(e){}}
+function saveState(){try{localStorage.setItem('opo_jex_v3',JSON.stringify({stats:state.stats,bancos:state.bancos,apiKey:state.apiKey,fuentes:state.fuentes}));}catch(e){}}
 loadState();
 
-// ---- NAVEGACIÓN ----
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
-  document.getElementById('screen-' + id).classList.add('visible');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const map = {home:0, temas:1, simulacro:2, banco:3, estadisticas:4, ajustes:5};
-  if (map[id] !== undefined) document.querySelectorAll('.nav-btn')[map[id]].classList.add('active');
-  const actions = { home: updateHomeStats, temas: renderTemas, banco: renderBancos, estadisticas: renderStats, ajustes: renderAjustes };
-  if (actions[id]) actions[id]();
+function showModal(title,body,onConfirm,label='Confirmar',danger=true){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').textContent=body;
+  const btn=document.getElementById('modal-confirm-btn');
+  btn.textContent=label;btn.className='btn '+(danger?'btn-danger':'btn-primary');
+  btn.onclick=()=>{closeModal();onConfirm();};
+  document.getElementById('modal').style.display='flex';
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('visible'));
+  document.getElementById('screen-'+id).classList.add('visible');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const map={home:0,temas:1,simulacro:2,fuentes:3,banco:4,estadisticas:5,ajustes:6};
+  if(map[id]!==undefined)document.querySelectorAll('.nav-btn')[map[id]].classList.add('active');
+  ({home:updateHomeStats,temas:renderTemas,banco:renderBancos,estadisticas:renderStats,ajustes:renderAjustes,fuentes:renderFuentes}[id]||function(){})();
 }
 
-// ---- HOME ----
-function updateHomeStats() {
-  let total=0, ok=0, fail=0;
-  Object.values(state.stats).forEach(v => { total+=v.total||0; ok+=v.ok||0; fail+=v.fail||0; });
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-ok').textContent = ok;
-  document.getElementById('stat-fail').textContent = fail;
-  document.getElementById('stat-pct').textContent = total > 0 ? Math.round(ok/total*100)+'%' : '—';
+function updateHomeStats(){
+  let total=0,ok=0,fail=0;
+  Object.values(state.stats).forEach(v=>{total+=v.total||0;ok+=v.ok||0;fail+=v.fail||0;});
+  document.getElementById('stat-total').textContent=total;
+  document.getElementById('stat-ok').textContent=ok;
+  document.getElementById('stat-fail').textContent=fail;
+  document.getElementById('stat-pct').textContent=total>0?Math.round(ok/total*100)+'%':'—';
 }
 
-// ---- TEMAS ----
-function renderTemas() {
-  const list = document.getElementById('tema-list');
-  const sel = document.getElementById('banco-tema-asoc');
-  sel.innerHTML = '<option value="">Todos los temas</option>';
-  list.innerHTML = TEMAS.map(t => {
-    const st = state.stats['t'+t.n] || {};
-    const okB = st.ok ? `<span class="badge badge-ok">${st.ok}✓</span>` : '';
-    const failB = st.fail ? `<span class="badge badge-fail">${st.fail}✗</span>` : '';
-    sel.innerHTML += `<option value="${t.n}">Tema ${t.n}</option>`;
-    return `<div class="tema-item" id="tema-${t.n}" onclick="selectTema(${t.n})">
-      <span class="tema-num">${t.n}</span>
-      <span>${t.t}</span>
-      <span class="tema-acc">${okB}${failB}</span>
-    </div>`;
+function renderTemas(){
+  const list=document.getElementById('tema-list');
+  const sel=document.getElementById('banco-tema-asoc');
+  sel.innerHTML='<option value="">Todos los temas</option>';
+  list.innerHTML=TEMAS.map(t=>{
+    const st=state.stats['t'+t.n]||{};
+    const okB=st.ok?`<span class="badge badge-ok">${st.ok}✓</span>`:'';
+    const failB=st.fail?`<span class="badge badge-fail">${st.fail}✗</span>`:'';
+    sel.innerHTML+=`<option value="${t.n}">Tema ${t.n}</option>`;
+    return `<div class="tema-item" id="tema-${t.n}" onclick="selectTema(${t.n})"><span class="tema-num">${t.n}</span><span>${t.t}</span><span class="tema-acc">${okB}${failB}</span></div>`;
   }).join('');
 }
-
-function selectTema(n) {
-  state.selectedTema = n;
-  document.querySelectorAll('.tema-item').forEach(e => e.classList.remove('selected'));
+function selectTema(n){
+  state.selectedTema=n;
+  document.querySelectorAll('.tema-item').forEach(e=>e.classList.remove('selected'));
   document.getElementById('tema-'+n).classList.add('selected');
-  document.getElementById('btn-start-tema').disabled = false;
+  document.getElementById('btn-start-tema').disabled=false;
 }
 
-async function startTema() {
-  if (!state.selectedTema) return;
-  const n = parseInt(document.getElementById('num-preguntas').value);
-  const fuente = document.getElementById('fuente-preguntas').value;
-  const tema = TEMAS.find(t => t.n === state.selectedTema);
-  state.testMode = 'tema';
-  state.currentTemaNum = state.selectedTema;
-  await startTest(n, tema, fuente, false);
+async function startTema(){
+  if(!state.selectedTema)return;
+  const n=parseInt(document.getElementById('num-preguntas').value);
+  const fuente=document.getElementById('fuente-preguntas').value;
+  const tema=TEMAS.find(t=>t.n===state.selectedTema);
+  state.testMode='tema';
+  await startTest(n,tema,fuente,false);
+}
+async function startAleatorio(){
+  state.testMode='aleatorio';
+  const temas=[...TEMAS].sort(()=>Math.random()-.5).slice(0,5);
+  await startTest(10,null,'ia',false,temas);
+}
+function selectSim(n){state.simType=n;[1,2,3].forEach(i=>document.getElementById('sim-opt-'+i).classList.toggle('selected',i===n));}
+async function startSimulacro(){
+  const configs={1:{n:80,time:90*60},2:{n:100,time:120*60},3:{n:20,time:25*60}};
+  const c=configs[state.simType];
+  state.testMode='simulacro';
+  await startTest(c.n,null,'ia',true,null,c.time);
 }
 
-async function startAleatorio() {
-  state.testMode = 'aleatorio';
-  const temas = [...TEMAS].sort(() => Math.random()-.5).slice(0, 5);
-  await startTest(10, null, 'ia', false, temas);
-}
-
-// ---- SIMULACRO ----
-function selectSim(n) {
-  state.simType = n;
-  [1,2,3].forEach(i => {
-    document.getElementById('sim-opt-'+i).classList.toggle('selected', i === n);
-  });
-}
-
-async function startSimulacro() {
-  const configs = {
-    1: {n:80, time:90*60},
-    2: {n:100, time:120*60},
-    3: {n:20, time:25*60}
-  };
-  const c = configs[state.simType];
-  state.testMode = 'simulacro';
-  await startTest(c.n, null, 'ia', true, null, c.time);
-}
-
-// ---- TEST ENGINE ----
-async function startTest(numQ, tema, fuente, timed, temas=null, timerSecs=0) {
+async function startTest(numQ,tema,fuente,timed,temas=null,timerSecs=0){
   showScreen('test');
-  state.questions = [];
-  state.currentQ = 0;
-  state.answers = [];
-  state.timerSeconds = timerSecs;
-  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.questions=[];state.currentQ=0;state.answers=[];
+  state.timerSeconds=timerSecs;
+  if(state.timerInterval)clearInterval(state.timerInterval);
+  const timerEl=document.getElementById('test-timer');
+  timerEl.style.display='none';timerEl.classList.remove('warning');
+  document.getElementById('test-actions').style.display='none';
+  document.getElementById('progress-fill').style.width='5%';
+  document.getElementById('test-body').innerHTML=`<div class="loading-q"><span class="spinner"></span>Generando preguntas con IA…<br><span style="font-size:12px;margin-top:6px;display:block;color:var(--text3)">Esto tarda unos segundos</span></div>`;
 
-  const timerEl = document.getElementById('test-timer');
-  if (timed && timerSecs > 0) {
-    timerEl.style.display = 'flex';
-    timerEl.classList.remove('warning');
+  if(!state.apiKey&&fuente!=='banco'){
+    document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-key" style="font-size:36px;color:var(--warn);display:block;margin-bottom:12px"></i><strong>Necesitas configurar tu API key</strong><br><span style="font-size:13px">Ve a Ajustes e introduce tu API key de Anthropic.</span><br><button class="btn btn-primary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button></div>`;
+    return;
+  }
+
+  let qs=[];
+  if(fuente==='banco'||fuente==='mixto'){const bqs=getBancoQuestions(tema?tema.n:null,fuente==='mixto'?Math.floor(numQ/3):numQ);qs=[...qs,...bqs];}
+  if((fuente==='fuentes'||fuente==='mixto')&&state.fuentes.length>0){const fqs=await generateFromFuentes(tema,fuente==='mixto'?Math.floor(numQ/3):numQ);qs=[...qs,...fqs];}
+  const iaNeeded=fuente==='ia'?numQ:Math.max(0,numQ-qs.length);
+  if(iaNeeded>0){
+    const desc=tema?`Tema ${tema.n}: ${tema.t}`:(temas?temas.map(t=>`Tema ${t.n}: ${t.t}`).join('; '):'temas variados del temario de titulados superiores especialidad jurídica Junta de Extremadura');
+    const nqs=await generateQuestionsIA(iaNeeded,desc,null);
+    qs=[...qs,...nqs];
+  }
+  qs=qs.sort(()=>Math.random()-.5).slice(0,numQ);
+  state.questions=qs;
+
+  if(qs.length===0){
+    document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:36px;color:var(--fail);display:block;margin-bottom:12px"></i><strong>No se pudieron generar preguntas</strong><br><span style="font-size:13px;color:var(--text3)">Comprueba tu API key en Ajustes y la conexión a internet.</span><br><button class="btn btn-secondary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button></div>`;
+    return;
+  }
+
+  // Cronómetro arranca SOLO cuando las preguntas ya están listas
+  if(timed&&timerSecs>0){
+    timerEl.style.display='flex';
     updateTimerDisplay();
-    state.timerInterval = setInterval(() => {
-      state.timerSeconds--;
-      updateTimerDisplay();
-      if (state.timerSeconds <= 300) timerEl.classList.add('warning');
-      if (state.timerSeconds <= 0) { clearInterval(state.timerInterval); endTest(); }
-    }, 1000);
-  } else {
-    timerEl.style.display = 'none';
-  }
-
-  document.getElementById('test-actions').style.display = 'none';
-  document.getElementById('test-body').innerHTML = `<div class="loading-q"><span class="spinner"></span>Generando preguntas con IA…<br><span style="font-size:12px;margin-top:6px;display:block">Esto tarda unos segundos</span></div>`;
-  document.getElementById('progress-fill').style.width = '5%';
-
-  if (!state.apiKey && (fuente === 'ia' || fuente === 'ambas')) {
-    document.getElementById('test-body').innerHTML = `<div class="loading-q">
-      <i class="ti ti-key" style="font-size:36px;color:var(--warn);display:block;margin-bottom:12px"></i>
-      <strong>Necesitas configurar tu API key</strong><br>
-      <span style="font-size:13px">Ve a <strong>Ajustes</strong> e introduce tu API key de Anthropic para generar preguntas con IA.</span>
-      <br><button class="btn btn-primary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button>
-    </div>`;
-    return;
-  }
-
-  let qs = [];
-  if (fuente === 'banco' || fuente === 'ambas') {
-    const bancoQs = getBancoQuestions(tema ? tema.n : null, fuente === 'ambas' ? Math.floor(numQ/2) : numQ);
-    qs = [...qs, ...bancoQs];
-  }
-  const iaNeeded = fuente === 'ia' ? numQ : Math.max(0, numQ - qs.length);
-  if (iaNeeded > 0) {
-    const temaDesc = tema
-      ? `Tema ${tema.n}: ${tema.t}`
-      : (temas ? temas.map(t => `Tema ${t.n}: ${t.t}`).join('; ') : 'temas variados del temario de titulados superiores especialidad jurídica Junta de Extremadura');
-    const newQs = await generateQuestionsIA(iaNeeded, temaDesc);
-    qs = [...qs, ...newQs];
-  }
-  qs = qs.sort(() => Math.random()-.5).slice(0, numQ);
-  state.questions = qs;
-
-  if (qs.length === 0) {
-    document.getElementById('test-body').innerHTML = `<div class="loading-q">
-      <i class="ti ti-alert-triangle" style="font-size:36px;color:var(--fail);display:block;margin-bottom:12px"></i>
-      No se pudieron generar preguntas. Comprueba tu API key y conexión a internet.
-      <br><button class="btn btn-secondary" onclick="showScreen('home')" style="margin-top:1rem">Volver</button>
-    </div>`;
-    return;
+    state.timerInterval=setInterval(()=>{
+      state.timerSeconds--;updateTimerDisplay();
+      if(state.timerSeconds<=300)timerEl.classList.add('warning');
+      if(state.timerSeconds<=0){clearInterval(state.timerInterval);endTest();}
+    },1000);
   }
   renderQuestion();
 }
 
-function updateTimerDisplay() {
-  const m = Math.floor(state.timerSeconds / 60);
-  const s = state.timerSeconds % 60;
-  document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+function updateTimerDisplay(){
+  const m=Math.floor(state.timerSeconds/60),s=state.timerSeconds%60;
+  document.getElementById('timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-async function generateQuestionsIA(n, temaDesc) {
-  const prompt = `Eres un experto en oposiciones de la Administración pública española.
-Genera exactamente ${n} preguntas tipo test sobre: ${temaDesc}.
-Las preguntas deben ser rigurosas, precisas y basadas en el temario oficial para titulados superiores especialidad jurídica de la Junta de Extremadura.
-Incluye preguntas sobre artículos concretos, plazos, órganos, procedimientos y conceptos clave.
-Responde SOLO con un JSON array, sin texto adicional, sin markdown, sin backticks. Formato exacto:
-[{"pregunta":"texto de la pregunta","opciones":["A) texto","B) texto","C) texto","D) texto"],"correcta":0,"explicacion":"breve explicación de por qué es correcta la respuesta correcta","tema":"Tema X: nombre"}]
-El campo "correcta" es el índice (0=A, 1=B, 2=C, 3=D). Genera exactamente ${n} objetos en el array.`;
-
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': state.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.error('API HTTP error:', resp.status, errText);
-      showApiError(resp.status, errText);
-      return [];
-    }
-    const data = await resp.json();
-    if (data.error) { console.error('API error:', data.error); showApiError(0, JSON.stringify(data.error)); return []; }
-    const text = data.content.map(c => c.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-    return parsed.map(q => ({ ...q, source: 'ia' }));
-  } catch(e) {
-    console.error('Error generando preguntas:', e);
-    showApiError(-1, e.message);
-    return [];
-  }
+async function generateQuestionsIA(n,temaDesc,textoFuente){
+  const prompt=textoFuente
+    ?`Eres un experto en oposiciones de la Administración pública española. Genera exactamente ${n} preguntas tipo test basadas EXCLUSIVAMENTE en este texto oficial, con referencias literales a artículos:\n\n${textoFuente.slice(0,8000)}\n\nResponde SOLO con JSON array sin texto ni backticks:\n[{"pregunta":"texto","opciones":["A) texto","B) texto","C) texto","D) texto"],"correcta":0,"explicacion":"cita el artículo concreto","tema":"${temaDesc.slice(0,60)}"}]\nGenera exactamente ${n} objetos.`
+    :`Eres un experto en oposiciones de la Administración pública española. Genera exactamente ${n} preguntas tipo test sobre: ${temaDesc}. Las preguntas deben ser rigurosas, con referencias a artículos, plazos, órganos y procedimientos concretos.\nResponde SOLO con JSON array sin texto ni backticks:\n[{"pregunta":"texto","opciones":["A) texto","B) texto","C) texto","D) texto"],"correcta":0,"explicacion":"breve explicación con referencia legal","tema":"${temaDesc.slice(0,60)}"}]\nGenera exactamente ${n} objetos.`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':state.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4000,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok){console.error('API error',resp.status,await resp.text());return[];}
+    const data=await resp.json();
+    if(data.error){console.error('API error',data.error);return[];}
+    const text=data.content.map(c=>c.text||'').join('');
+    return JSON.parse(text.replace(/```json|```/g,'').trim()).map(q=>({...q,source:'ia'}));
+  }catch(e){console.error('Error IA:',e);return[];}
 }
 
-function showApiError(status, msg) {
-  const hints = { 401: "API key incorrecta o no válida. Ve a Ajustes y comprueba que la has copiado completa.", 403: "API key sin permisos o sin saldo. Comprueba en console.anthropic.com.", 429: "Demasiadas peticiones. Espera un momento.", "-1": "Error de red. Asegúrate de abrir la app desde la URL de GitHub Pages." };
-  const hint = hints[status] || hints["-1"];
-  document.getElementById("test-body").innerHTML = `<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:36px;color:var(--fail);display:block;margin-bottom:12px"></i><strong>${hint}</strong><br><span style="font-size:11px;color:var(--text3);margin-top:8px;display:block;font-family:monospace">Código: ${status} — ${msg}</span><br><button class="btn btn-secondary" onclick="showScreen('ajustes')" style="margin-top:1rem">Ir a Ajustes</button> <button class="btn btn-secondary" onclick="showScreen('home')" style="margin-top:1rem">Volver</button></div>`;
+async function generateFromFuentes(tema,max){
+  const relevantes=tema?state.fuentes.filter(f=>!f.tema||f.tema===tema.n):state.fuentes;
+  if(relevantes.length===0)return[];
+  const f=relevantes[Math.floor(Math.random()*relevantes.length)];
+  return(await generateQuestionsIA(max,f.nombre,f.contenido)).map(q=>({...q,source:'fuente'}));
+}
+function getBancoQuestions(temaNum,max){
+  let qs=[];state.bancos.forEach(b=>{if(!temaNum||!b.tema||b.tema===temaNum)qs=[...qs,...b.preguntas];});
+  return qs.sort(()=>Math.random()-.5).slice(0,max);
 }
 
-function getBancoQuestions(temaNum, max) {
-  let qs = [];
-  state.bancos.forEach(b => {
-    if (!temaNum || !b.tema || b.tema === temaNum) qs = [...qs, ...b.preguntas];
-  });
-  return qs.sort(() => Math.random()-.5).slice(0, max);
-}
-
-function renderQuestion() {
-  const q = state.questions[state.currentQ];
-  if (!q) { endTest(); return; }
-  const total = state.questions.length;
-  const idx = state.currentQ;
-  document.getElementById('test-info').textContent = `Pregunta ${idx+1} de ${total}`;
-  document.getElementById('progress-fill').style.width = `${Math.round((idx+1)/total*100)}%`;
-  document.getElementById('test-actions').style.display = 'none';
-
-  const opts = q.opciones.map((o, i) => {
-    const letter = String.fromCharCode(65+i);
-    return `<button class="option-btn" id="opt-${i}" onclick="selectOption(${i})">
-      <span class="option-letter">${letter}</span>
-      <span>${o.replace(/^[A-D]\)\s*/, '')}</span>
-    </button>`;
+function renderQuestion(){
+  const q=state.questions[state.currentQ];if(!q){endTest();return;}
+  const total=state.questions.length,idx=state.currentQ;
+  document.getElementById('test-info').textContent=`Pregunta ${idx+1} de ${total}`;
+  document.getElementById('progress-fill').style.width=`${Math.round((idx+1)/total*100)}%`;
+  const answered=state.answers[idx]!==undefined;
+  const opts=q.opciones.map((o,i)=>{
+    const letter=String.fromCharCode(65+i);
+    let cls='option-btn';
+    if(answered){cls+=' locked';if(i===q.correcta)cls+=' correct';else if(i===state.answers[idx]&&state.answers[idx]!==q.correcta)cls+=' wrong';}
+    return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-letter">${letter}</span><span>${o.replace(/^[A-D]\)\s*/,'')}</span></button>`;
   }).join('');
-
-  document.getElementById('test-body').innerHTML = `<div class="question-block">
-    <div class="question-tag">
-      <span class="tag">${q.tema || 'Temario jurídico'}</span>
-      ${q.source === 'banco' ? '<span style="font-size:11px;color:var(--text2)"><i class="ti ti-database" style="font-size:13px"></i> Tu banco</span>' : ''}
-    </div>
-    <div class="question-text">${q.pregunta}</div>
-    <div class="options-list">${opts}</div>
-  </div>`;
+  const expHtml=answered&&q.explicacion?`<div class="explanation"><i class="ti ti-bulb"></i> ${q.explicacion}</div>`:'';
+  const sourceBadge=q.source==='banco'?'<span style="font-size:11px;color:var(--text2)"><i class="ti ti-database" style="font-size:12px"></i> Tu banco</span>':q.source==='fuente'?'<span style="font-size:11px;color:var(--ok)"><i class="ti ti-link" style="font-size:12px"></i> Fuente oficial</span>':'';
+  document.getElementById('test-body').innerHTML=`<div class="question-block"><div class="question-tag"><span class="tag">${q.tema||'Temario'}</span>${sourceBadge}</div><div class="question-text">${q.pregunta}</div><div class="options-list">${opts}</div>${expHtml}</div>`;
+  const actEl=document.getElementById('test-actions');
+  actEl.style.display=answered?'flex':'none';
+  document.getElementById('btn-prev').disabled=idx===0;
+  const isLast=idx>=total-1;
+  document.getElementById('btn-next').innerHTML=isLast?'Ver resultados <i class="ti ti-chart-bar"></i>':'Siguiente <i class="ti ti-arrow-right"></i>';
 }
 
-function selectOption(idx) {
-  if (state.answers[state.currentQ] !== undefined) return;
-  state.answers[state.currentQ] = idx;
-  const q = state.questions[state.currentQ];
-  const correct = q.correcta;
-
-  document.querySelectorAll('.option-btn').forEach((b, i) => {
-    b.classList.add('locked');
-    if (i === correct) b.classList.add('correct');
-    else if (i === idx && idx !== correct) b.classList.add('wrong');
-  });
-
-  if (q.explicacion) {
-    document.querySelector('.question-block').insertAdjacentHTML('beforeend',
-      `<div class="explanation"><i class="ti ti-bulb"></i> ${q.explicacion}</div>`);
-  }
-
-  const tKey = 't' + (q.temaNum || extractTemaNum(q.tema) || 0);
-  if (!state.stats[tKey]) state.stats[tKey] = {total:0, ok:0, fail:0};
+function selectOption(idx){
+  if(state.answers[state.currentQ]!==undefined)return;
+  state.answers[state.currentQ]=idx;
+  const q=state.questions[state.currentQ];
+  const tKey='t'+(extractTemaNum(q.tema)||0);
+  if(!state.stats[tKey])state.stats[tKey]={total:0,ok:0,fail:0};
   state.stats[tKey].total++;
-  if (idx === correct) state.stats[tKey].ok++;
-  else state.stats[tKey].fail++;
-  saveState();
-
-  document.getElementById('test-actions').style.display = 'flex';
-  const isLast = state.currentQ >= state.questions.length - 1;
-  document.getElementById('btn-next').innerHTML = isLast
-    ? 'Ver resultados <i class="ti ti-chart-bar"></i>'
-    : 'Siguiente <i class="ti ti-arrow-right"></i>';
+  if(idx===q.correcta)state.stats[tKey].ok++;else state.stats[tKey].fail++;
+  saveState();renderQuestion();
+}
+function prevQuestion(){if(state.currentQ>0){state.currentQ--;renderQuestion();}}
+function nextQuestion(){if(state.currentQ>=state.questions.length-1){endTest();return;}state.currentQ++;renderQuestion();}
+function confirmAbandonar(){showModal('¿Abandonar el test?','Perderás el progreso de este test pero se guardarán las estadísticas de las preguntas ya respondidas.',()=>{if(state.timerInterval)clearInterval(state.timerInterval);showScreen('home');});}
+function confirmTerminar(){
+  const pending=state.questions.length-state.answers.filter(a=>a!==undefined).length;
+  if(pending>0)showModal('¿Terminar el test?',`Tienes ${pending} pregunta${pending>1?'s':''} sin responder. Las preguntas sin responder no puntúan ni penalizan.`,endTest,'Terminar y ver resultados');
+  else endTest();
 }
 
-function extractTemaNum(temaStr) {
-  if (!temaStr) return 0;
-  const m = temaStr.match(/\d+/);
-  return m ? parseInt(m[0]) : 0;
-}
-
-function nextQuestion() {
-  if (state.currentQ >= state.questions.length - 1) { endTest(); return; }
-  state.currentQ++;
-  renderQuestion();
-}
-
-function endTest() {
-  if (state.timerInterval) clearInterval(state.timerInterval);
+function endTest(){
+  if(state.timerInterval)clearInterval(state.timerInterval);
   showScreen('result');
-
-  const total = state.questions.length;
-  const answered = state.answers.filter(a => a !== undefined).length;
-  const ok = state.answers.filter((a, i) => a !== undefined && a === state.questions[i]?.correcta).length;
-  const fail = answered - ok;
-  const skip = total - answered;
-  const pct = answered > 0 ? Math.round(ok/answered*100) : 0;
-
-  // Nota con penalización
-  const nota = ok - (fail * 0.25);
-  const notaStr = nota.toFixed(2);
-  const notaColor = nota >= (total*0.6) ? 'var(--ok)' : 'var(--fail)';
-
-  document.getElementById('result-score').textContent = pct + '%';
-  document.getElementById('result-score').style.color = pct >= 60 ? 'var(--ok)' : 'var(--fail)';
-  document.getElementById('result-label').textContent = `${ok} correctas de ${answered} respondidas`;
-  document.getElementById('result-nota').textContent = `Nota con penalización: ${notaStr} / ${total}`;
-  document.getElementById('result-nota').style.cssText = `background:${notaColor === 'var(--ok)' ? 'var(--ok-light)' : 'var(--fail-light)'};color:${notaColor};padding:4px 14px;border-radius:10px;font-size:13px;font-weight:500;display:inline-block`;
-  document.getElementById('r-ok').textContent = ok;
-  document.getElementById('r-fail').textContent = fail;
-  document.getElementById('r-skip').textContent = skip;
-
-  const bl = document.getElementById('breakdown-list');
-  bl.innerHTML = state.questions.map((q, i) => {
-    const ans = state.answers[i];
-    const isOk = ans === q.correcta;
-    const icon = ans === undefined
-      ? '<i class="ti ti-minus b-icon" style="color:var(--text3)"></i>'
-      : isOk
-        ? '<i class="ti ti-check b-icon" style="color:var(--ok)"></i>'
-        : '<i class="ti ti-x b-icon" style="color:var(--fail)"></i>';
-    const correctaText = q.opciones[q.correcta] ? q.opciones[q.correcta].replace(/^[A-D]\)\s*/,'') : '';
-    const wrongNote = ans !== undefined && !isOk ? `<br><span style="font-size:11px;color:var(--ok)">✓ ${correctaText}</span>` : '';
-    return `<div class="breakdown-item">${icon}<span class="b-num">${i+1}.</span><span class="b-text">${q.pregunta.length>90?q.pregunta.slice(0,90)+'…':q.pregunta}${wrongNote}</span></div>`;
+  const total=state.questions.length;
+  const answered=state.answers.filter(a=>a!==undefined).length;
+  const ok=state.answers.filter((a,i)=>a!==undefined&&a===state.questions[i]?.correcta).length;
+  const fail=answered-ok,skip=total-answered;
+  const pct=answered>0?Math.round(ok/answered*100):0;
+  const nota=(ok-(fail*0.25)).toFixed(2);
+  const color=pct>=60?'var(--ok)':'var(--fail)';
+  document.getElementById('result-score').textContent=pct+'%';
+  document.getElementById('result-score').style.color=color;
+  document.getElementById('result-label').textContent=`${ok} correctas de ${answered} respondidas`;
+  document.getElementById('result-nota').textContent=`Nota con penalización: ${nota} / ${total}`;
+  document.getElementById('result-nota').style.cssText=`background:${pct>=60?'var(--ok-light)':'var(--fail-light)'};color:${color};padding:4px 14px;border-radius:10px;font-size:13px;font-weight:500;display:inline-block`;
+  document.getElementById('r-ok').textContent=ok;document.getElementById('r-fail').textContent=fail;document.getElementById('r-skip').textContent=skip;
+  document.getElementById('breakdown-list').innerHTML=state.questions.map((q,i)=>{
+    const ans=state.answers[i],isOk=ans===q.correcta;
+    const icon=ans===undefined?'<i class="ti ti-minus b-icon" style="color:var(--text3)"></i>':isOk?'<i class="ti ti-check b-icon" style="color:var(--ok)"></i>':'<i class="ti ti-x b-icon" style="color:var(--fail)"></i>';
+    const fix=!isOk&&ans!==undefined&&q.opciones[q.correcta]?`<br><span style="font-size:11px;color:var(--ok)">✓ ${q.opciones[q.correcta].replace(/^[A-D]\)\s*/,'')}</span>`:'';
+    return `<div class="breakdown-item">${icon}<span class="b-num">${i+1}.</span><span class="b-text">${q.pregunta.length>90?q.pregunta.slice(0,90)+'…':q.pregunta}${fix}</span></div>`;
   }).join('');
-
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
 }
+function extractTemaNum(s){if(!s)return 0;const m=s.match(/\d+/);return m?parseInt(m[0]):0;}
 
-// ---- BANCO ----
-function renderBancos() {
-  const lista = document.getElementById('banco-lista-section');
-  const bl = document.getElementById('banco-list');
-  if (state.bancos.length === 0) { lista.style.display = 'none'; return; }
-  lista.style.display = 'block';
-  bl.innerHTML = state.bancos.map((b, i) => `<div class="banco-item">
-    <i class="ti ti-database"></i>
-    <span class="b-title">${b.nombre}</span>
-    <span class="b-count">${b.preguntas.length} preguntas</span>
-    <button class="b-del" onclick="deleteBanco(${i})" title="Eliminar"><i class="ti ti-trash"></i></button>
+// FUENTES
+function setFuenteTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===(tab==='url'?0:1)));
+  document.getElementById('fuente-url-panel').style.display=tab==='url'?'block':'none';
+  document.getElementById('fuente-texto-panel').style.display=tab==='texto'?'block':'none';
+}
+async function agregarFuenteURL(){
+  const url=document.getElementById('fuente-url').value.trim();
+  const nombre=document.getElementById('fuente-url-nombre').value.trim();
+  const status=document.getElementById('fuente-url-status');
+  if(!url||!nombre){alert('Rellena la URL y el nombre');return;}
+  status.innerHTML='<span class="spinner"></span> Descargando…';
+  try{
+    const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const resp=await fetch(proxy);
+    const data=await resp.json();
+    if(!data.contents)throw new Error('No se pudo obtener el contenido');
+    const doc=new DOMParser().parseFromString(data.contents,'text/html');
+    let contenido='';
+    for(const sel of['#textoxslt','#texto','article','.documento','main']){const el=doc.querySelector(sel);if(el&&el.innerText&&el.innerText.length>200){contenido=el.innerText.trim();break;}}
+    if(!contenido){['script','style','nav','header','footer'].forEach(t=>doc.body.querySelectorAll(t).forEach(e=>e.remove()));contenido=doc.body?.innerText?.trim()||'';}
+    if(contenido.length<200)throw new Error('Contenido demasiado corto. Prueba pegando el texto manualmente.');
+    state.fuentes.push({id:Date.now(),nombre,url,contenido,tipo:'url',fecha:new Date().toLocaleDateString('es-ES')});
+    saveState();renderFuentes();
+    document.getElementById('fuente-url').value='';document.getElementById('fuente-url-nombre').value='';
+    status.innerHTML=`<span style="color:var(--ok)">✓ Añadida (${Math.round(contenido.length/1000)}KB de texto)</span>`;
+  }catch(e){status.innerHTML=`<span style="color:var(--fail)">✗ ${e.message}</span>`;}
+}
+function agregarFuenteTexto(){
+  const nombre=document.getElementById('fuente-texto-nombre').value.trim();
+  const contenido=document.getElementById('fuente-texto-contenido').value.trim();
+  if(!nombre||contenido.length<100){alert('Rellena el nombre y añade al menos 100 caracteres de texto');return;}
+  state.fuentes.push({id:Date.now(),nombre,contenido,tipo:'texto',fecha:new Date().toLocaleDateString('es-ES')});
+  saveState();renderFuentes();
+  document.getElementById('fuente-texto-nombre').value='';document.getElementById('fuente-texto-contenido').value='';
+  alert(`✓ Fuente "${nombre}" añadida (${Math.round(contenido.length/1000)}KB)`);
+}
+function renderFuentes(){
+  const sec=document.getElementById('fuentes-lista-section');
+  if(state.fuentes.length===0){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('fuentes-list').innerHTML=state.fuentes.map(f=>`<div class="fuente-item">
+    <i class="ti ti-${f.tipo==='url'?'link':'file-text'}" style="color:var(--accent)"></i>
+    <div style="flex:1"><div class="f-title">${f.nombre}</div><div class="f-sub">${f.fecha} · ${Math.round(f.contenido.length/1000)}KB · ${f.tipo==='url'?f.url.slice(0,45)+'…':'texto pegado'}</div></div>
+    <button class="f-use" onclick="testDesdeFuente(${f.id})"><i class="ti ti-player-play"></i> Test</button>
+    <button class="f-del" onclick="deleteFuente(${f.id})"><i class="ti ti-trash"></i></button>
   </div>`).join('');
 }
-
-function setBancoTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === (tab === 'pegar' ? 0 : 1)));
-  document.getElementById('banco-pegar').style.display = tab === 'pegar' ? 'block' : 'none';
-  document.getElementById('banco-archivo').style.display = tab === 'archivo' ? 'block' : 'none';
+async function testDesdeFuente(id){
+  const f=state.fuentes.find(x=>x.id===id);if(!f)return;
+  if(!state.apiKey){showScreen('ajustes');return;}
+  showScreen('test');state.questions=[];state.currentQ=0;state.answers=[];
+  if(state.timerInterval)clearInterval(state.timerInterval);
+  document.getElementById('test-timer').style.display='none';
+  document.getElementById('test-actions').style.display='none';
+  document.getElementById('test-body').innerHTML=`<div class="loading-q"><span class="spinner"></span>Generando preguntas desde "${f.nombre}"…</div>`;
+  const qs=(await generateQuestionsIA(10,f.nombre,f.contenido)).map(q=>({...q,source:'fuente'}));
+  if(qs.length===0){document.getElementById('test-body').innerHTML=`<div class="loading-q"><i class="ti ti-alert-triangle" style="font-size:36px;color:var(--fail);display:block;margin-bottom:12px"></i>No se pudieron generar preguntas.</div>`;return;}
+  state.questions=qs;renderQuestion();
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
 }
+function deleteFuente(id){showModal('¿Eliminar fuente?','Esta acción no se puede deshacer.',()=>{state.fuentes=state.fuentes.filter(f=>f.id!==id);saveState();renderFuentes();});}
 
-function parseBancoText(text) {
-  const questions = [];
-  const blocks = text.split(/\n(?=P:)/);
-  blocks.forEach(block => {
-    const pMatch = block.match(/P:\s*(.+)/);
-    if (!pMatch) return;
-    const pregunta = pMatch[1].trim();
-    const opcs = [];
-    ['A','B','C','D'].forEach(l => {
-      const m = block.match(new RegExp(l+'\\)\\s*(.+)'));
-      if (m) opcs.push(l+') '+m[1].trim());
-    });
-    const rMatch = block.match(/R:\s*([A-D])/);
-    const eMatch = block.match(/E:\s*(.+)/);
-    if (pregunta && opcs.length >= 2 && rMatch) {
-      questions.push({
-        pregunta, opciones: opcs,
-        correcta: ['A','B','C','D'].indexOf(rMatch[1]),
-        explicacion: eMatch ? eMatch[1].trim() : '',
-        tema: 'Banco importado', source: 'banco'
-      });
-    }
+// BANCO
+function renderBancos(){
+  const sec=document.getElementById('banco-lista-section');
+  if(state.bancos.length===0){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('banco-list').innerHTML=state.bancos.map((b,i)=>`<div class="banco-item"><i class="ti ti-database"></i><span class="b-title">${b.nombre}</span><span class="b-count">${b.preguntas.length} preguntas</span><button class="b-del" onclick="deleteBanco(${i})"><i class="ti ti-trash"></i></button></div>`).join('');
+}
+function setBancoTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===(tab==='pegar'?0:1)));
+  document.getElementById('banco-pegar').style.display=tab==='pegar'?'block':'none';
+  document.getElementById('banco-archivo').style.display=tab==='archivo'?'block':'none';
+}
+function parseBancoText(text){
+  const qs=[];
+  text.split(/\n(?=P:)/).forEach(block=>{
+    const pM=block.match(/P:\s*(.+)/);if(!pM)return;
+    const pregunta=pM[1].trim(),opcs=[];
+    ['A','B','C','D'].forEach(l=>{const m=block.match(new RegExp(l+'\\)\\s*(.+)'));if(m)opcs.push(l+') '+m[1].trim());});
+    const rM=block.match(/R:\s*([A-D])/),eM=block.match(/E:\s*(.+)/);
+    if(pregunta&&opcs.length>=2&&rM)qs.push({pregunta,opciones:opcs,correcta:['A','B','C','D'].indexOf(rM[1]),explicacion:eM?eM[1].trim():'',tema:'Banco importado',source:'banco'});
   });
-  return questions;
+  return qs;
 }
-
-function importarBanco() {
-  const nombre = document.getElementById('banco-nombre').value.trim() || 'Banco ' + Date.now();
-  const texto = document.getElementById('banco-texto').value.trim();
-  const temaNum = document.getElementById('banco-tema-asoc').value;
-  if (!texto) { alert('Pega el texto de tus preguntas primero'); return; }
-  const qs = parseBancoText(texto);
-  if (qs.length === 0) { alert('No se encontraron preguntas con el formato correcto.\nRevisa que usas el formato:\nP: pregunta\nA) ...\nB) ...\nR: A'); return; }
-  state.bancos.push({ nombre, preguntas: qs, tema: temaNum ? parseInt(temaNum) : null });
-  saveState();
-  document.getElementById('banco-texto').value = '';
-  document.getElementById('banco-nombre').value = '';
-  renderBancos();
-  alert(`✓ Importadas ${qs.length} preguntas en "${nombre}"`);
+function importarBanco(){
+  const nombre=document.getElementById('banco-nombre').value.trim()||'Banco '+Date.now();
+  const texto=document.getElementById('banco-texto').value.trim();
+  const temaNum=document.getElementById('banco-tema-asoc').value;
+  if(!texto){alert('Pega el texto primero');return;}
+  const qs=parseBancoText(texto);
+  if(qs.length===0){alert('No se encontraron preguntas con el formato correcto.');return;}
+  state.bancos.push({nombre,preguntas:qs,tema:temaNum?parseInt(temaNum):null});
+  saveState();document.getElementById('banco-texto').value='';document.getElementById('banco-nombre').value='';
+  renderBancos();alert(`Importadas ${qs.length} preguntas en "${nombre}"`);
 }
-
-let fileText = '';
-function loadFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    fileText = ev.target.result;
-    document.getElementById('file-preview').textContent = `Archivo: ${file.name} · ${fileText.split('\n').length} líneas`;
-    if (!document.getElementById('banco-nombre-f').value)
-      document.getElementById('banco-nombre-f').value = file.name.replace('.txt','');
-  };
-  reader.readAsText(file, 'UTF-8');
+let fileText='';
+function loadFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{fileText=ev.target.result;document.getElementById('file-preview').textContent=`${file.name} · ${fileText.split('\n').length} líneas`;if(!document.getElementById('banco-nombre-f').value)document.getElementById('banco-nombre-f').value=file.name.replace('.txt','');};
+  r.readAsText(file,'UTF-8');
 }
-
-function importarBancoArchivo() {
-  if (!fileText) { alert('Selecciona un archivo primero'); return; }
-  const nombre = document.getElementById('banco-nombre-f').value.trim() || 'Banco archivo';
-  const qs = parseBancoText(fileText);
-  if (qs.length === 0) { alert('No se encontraron preguntas con el formato correcto.'); return; }
-  state.bancos.push({ nombre, preguntas: qs, tema: null });
-  saveState();
-  fileText = '';
-  document.getElementById('file-preview').textContent = '';
-  renderBancos();
-  alert(`✓ Importadas ${qs.length} preguntas en "${nombre}"`);
+function importarBancoArchivo(){
+  if(!fileText){alert('Selecciona un archivo primero');return;}
+  const nombre=document.getElementById('banco-nombre-f').value.trim()||'Banco archivo';
+  const qs=parseBancoText(fileText);
+  if(qs.length===0){alert('No se encontraron preguntas con el formato correcto.');return;}
+  state.bancos.push({nombre,preguntas:qs,tema:null});
+  saveState();fileText='';document.getElementById('file-preview').textContent='';
+  renderBancos();alert(`Importadas ${qs.length} preguntas en "${nombre}"`);
 }
+function deleteBanco(i){showModal(`¿Eliminar "${state.bancos[i].nombre}"?`,'Esta acción no se puede deshacer.',()=>{state.bancos.splice(i,1);saveState();renderBancos();});}
 
-function deleteBanco(i) {
-  if (!confirm(`¿Eliminar el banco "${state.bancos[i].nombre}"?`)) return;
-  state.bancos.splice(i, 1);
-  saveState();
-  renderBancos();
+// ESTADÍSTICAS
+function renderStats(){
+  const body=document.getElementById('stats-body');
+  const con=TEMAS.filter(t=>state.stats['t'+t.n]);
+  if(con.length===0){body.innerHTML='<div class="empty-state"><i class="ti ti-chart-bar"></i>Aún no tienes estadísticas.<br>Haz tu primer test.</div>';return;}
+  const sorted=[...con].sort((a,b)=>{const sa=state.stats['t'+a.n],sb=state.stats['t'+b.n];return(sa.total>0?sa.ok/sa.total:0)-(sb.total>0?sb.ok/sb.total:0);});
+  body.innerHTML=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:0 1.25rem">`+sorted.map(t=>{
+    const s=state.stats['t'+t.n],pct=s.total>0?Math.round(s.ok/s.total*100):0;
+    const c=pct>=70?'var(--ok)':pct>=50?'var(--warn)':'var(--fail)';
+    return `<div class="stat-bar-item">
+      <span style="min-width:26px;color:var(--text3);font-size:11px;font-weight:600">${t.n}</span>
+      <span style="flex:1;color:var(--text)">${t.t.length>58?t.t.slice(0,58)+'…':t.t}</span>
+      <span style="min-width:44px;text-align:right;color:${c};font-weight:600">${pct}%</span>
+      <span style="min-width:32px;text-align:right;font-size:11px;color:var(--text3)">${s.total}p</span>
+      <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+      <button class="btn btn-sm btn-danger" style="padding:3px 7px" onclick="clearStatTema(${t.n})" title="Resetear tema ${t.n}"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('')+'</div>';
 }
+function clearStatTema(n){showModal(`¿Resetear estadísticas del tema ${n}?`,'Se borrarán los datos de aciertos y fallos de este tema.',()=>{delete state.stats['t'+n];saveState();renderStats();updateHomeStats();});}
+function confirmClearStats(){showModal('¿Resetear todas las estadísticas?','Se borrarán todos los datos de rendimiento.',()=>{state.stats={};saveState();renderStats();updateHomeStats();});}
 
-function clearAllBancos() {
-  if (!confirm('¿Eliminar todos los bancos de preguntas?')) return;
-  state.bancos = [];
-  saveState();
-  renderBancos();
+// AJUSTES
+function renderAjustes(){
+  const input=document.getElementById('api-key-input'),st=document.getElementById('api-key-status');
+  if(state.apiKey){input.value=state.apiKey;st.textContent='✓ API key guardada';st.style.color='var(--ok)';}
+  else{st.textContent='Sin API key configurada';st.style.color='var(--text3)';}
 }
-
-// ---- ESTADÍSTICAS ----
-function renderStats() {
-  const body = document.getElementById('stats-body');
-  const temasConDatos = TEMAS.filter(t => state.stats['t'+t.n]);
-  if (temasConDatos.length === 0) {
-    body.innerHTML = '<div class="empty-state"><i class="ti ti-chart-bar"></i>Aún no tienes estadísticas.<br>¡Haz tu primer test!</div>';
-    return;
-  }
-  const sorted = [...temasConDatos].sort((a,b) => {
-    const sa = state.stats['t'+a.n]; const sb = state.stats['t'+b.n];
-    const pa = sa.total>0?sa.ok/sa.total:0; const pb = sb.total>0?sb.ok/sb.total:0;
-    return pa - pb;
-  });
-  body.innerHTML = `<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:0 1.25rem">` +
-    sorted.map(t => {
-      const s = state.stats['t'+t.n];
-      const pct = s.total > 0 ? Math.round(s.ok/s.total*100) : 0;
-      const color = pct >= 70 ? 'var(--ok)' : pct >= 50 ? 'var(--warn)' : 'var(--fail)';
-      return `<div class="stat-bar-item">
-        <span style="min-width:26px;color:var(--text3);font-size:12px;font-weight:600">${t.n}</span>
-        <span style="flex:1;color:var(--text)">${t.t.length>65?t.t.slice(0,65)+'…':t.t}</span>
-        <span style="min-width:52px;text-align:right;color:${color};font-weight:600;font-size:13px">${pct}%</span>
-        <span style="min-width:40px;text-align:right;font-size:11px;color:var(--text3)">${s.total}p</span>
-        <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      </div>`;
-    }).join('') + '</div>';
+function saveApiKey(){
+  const key=document.getElementById('api-key-input').value.trim();
+  if(!key){alert('Introduce una API key válida');return;}
+  state.apiKey=key;saveState();
+  document.getElementById('api-key-status').textContent='✓ API key guardada';
+  document.getElementById('api-key-status').style.color='var(--ok)';
 }
+function confirmResetAll(){showModal('¿Borrar TODOS los datos?','Se eliminarán estadísticas, bancos, fuentes y API key.',()=>{localStorage.removeItem('opo_jex_v3');state.stats={};state.bancos=[];state.apiKey='';state.fuentes=[];renderAjustes();updateHomeStats();alert('Datos borrados.');});}
 
-function clearStats() {
-  if (!confirm('¿Resetear todas las estadísticas?')) return;
-  state.stats = {};
-  saveState();
-  renderStats();
-  updateHomeStats();
-}
-
-// ---- AJUSTES ----
-function renderAjustes() {
-  const input = document.getElementById('api-key-input');
-  const status = document.getElementById('api-key-status');
-  if (state.apiKey) {
-    input.value = state.apiKey;
-    status.textContent = '✓ API key guardada';
-    status.style.color = 'var(--ok)';
-  } else {
-    status.textContent = 'Sin API key configurada';
-    status.style.color = 'var(--text3)';
-  }
-}
-
-function saveApiKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key) { alert('Introduce una API key válida'); return; }
-  state.apiKey = key;
-  saveState();
-  document.getElementById('api-key-status').textContent = '✓ API key guardada correctamente';
-  document.getElementById('api-key-status').style.color = 'var(--ok)';
-}
-
-function resetAll() {
-  if (!confirm('¿Borrar TODOS los datos? (estadísticas, bancos y API key)')) return;
-  localStorage.removeItem('opo_jex_v2');
-  state.stats = {}; state.bancos = []; state.apiKey = '';
-  renderAjustes();
-  updateHomeStats();
-  alert('Datos borrados.');
-}
-
-// Init
-updateHomeStats();
-renderTemas();
+updateHomeStats();renderTemas();
 </script>
 </body>
 </html>
