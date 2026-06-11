@@ -1,0 +1,72 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabase } from "@/lib/supabase/server";
+
+export async function GET(req: NextRequest) {
+  const exportAll = req.nextUrl.searchParams.get("export") === "all";
+  const id = req.nextUrl.searchParams.get("id");
+  const supabase = getSupabase();
+
+  if (exportAll) {
+    const { data, error } = await supabase.from("materias").select("*");
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  }
+
+  if (id && req.nextUrl.searchParams.get("export") === "1") {
+    const { data, error } = await supabase
+      .from("materias")
+      .select("*, bancos(*, preguntas(*))")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  }
+
+  const { data, error } = await supabase.from("materias").select("id, nombre").order("nombre");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}
+
+export async function POST(req: NextRequest) {
+  const { nombre } = await req.json();
+  if (!nombre?.trim()) {
+    return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
+  }
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("materias")
+    .insert({ nombre: nombre.trim() })
+    .select("id, nombre")
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}
+
+export async function PATCH(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Falta id" }, { status: 400 });
+  const { nombre } = await req.json();
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("materias")
+    .update({ nombre: nombre.trim() })
+    .eq("id", id)
+    .select("id, nombre")
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ...data, bancos: 0 });
+}
+
+export async function DELETE(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Falta id" }, { status: 400 });
+  const supabase = getSupabase();
+  const { count } = await supabase
+    .from("bancos")
+    .select("*", { count: "exact", head: true })
+    .eq("materia_id", id);
+  await supabase.from("bancos").delete().eq("materia_id", id);
+  const { error } = await supabase.from("materias").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ bancosEliminados: count ?? 0 });
+}

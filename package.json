@@ -1,0 +1,10 @@
+{
+  "name": "oposiciones-jex",
+  "scripts": {
+    "start": "npx --yes serve -l 3000 .",
+    "open-app": "start https://web-iota-drab-20.vercel.app/practicar",
+    "dev": "npm run dev --prefix web",
+    "build": "npm run build --prefix web",
+    "start:web": "npm run start --prefix web"
+  }
+}
