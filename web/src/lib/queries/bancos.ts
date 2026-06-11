@@ -138,11 +138,12 @@ export async function getBancoForAdmin(id: string) {
       .eq("banco_id", id)
       .order("orden");
 
-    if (pErr) throw pErr;
-    preguntas = (data ?? []).map((p) => ({
-      ...p,
-      opciones: p.opciones as string[],
-    }));
+    if (!pErr) {
+      preguntas = (data ?? []).map((p) => ({
+        ...p,
+        opciones: p.opciones as string[],
+      }));
+    }
   }
 
   return { banco: banco as BancoRow, preguntas };

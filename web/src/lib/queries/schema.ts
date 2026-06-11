@@ -19,7 +19,7 @@ export async function preguntasTableExists(): Promise<boolean> {
   const { error } = await supabase
     .from("preguntas")
     .select("id", { head: true, count: "exact" })
-    .limit(1);
+    .limit(0);
 
   if (!error) return true;
   return !isTableMissingMessage(error.message);
