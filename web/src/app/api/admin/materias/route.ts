@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase/server";
+import { buildFullBackup } from "@/lib/queries/export";
 
 export async function GET(req: NextRequest) {
   const exportAll = req.nextUrl.searchParams.get("export") === "all";
@@ -7,9 +8,15 @@ export async function GET(req: NextRequest) {
   const supabase = getSupabase();
 
   if (exportAll) {
-    const { data, error } = await supabase.from("materias").select("*");
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+    try {
+      const backup = await buildFullBackup();
+      return NextResponse.json(backup);
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Error al exportar" },
+        { status: 500 },
+      );
+    }
   }
 
   if (id && req.nextUrl.searchParams.get("export") === "1") {

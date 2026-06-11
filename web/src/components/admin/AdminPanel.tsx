@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { AdminCocinar } from "@/components/admin/AdminCocinar";
 import { AdminBancos } from "@/components/admin/AdminBancos";
+import { AdminBackup } from "@/components/admin/AdminBackup";
 import type { BancoRow } from "@/lib/queries/bancos";
 
 type Materia = { id: string; nombre: string; bancos: number };
@@ -13,7 +14,7 @@ type Props = {
   schemaOk: boolean;
 };
 
-const tabs = ["cocinar", "bancos"] as const;
+const tabs = ["cocinar", "bancos", "copia"] as const;
 
 export function AdminPanel({ bancos, materias, schemaOk }: Props) {
   const router = useRouter();
@@ -48,9 +49,19 @@ export function AdminPanel({ bancos, materias, schemaOk }: Props) {
         >
           Bancos
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "copia"}
+          className={tab === "copia" ? "active" : ""}
+          onClick={() => setTab("copia")}
+        >
+          Copia de seguridad
+        </button>
       </div>
       {tab === "cocinar" && <AdminCocinar materias={materias} schemaOk={schemaOk} />}
       {tab === "bancos" && <AdminBancos bancos={bancos} />}
+      {tab === "copia" && <AdminBackup schemaOk={schemaOk} />}
     </>
   );
 }
