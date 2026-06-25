@@ -24,10 +24,9 @@ export default async function TestPage({ params }: Props) {
 
   const preguntas = (data?.preguntas ?? []).map((p, i) => ({
     id: p.id,
+    tipo: data!.banco.tipo === "practico" ? ("practico" as const) : ("teorico" as const),
     enunciado: p.enunciado,
     opciones: p.opciones,
-    respuesta: p.respuesta,
-    explicacion: p.explicacion ?? undefined,
     orden: p.orden ?? i,
   }));
 

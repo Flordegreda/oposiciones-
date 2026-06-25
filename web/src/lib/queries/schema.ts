@@ -37,3 +37,47 @@ export async function getPreguntasCount(): Promise<number | null> {
   }
   return count ?? 0;
 }
+
+export async function intentosTableExists(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("intentos")
+    .select("id, pregunta_id, banco_id, correcta")
+    .limit(0);
+
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  if (
+    msg.includes("could not find the table") ||
+    msg.includes('relation "intentos" does not exist') ||
+    (msg.includes("intentos") && msg.includes("does not exist"))
+  ) {
+    return false;
+  }
+  if (msg.includes("pregunta_id") || msg.includes("column")) return false;
+  return false;
+}
+
+export async function resultadosTableExists(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("resultados").select("id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "resultados" does not exist') ||
+    (msg.includes("resultados") && msg.includes("does not exist"))
+  );
+}
+
+export async function favoritosTableExists(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("favoritos").select("banco_id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "favoritos" does not exist') ||
+    (msg.includes("favoritos") && msg.includes("does not exist"))
+  );
+}

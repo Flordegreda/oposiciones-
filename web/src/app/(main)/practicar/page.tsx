@@ -1,6 +1,9 @@
-import { BancoTile } from "@/components/BancoTile";
-import { getPracticarData } from "@/lib/queries/bancos";
+import { PracticarTemario } from "@/components/PracticarTemario";
+import { RepasoGlobal } from "@/components/RepasoGlobal";
+import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { JEX_SUBTITLE } from "@/lib/constants";
+
+export const revalidate = 300;
 
 export default async function PracticarPage() {
   let sections: Awaited<ReturnType<typeof getPracticarData>>["sections"] = [];
@@ -20,6 +23,8 @@ export default async function PracticarPage() {
         <p className="lead lead--compact">{JEX_SUBTITLE}</p>
       </section>
 
+      {!error && <RepasoGlobal compact />}
+
       {error && (
         <div className="card card-warning">
           <p className="error">{error}</p>
@@ -30,27 +35,7 @@ export default async function PracticarPage() {
         </div>
       )}
 
-      {sections.length > 0 && (
-        <div className="linea-block">
-          <h2 className="linea-block-title">Temario</h2>
-          {sections.map((section) => (
-            <section key={section.nombre} className="materia-section card">
-              <div className="materia-head">
-                <span className="materia-tag">{section.nombre}</span>
-                <span className="muted small">
-                  {section.bancos.length} banco
-                  {section.bancos.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="banco-grid banco-grid--wide">
-                {section.bancos.map((b) => (
-                  <BancoTile key={b.id} banco={b} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+      {!error && sections.length > 0 && <PracticarTemario sections={sections} />}
 
       {!error && sections.length === 0 && (
         <div className="card">

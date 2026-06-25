@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 import { parseImportText } from "@/lib/parse-import-text";
 import { getJexLineaId } from "@/lib/queries/bancos";
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: pErr.message }, { status: 500 });
     }
 
+    revalidateContentCache();
     return NextResponse.json({ banco, num: preguntas.length });
   } catch (e) {
     return NextResponse.json(

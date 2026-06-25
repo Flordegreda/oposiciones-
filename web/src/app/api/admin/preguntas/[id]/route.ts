@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string }> };
@@ -30,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    revalidateContentCache();
     return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json(
@@ -47,6 +49,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const { error } = await supabase.from("preguntas").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    revalidateContentCache();
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json(

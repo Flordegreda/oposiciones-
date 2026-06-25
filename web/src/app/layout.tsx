@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Source_Serif_4 } from "next/font/google";
+import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
 
 const sans = Plus_Jakarta_Sans({
@@ -33,8 +34,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${sans.variable} ${serif.variable}`}>
-      <body>{children}</body>
+    <html lang="es" className={`${sans.variable} ${serif.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("opo_jex_theme");var s=localStorage.getItem("opo_jex_text_size");if(t==="dark")document.documentElement.dataset.theme="dark";if(s==="large")document.documentElement.dataset.textSize="large";}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

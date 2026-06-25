@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { parseImportText } from "@/lib/parse-import-text";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -21,12 +22,22 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
     tipo: "teorico",
     materiaId: initial[0]?.id ?? "",
   });
+
+  useEffect(() => {
+    setMaterias(initial);
+    if (initial.length && !initial.some((m) => m.id === ctx.materiaId)) {
+      setCtx((c) => ({ ...c, materiaId: initial[0]?.id ?? "" }));
+    }
+  }, [initial, ctx.materiaId]);
   const [nombre, setNombre] = useState("");
   const [texto, setTexto] = useState("");
-  const [nuevaMateria, setNuevaMateria] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const previewCount = useMemo(
+    () => (texto.trim() ? parseImportText(texto).length : 0),
+    [texto],
+  );
 
   async function guardarBanco() {
     setBusy(true);
@@ -43,25 +54,6 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
     setTexto("");
     setMsg(`Banco creado: ${data.banco.nombre} (${data.num} preguntas)`);
     router.refresh();
-  }
-
-  async function addMateria(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const res = await fetch("/api/admin/materias", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: nuevaMateria }),
-    });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) return setErr(data.error);
-    setMaterias((m) =>
-      [...m, { ...data, bancos: 0 }].sort((a, b) => a.nombre.localeCompare(b.nombre)),
-    );
-    setCtx((c) => ({ ...c, materiaId: data.id }));
-    setNuevaMateria("");
-    setMsg("Materia creada");
   }
 
   return (
@@ -88,13 +80,25 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
       <div className="card card-elevated">
         <h2>Pegar test (PDF → texto)</h2>
         <div className="cafe-highlight" style={{ marginTop: "0.75rem" }}>
-          <strong>Formato:</strong>
+          <strong>Formatos aceptados:</strong>
           <pre className="format-ejemplo">{`1. ¿Enunciado?
 A) …
 B) …
 C) …
 D) …
-Respuesta: B`}</pre>
+Respuesta: B
+
+— o —
+
+P: ¿Enunciado?
+A) …
+B) …
+R: B`}</pre>
+          <p className="muted small" style={{ marginTop: "0.5rem" }}>
+            Cada pregunta debe empezar con <code>1.</code>, <code>2.</code> o{" "}
+            <code>P:</code> en una línea nueva. Si pegas desde PDF, revisa que
+            los números no se hayan pegado en la misma línea.
+          </p>
         </div>
 
         <div className="form-grid-fields carga-campos">
@@ -119,6 +123,7 @@ Respuesta: B`}</pre>
               {materias.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nombre}
+                  {m.bancos !== undefined ? ` (${m.bancos} bancos)` : ""}
                 </option>
               ))}
             </select>
@@ -143,35 +148,32 @@ Respuesta: B`}</pre>
             placeholder="Pega aquí el bloque copiado del PDF…"
           />
         </label>
+        {texto.trim() && (
+          <p className={previewCount > 0 ? "ok" : "error"} style={{ marginTop: "0.5rem" }}>
+            {previewCount > 0
+              ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""} en el texto`
+              : "No se detectan preguntas válidas — revisa el formato (Respuesta: B o R: B)"}
+          </p>
+        )}
         <div className="form-actions">
           <button
             type="button"
             className="btn-primary"
-            disabled={busy || !schemaOk || !materias.length || !texto.trim()}
+            disabled={
+              busy || !schemaOk || !materias.length || !texto.trim() || previewCount === 0
+            }
             onClick={() => void guardarBanco()}
           >
-            {busy ? "Guardando…" : "Guardar banco"}
+            {busy ? "Guardando…" : `Guardar banco (${previewCount || 0})`}
           </button>
         </div>
       </div>
 
       <div className="card">
-        <h2>Materias</h2>
-        <form className="form" onSubmit={addMateria}>
-          <label>
-            Nueva materia
-            <input
-              value={nuevaMateria}
-              onChange={(e) => setNuevaMateria(e.target.value)}
-              placeholder="EBEP"
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit" className="btn-primary btn-sm" disabled={busy}>
-              Añadir materia
-            </button>
-          </div>
-        </form>
+        <p className="muted small" style={{ margin: 0 }}>
+          ¿Nueva materia? Ve a la pestaña <strong>Materias</strong> para crear, renombrar o ver
+          totales por categoría.
+        </p>
       </div>
     </>
   );

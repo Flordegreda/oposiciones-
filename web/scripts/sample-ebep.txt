@@ -1,0 +1,19 @@
+Aquí tienes el archivo unificado con todas las preguntas de los cinco tests, siguiendo el formato solicitado:
+¿No se encuentra dentro del ámbito de aplicación del artículo 2.1 del Estatuto Básico del Empleado Público el personal funcionario al servicio de?
+A) La Administración de las Ciudades de Ceuta y Melilla
+B) Las Universidades Públicas
+C) Las Cortes Generales
+D) La Administración Local
+Respuesta: C
+Según el EBEP, es requisito indispensable para ser nombrado funcionario interino:
+A) La existencia de plazas vacantes
+B) Que existan razones expresamente justificadas de necesidad y urgencia
+C) La sustitución transitoria de los titulares
+D) La ejecución de programas de carácter temporal
+Respuesta: B
+Señale la respuesta incorrecta. Según el EBEP, en función de la duración del contrato el personal laboral puede ser:
+A) Fijo
+B) Indefinido
+C) Transitorio
+D) Temporal
+Respuesta: C

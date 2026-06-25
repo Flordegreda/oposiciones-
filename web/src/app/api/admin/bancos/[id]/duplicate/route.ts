@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string }> };
+
+const PAGE_SIZE = 1000;
 
 export async function POST(_req: Request, { params }: Params) {
   try {
@@ -18,13 +21,27 @@ export async function POST(_req: Request, { params }: Params) {
       return NextResponse.json({ error: "Banco no encontrado" }, { status: 404 });
     }
 
-    const { data: preguntas, error: pErr } = await supabase
-      .from("preguntas")
-      .select("enunciado, opciones, respuesta, explicacion, orden")
-      .eq("banco_id", id)
-      .order("orden");
+    const preguntas: {
+      enunciado: string;
+      opciones: unknown;
+      respuesta: number;
+      explicacion: string | null;
+      orden: number;
+    }[] = [];
 
-    if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error: pErr } = await supabase
+        .from("preguntas")
+        .select("enunciado, opciones, respuesta, explicacion, orden")
+        .eq("banco_id", id)
+        .order("orden")
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
+      if (!data?.length) break;
+      preguntas.push(...data);
+      if (data.length < PAGE_SIZE) break;
+    }
 
     const { data: nuevo, error: nErr } = await supabase
       .from("bancos")
@@ -42,22 +59,25 @@ export async function POST(_req: Request, { params }: Params) {
       return NextResponse.json({ error: nErr?.message ?? "Error al duplicar" }, { status: 500 });
     }
 
-    if (preguntas?.length) {
-      const rows = preguntas.map((p) => ({
-        banco_id: nuevo.id,
-        enunciado: p.enunciado,
-        opciones: p.opciones,
-        respuesta: p.respuesta,
-        explicacion: p.explicacion,
-        orden: p.orden,
-      }));
-      const { error: insErr } = await supabase.from("preguntas").insert(rows);
-      if (insErr) {
-        await supabase.from("bancos").delete().eq("id", nuevo.id);
-        return NextResponse.json({ error: insErr.message }, { status: 500 });
+    if (preguntas.length) {
+      for (let i = 0; i < preguntas.length; i += 500) {
+        const chunk = preguntas.slice(i, i + 500).map((p) => ({
+          banco_id: nuevo.id,
+          enunciado: p.enunciado,
+          opciones: p.opciones,
+          respuesta: p.respuesta,
+          explicacion: p.explicacion,
+          orden: p.orden,
+        }));
+        const { error: insErr } = await supabase.from("preguntas").insert(chunk);
+        if (insErr) {
+          await supabase.from("bancos").delete().eq("id", nuevo.id);
+          return NextResponse.json({ error: insErr.message }, { status: 500 });
+        }
       }
     }
 
+    revalidateContentCache();
     return NextResponse.json({ id: nuevo.id });
   } catch (e) {
     return NextResponse.json(

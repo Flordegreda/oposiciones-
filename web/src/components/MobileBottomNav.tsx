@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { openStudySettings } from "@/components/AppProviders";
 
 const items = [
   { href: "/practicar", label: "Tests", match: (p: string) => p === "/practicar" || p.startsWith("/test/") },
+  { href: "/repaso", label: "Repaso", match: (p: string) => p.startsWith("/repaso") },
   { href: "/simulacro", label: "Simulacro", match: (p: string) => p.startsWith("/simulacro") },
+  { href: "/estadisticas", label: "Stats", match: (p: string) => p.startsWith("/estadisticas") },
 ];
 
 export function MobileBottomNav() {
@@ -26,6 +29,14 @@ export function MobileBottomNav() {
           </Link>
         );
       })}
+      <button
+        type="button"
+        className="mobile-bottom-nav__item mobile-bottom-nav__item--settings"
+        aria-label="Ajustes de estudio"
+        onClick={openStudySettings}
+      >
+        Ajustes
+      </button>
     </nav>
   );
 }

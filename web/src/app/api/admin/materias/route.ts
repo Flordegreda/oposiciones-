@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
-import { buildFullBackup } from "@/lib/queries/export";
+import { buildFullBackup, buildMateriaBackup } from "@/lib/queries/export";
 
 export async function GET(req: NextRequest) {
   const exportAll = req.nextUrl.searchParams.get("export") === "all";
@@ -20,13 +21,15 @@ export async function GET(req: NextRequest) {
   }
 
   if (id && req.nextUrl.searchParams.get("export") === "1") {
-    const { data, error } = await supabase
-      .from("materias")
-      .select("*, bancos(*, preguntas(*))")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+    try {
+      const data = await buildMateriaBackup(id);
+      return NextResponse.json(data);
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Error al exportar" },
+        { status: 500 },
+      );
+    }
   }
 
   const { data, error } = await supabase.from("materias").select("id, nombre").order("nombre");
@@ -46,6 +49,7 @@ export async function POST(req: NextRequest) {
     .select("id, nombre")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  revalidateContentCache();
   return NextResponse.json(data);
 }
 
@@ -61,7 +65,14 @@ export async function PATCH(req: NextRequest) {
     .select("id, nombre")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ...data, bancos: 0 });
+
+  const { count } = await supabase
+    .from("bancos")
+    .select("*", { count: "exact", head: true })
+    .eq("materia_id", id);
+
+  revalidateContentCache();
+  return NextResponse.json({ ...data, bancos: count ?? 0 });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -75,5 +86,6 @@ export async function DELETE(req: NextRequest) {
   await supabase.from("bancos").delete().eq("materia_id", id);
   const { error } = await supabase.from("materias").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  revalidateContentCache();
   return NextResponse.json({ bancosEliminados: count ?? 0 });
 }

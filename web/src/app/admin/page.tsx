@@ -3,15 +3,22 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { AdminPanel } from "@/components/admin/AdminPanel";
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
+import { AdminIntentosSetup } from "@/components/admin/AdminIntentosSetup";
+import { AdminResultadosSetup } from "@/components/admin/AdminResultadosSetup";
 import {
   getAdminBancos,
   getMateriasWithCounts,
   type BancoRow,
+  type MaterialStats,
 } from "@/lib/queries/bancos";
+import { getMaterialStats } from "@/lib/queries/bancos-cached";
 import {
   getPreguntasCount,
+  intentosTableExists,
   preguntasTableExists,
+  resultadosTableExists,
 } from "@/lib/queries/schema";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -22,16 +29,29 @@ export default async function AdminPage() {
   let materias: { id: string; nombre: string; bancos: number }[] = [];
   let error: string | null = null;
   let schemaOk = true;
+  let intentosOk = true;
+  let resultadosOk = true;
   let preguntasCount: number | null = null;
+  let stats: MaterialStats = {
+    materias: 0,
+    bancos: 0,
+    preguntas: 0,
+    teorico: { bancos: 0, preguntas: 0 },
+    practico: { bancos: 0, preguntas: 0 },
+    porMateria: [],
+  };
 
   try {
     schemaOk = await preguntasTableExists();
     if (schemaOk) {
       preguntasCount = await getPreguntasCount();
+      intentosOk = await intentosTableExists();
+      resultadosOk = await resultadosTableExists();
     }
-    [bancos, materias] = await Promise.all([
+    [bancos, materias, stats] = await Promise.all([
       getAdminBancos(),
       getMateriasWithCounts(),
+      getMaterialStats(),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Error";
@@ -45,6 +65,9 @@ export default async function AdminPage() {
           <p className="hero-eyebrow">Administración</p>
           <h1 className="page-title">Material</h1>
           <p className="lead lead--compact">{JEX_SUBTITLE}</p>
+          <p className="muted small">
+            <AdminLogoutButton />
+          </p>
         </section>
 
         {error && (
@@ -58,6 +81,10 @@ export default async function AdminPage() {
 
         {!schemaOk && <AdminSchemaSetup />}
 
+        {schemaOk && !intentosOk && <AdminIntentosSetup />}
+
+        {schemaOk && !resultadosOk && <AdminResultadosSetup />}
+
         {schemaOk && preguntasCount === 0 && bancos.length > 0 && (
           <div className="card card-warning">
             <p className="muted small">
@@ -68,7 +95,7 @@ export default async function AdminPage() {
         )}
 
         <Suspense fallback={<p className="muted">Cargando…</p>}>
-          <AdminPanel bancos={bancos} materias={materias} schemaOk={schemaOk} />
+          <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} />
         </Suspense>
 
         <p className="admin-mobile-only">

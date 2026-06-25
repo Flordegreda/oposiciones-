@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 
 export async function PATCH(req: NextRequest) {
@@ -13,6 +14,7 @@ export async function PATCH(req: NextRequest) {
         .update({ linea_id: linea_id ?? null })
         .in("id", body.ids);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      revalidateContentCache();
       return NextResponse.json({ ok: true, updated: body.ids.length });
     }
 
@@ -40,6 +42,7 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    revalidateContentCache();
     return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json(

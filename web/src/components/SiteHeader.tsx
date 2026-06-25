@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { StudySettingsButton } from "@/components/StudySettingsButton";
 import { JEX_SUBTITLE, SITE_TITLE } from "@/lib/constants";
 
 type Props = {
@@ -22,8 +23,10 @@ export function SiteHeader({ backHref, backLabel }: Props) {
         <nav className="site-nav site-nav--desktop" aria-label="Principal">
           <Link href="/practicar">Tests</Link>
           <Link href="/simulacro">Simulacro</Link>
+          <Link href="/estadisticas">Estadísticas</Link>
           <Link href="/admin">Material</Link>
         </nav>
+        <StudySettingsButton />
       </div>
       {backHref && (
         <div className="site-header-context">

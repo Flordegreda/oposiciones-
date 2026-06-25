@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { ProgressSync } from "@/components/ProgressSync";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
 export default function MainLayout({
@@ -9,6 +10,7 @@ export default function MainLayout({
 }) {
   return (
     <div className="site site--mobile-nav site--mobile-exam">
+      <ProgressSync />
       <SiteHeader />
       <main className="site-main">{children}</main>
       <footer className="site-footer">
