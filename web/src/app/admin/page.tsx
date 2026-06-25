@@ -3,7 +3,6 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { AdminPanel } from "@/components/admin/AdminPanel";
-import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 import { AdminIntentosSetup } from "@/components/admin/AdminIntentosSetup";
 import { AdminResultadosSetup } from "@/components/admin/AdminResultadosSetup";
@@ -65,9 +64,6 @@ export default async function AdminPage() {
           <p className="hero-eyebrow">Administración</p>
           <h1 className="page-title">Material</h1>
           <p className="lead lead--compact">{JEX_SUBTITLE}</p>
-          <p className="muted small">
-            <AdminLogoutButton />
-          </p>
         </section>
 
         {error && (
