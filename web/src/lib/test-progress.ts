@@ -32,6 +32,12 @@ function writeStore(key: string, data: Store) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
+function emitProgressChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("opo-progress-changed"));
+  }
+}
+
 function storeFromEntries(entries: FalloEntry[]): Store {
   const store: Store = {};
   for (const { bancoId, preguntaId } of entries) {
@@ -100,6 +106,7 @@ export function markFallo(bancoId: string, preguntaId: string) {
   list.add(preguntaId);
   store[bancoId] = [...list];
   writeStore(FAILS_KEY, store);
+  emitProgressChanged();
   void postIntento(bancoId, preguntaId, false);
 }
 
@@ -110,6 +117,7 @@ export function markAcerto(bancoId: string, preguntaId: string) {
   if (list.size) store[bancoId] = [...list];
   else delete store[bancoId];
   writeStore(FAILS_KEY, store);
+  emitProgressChanged();
   void postIntento(bancoId, preguntaId, true);
 }
 
@@ -117,6 +125,7 @@ export function clearFallos(bancoId: string) {
   const store = readStore(FAILS_KEY);
   delete store[bancoId];
   writeStore(FAILS_KEY, store);
+  emitProgressChanged();
 }
 
 export function getFavoritoIds(bancoId: string): Set<string> {

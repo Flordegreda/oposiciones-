@@ -2423,6 +2423,24 @@ code {
   font-size: 9.5pt;
 }
 
+.banco-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding-top: 0.2rem;
+}
+
+.banco-progress-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.banco-progress-text {
+  letter-spacing: 0.3px;
+}
+
 @media print {
   @page {
     margin: 14mm 12mm;
