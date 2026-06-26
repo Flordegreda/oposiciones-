@@ -53,13 +53,6 @@ function isIntroLine(line: string): boolean {
 function parseNumberedBlocks(texto: string): ParsedQuestion[] {
   const blocks = splitQuestionBlocks(texto);
 
-function splitQuestionBlocks(texto: string): string[] {
-  return texto
-    .split(/\n(?=\d+[\.\)]\s+|P:\s)/i)
-    .map((b) => b.trim())
-    .filter(Boolean);
-}
-
   const preguntas: ParsedQuestion[] = [];
 
   for (const block of blocks) {
@@ -98,6 +91,13 @@ function splitQuestionBlocks(texto: string): string[] {
   }
 
   return preguntas;
+}
+
+function splitQuestionBlocks(texto: string): string[] {
+  return texto
+    .split(/\n(?=\d+[\.\)]\s+|P:\s)/i)
+    .map((b) => b.trim())
+    .filter(Boolean);
 }
 
 /** Formato PDF/IA: enunciado(s) + A) B) C) D) + Respuesta: X (sin numerar) */
