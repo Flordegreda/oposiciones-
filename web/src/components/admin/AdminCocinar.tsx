@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { parseImportText } from "@/lib/parse-import-text";
+import {
+  analyzeImportText,
+  cleanPdfImportText,
+  parseImportText,
+} from "@/lib/parse-import-text";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -38,6 +42,12 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
     () => (texto.trim() ? parseImportText(texto).length : 0),
     [texto],
   );
+  const analysis = useMemo(() => analyzeImportText(texto), [texto]);
+
+  function limpiarTextoPdf() {
+    if (!texto.trim()) return;
+    setTexto(cleanPdfImportText(texto));
+  }
 
   async function guardarBanco() {
     setBusy(true);
@@ -148,12 +158,39 @@ R: B`}</pre>
             placeholder="Pega aquí el bloque copiado del PDF…"
           />
         </label>
+        <div className="form-actions" style={{ marginTop: "0.4rem" }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={!texto.trim()}
+            onClick={limpiarTextoPdf}
+          >
+            Limpiar formato PDF automáticamente
+          </button>
+        </div>
         {texto.trim() && (
-          <p className={previewCount > 0 ? "ok" : "error"} style={{ marginTop: "0.5rem" }}>
-            {previewCount > 0
-              ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""} en el texto`
-              : "No se detectan preguntas válidas — revisa el formato (Respuesta: B o R: B)"}
-          </p>
+          <>
+            <p className={previewCount > 0 ? "ok" : "error"} style={{ marginTop: "0.5rem" }}>
+              {previewCount > 0
+                ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""} en el texto`
+                : "No se detectan preguntas válidas — revisa el formato (Respuesta: B o R: B)"}
+            </p>
+            <p className="muted small" style={{ marginTop: "0.35rem" }}>
+              Bloques detectados: {analysis.estimatedBlocks} · Sin respuesta: {analysis.blocksWithoutAnswer} · Sin opciones: {analysis.blocksWithoutOptions}
+            </p>
+            {analysis.warnings.length > 0 && (
+              <div className="card card-warning" style={{ marginTop: "0.6rem" }}>
+                <p className="muted small" style={{ marginTop: 0, marginBottom: "0.45rem" }}>
+                  Revisa estos posibles problemas antes de guardar:
+                </p>
+                {analysis.warnings.map((w) => (
+                  <p key={w} className="error small" style={{ margin: "0.2rem 0" }}>
+                    {w}
+                  </p>
+                ))}
+              </div>
+            )}
+          </>
         )}
         <div className="form-actions">
           <button
