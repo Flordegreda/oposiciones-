@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   analyzeImportText,
   cleanPdfImportText,
+  type ParsedQuestion,
   parseImportText,
 } from "@/lib/parse-import-text";
 
@@ -38,10 +39,12 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [batchSize, setBatchSize] = useState(100);
   const previewCount = useMemo(
     () => (texto.trim() ? parseImportText(texto).length : 0),
     [texto],
   );
+  const parsedQuestions = useMemo(() => parseImportText(texto), [texto]);
   const analysis = useMemo(() => analyzeImportText(texto), [texto]);
 
   function limpiarTextoPdf() {
@@ -64,6 +67,52 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
     setTexto("");
     setMsg(`Banco creado: ${data.banco.nombre} (${data.num} preguntas)`);
     router.refresh();
+  }
+
+  async function guardarEnLotes() {
+    if (parsedQuestions.length === 0) return;
+    const size = Math.max(1, batchSize);
+    const chunks: ParsedQuestion[][] = [];
+
+    for (let i = 0; i < parsedQuestions.length; i += size) {
+      chunks.push(parsedQuestions.slice(i, i + size));
+    }
+
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+
+    let created = 0;
+    try {
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const chunkName = (nombre?.trim() || "Banco").trim();
+        const suffix = ` · Parte ${i + 1}/${chunks.length}`;
+
+        const res = await fetch("/api/admin/import-parsed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...ctx,
+            nombre: `${chunkName}${suffix}`,
+            preguntas: chunk,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error en importación por lotes");
+        created++;
+      }
+
+      setTexto("");
+      setMsg(
+        `Importación por lotes completada: ${created} bancos creados (${parsedQuestions.length} preguntas).`,
+      );
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error en importación por lotes");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -204,6 +253,41 @@ R: B`}</pre>
             {busy ? "Guardando…" : `Guardar banco (${previewCount || 0})`}
           </button>
         </div>
+
+        {previewCount > 0 && (
+          <div className="form-grid-fields carga-campos" style={{ marginTop: "0.7rem" }}>
+            <label>
+              Tamaño por banco (lotes)
+              <input
+                type="number"
+                min={10}
+                max={500}
+                step={10}
+                value={batchSize}
+                onChange={(e) => setBatchSize(Number(e.target.value) || 100)}
+              />
+            </label>
+            <label>
+              Bancos estimados
+              <input
+                value={String(Math.ceil(previewCount / Math.max(1, batchSize)))}
+                readOnly
+              />
+            </label>
+            <div className="form-actions" style={{ marginTop: "1.6rem" }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={busy || previewCount === 0 || !schemaOk || !materias.length}
+                onClick={() => void guardarEnLotes()}
+              >
+                {busy
+                  ? "Guardando lotes…"
+                  : `Guardar en lotes (${Math.ceil(previewCount / Math.max(1, batchSize))} bancos)`}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="card">
