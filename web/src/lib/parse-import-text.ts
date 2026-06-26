@@ -13,6 +13,19 @@ export type ImportTextAnalysis = {
   warnings: string[];
 };
 
+type DraftQuestion = {
+  qNum?: number;
+  enunciado: string;
+  opciones: string[];
+  respuesta: number;
+  explicacion?: string;
+};
+
+type KeyEntry = {
+  qNum: number;
+  answer: number;
+};
+
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
 const ANSWER_RE =
   /^(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:?\s*([A-Da-d])\s*$/i;
@@ -52,11 +65,11 @@ function isIntroLine(line: string): boolean {
   );
 }
 
-function extractAnswerKeyMap(texto: string): Map<number, number> {
-  const map = new Map<number, number>();
+function extractAnswerKeyEntries(texto: string): KeyEntry[] {
+  const entries: KeyEntry[] = [];
   const lines = texto.split("\n");
   const claveIndex = lines.findIndex((l) => /\bclave\b/i.test(l));
-  if (claveIndex < 0) return map;
+  if (claveIndex < 0) return entries;
 
   for (let i = claveIndex + 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -70,17 +83,28 @@ function extractAnswerKeyMap(texto: string): Map<number, number> {
     const answerIdx = m[2].toUpperCase().charCodeAt(0) - 65;
     if (answerIdx < 0 || answerIdx > 3) continue;
 
-    map.set(qNum, answerIdx);
+    entries.push({ qNum, answer: answerIdx });
   }
 
-  return map;
+  return entries;
 }
 
 function parseNumberedBlocks(texto: string): ParsedQuestion[] {
   const blocks = splitQuestionBlocks(texto);
-  const keyAnswers = extractAnswerKeyMap(texto);
+  const keyEntries = extractAnswerKeyEntries(texto);
+  const keyAnswers = new Map<number, number>();
+  const seenKeyNums = new Set<number>();
+  let hasDuplicateKeyNums = false;
 
-  const preguntas: ParsedQuestion[] = [];
+  for (const k of keyEntries) {
+    if (seenKeyNums.has(k.qNum)) hasDuplicateKeyNums = true;
+    seenKeyNums.add(k.qNum);
+    if (!keyAnswers.has(k.qNum)) {
+      keyAnswers.set(k.qNum, k.answer);
+    }
+  }
+
+  const drafts: DraftQuestion[] = [];
 
   for (const block of blocks) {
     const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -115,12 +139,33 @@ function parseNumberedBlocks(texto: string): ParsedQuestion[] {
       if (opt) opciones.push(opt[2].trim());
     }
 
-    if (respuesta < 0 && qNum !== undefined && keyAnswers.has(qNum)) {
-      respuesta = keyAnswers.get(qNum) ?? -1;
-    }
+    drafts.push({ qNum, enunciado: head, opciones, respuesta, explicacion });
+  }
 
-    if (opciones.length >= 2 && respuesta >= 0 && respuesta < opciones.length) {
-      preguntas.push({ enunciado: head, opciones, respuesta, explicacion });
+  if (hasDuplicateKeyNums && keyEntries.length >= drafts.length) {
+    // Fallback por orden para lotes concatenados con claves reiniciadas (1..10, 1..10, ...).
+    for (let i = 0; i < drafts.length; i++) {
+      if (drafts[i].respuesta < 0) {
+        drafts[i].respuesta = keyEntries[i]?.answer ?? -1;
+      }
+    }
+  } else {
+    for (const d of drafts) {
+      if (d.respuesta < 0 && d.qNum !== undefined && keyAnswers.has(d.qNum)) {
+        d.respuesta = keyAnswers.get(d.qNum) ?? -1;
+      }
+    }
+  }
+
+  const preguntas: ParsedQuestion[] = [];
+  for (const d of drafts) {
+    if (d.opciones.length >= 2 && d.respuesta >= 0 && d.respuesta < d.opciones.length) {
+      preguntas.push({
+        enunciado: d.enunciado,
+        opciones: d.opciones,
+        respuesta: d.respuesta,
+        explicacion: d.explicacion,
+      });
     }
   }
 
