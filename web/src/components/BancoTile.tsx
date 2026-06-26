@@ -27,8 +27,6 @@ export function BancoTile({ banco }: Props) {
   }, [banco.id, banco.numPreguntas]);
 
   const numPreguntas = banco.numPreguntas ?? 0;
-  const numAciertos =
-    numFallos === null ? null : Math.max(0, numPreguntas - numFallos);
 
   return (
     <Link href={`/test/${banco.id}`} className="banco-tile">
@@ -40,14 +38,13 @@ export function BancoTile({ banco }: Props) {
             <span className="banco-tile-count">{numPreguntas} preg.</span>
           )}
         </span>
-        {numPreguntas > 0 && numAciertos !== null && (
+        {numPreguntas > 0 && numFallos !== null && (
           <span className="banco-progress">
             <span className="banco-progress-icon">
-              {numAciertos === 0 ? "⚪" : numAciertos / numPreguntas >= 0.8 ? "🟢" : numAciertos / numPreguntas >= 0.6 ? "🟡" : numAciertos / numPreguntas >= 0.4 ? "🟠" : "🔴"}
+              {numFallos === 0 ? "🟢" : numFallos <= Math.max(1, Math.round(numPreguntas * 0.1)) ? "🟡" : numFallos <= Math.max(2, Math.round(numPreguntas * 0.25)) ? "🟠" : "🔴"}
             </span>
             <span className="banco-progress-text">
-              {numAciertos}/{numPreguntas} ·{" "}
-              {Math.round((numAciertos / numPreguntas) * 100)}%
+              {numFallos} fallos pendientes
             </span>
           </span>
         )}
