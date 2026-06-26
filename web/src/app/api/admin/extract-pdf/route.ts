@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No se recibieron PDFs" }, { status: 400 });
     }
 
-    const { default: pdfParse } = await import("pdf-parse");
+    const { PDFParse } = await import("pdf-parse");
 
     const parsedInfo: ParsedPdf[] = [];
     const chunks: string[] = [];
@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
-      const out = await pdfParse(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const out = await parser.getText();
+      await parser.destroy();
       const text = (out.text ?? "").trim();
 
       if (text) {
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
 
       parsedInfo.push({
         fileName: file.name,
-        pages: out.numpages ?? 0,
+        pages: out.total ?? 0,
         chars: text.length,
       });
     }
