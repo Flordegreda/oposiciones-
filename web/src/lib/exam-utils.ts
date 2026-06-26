@@ -95,13 +95,27 @@ export function pickSimulacroMix(
   const teoricas = shuffle(all.filter((p) => p.tipo !== "practico"));
   const practicas = shuffle(all.filter((p) => p.tipo === "practico"));
 
-  const teoricoUsed = Math.min(preset.teorico, teoricas.length);
-  const practicoUsed = Math.min(preset.practico, practicas.length);
+  const teoricasBase = teoricas.slice(0, Math.min(preset.teorico, teoricas.length));
+  const practicasBase = practicas.slice(0, Math.min(preset.practico, practicas.length));
+  const targetTotal = preset.teorico + preset.practico;
 
-  const list = shuffle([
-    ...teoricas.slice(0, teoricoUsed),
-    ...practicas.slice(0, practicoUsed),
-  ]);
+  const listBase = [...teoricasBase, ...practicasBase];
+  const usedIds = new Set(listBase.map((p) => p.id));
+
+  // Compensa faltantes con preguntas del otro bloque para mantener tamaño objetivo.
+  const faltan = Math.max(0, targetTotal - listBase.length);
+  let extras: ExamPregunta[] = [];
+
+  if (faltan > 0) {
+    const extraTeoricas = teoricas.filter((p) => !usedIds.has(p.id));
+    const extraPracticas = practicas.filter((p) => !usedIds.has(p.id));
+    const poolExtras = [...extraTeoricas, ...extraPracticas];
+    extras = poolExtras.slice(0, faltan);
+  }
+
+  const list = shuffle([...listBase, ...extras]);
+  const teoricoUsed = list.filter((p) => p.tipo !== "practico").length;
+  const practicoUsed = list.length - teoricoUsed;
 
   return {
     list,
