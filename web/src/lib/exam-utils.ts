@@ -159,10 +159,20 @@ export function estimateSimulacroPick(
   presetId: SimulacroPresetId,
 ): SimulacroPick {
   const preset = SIMULACRO_PRESETS.find((p) => p.id === presetId)!;
+  const targetTotal = preset.teorico + preset.practico;
+  const teoricoBase = Math.min(preset.teorico, pool.teorico);
+  const practicoBase = Math.min(preset.practico, pool.practico);
+  const faltan = Math.max(0, targetTotal - (teoricoBase + practicoBase));
+
+  // Compensa faltantes con el otro bloque (normalmente teóricas cuando faltan prácticas).
+  const extraTeorico = Math.min(faltan, Math.max(0, pool.teorico - teoricoBase));
+  const faltanTrasTeorico = faltan - extraTeorico;
+  const extraPractico = Math.min(faltanTrasTeorico, Math.max(0, pool.practico - practicoBase));
+
   return {
     list: [],
-    teoricoUsed: Math.min(preset.teorico, pool.teorico),
-    practicoUsed: Math.min(preset.practico, pool.practico),
+    teoricoUsed: teoricoBase + extraTeorico,
+    practicoUsed: practicoBase + extraPractico,
     teoricoTarget: preset.teorico,
     practicoTarget: preset.practico,
   };
