@@ -20,6 +20,25 @@ type Props = {
   schemaOk?: boolean;
 };
 
+const EXTRACT_PROMPT_TEMPLATE = `Convierte estas preguntas de test al formato EXACTO que indico abajo. Devuelve SOLO el texto del banco, sin introducción, sin comentarios, sin markdown, sin títulos.
+
+REGLAS OBLIGATORIAS:
+- Extrae TODAS las preguntas del archivo, sin omitir ninguna.
+- Cada pregunta empieza con número y punto en línea propia: 1. 2. 3. etc.
+- El enunciado va en la MISMA línea que el número.
+- Las 4 opciones van cada una en su línea con formato exacto: A) texto, B) texto, C) texto, D) texto.
+- La respuesta correcta va en línea aparte: Respuesta: B
+- Si hay explicación, después: E: texto
+- Deja UNA línea en blanco entre pregunta y pregunta.
+- NO escribas frases tipo: "Aquí tienes...", "formato solicitado...", etc.
+- NO uses viñetas, asteriscos, negritas ni formatos distintos.
+- NO mezcles varias preguntas en un solo bloque.
+
+Control final antes de responder:
+- Numeración correlativa sin saltos.
+- Todas las preguntas con A) B) C) D) y Respuesta: X.
+- Si una pregunta está incompleta, marcar: E: INCOMPLETA EN ORIGINAL.`;
+
 export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
   const router = useRouter();
   const [materias, setMaterias] = useState(initial);
@@ -39,6 +58,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [batchSize, setBatchSize] = useState(100);
   const previewCount = useMemo(
     () => (texto.trim() ? parseImportText(texto).length : 0),
@@ -50,6 +70,16 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
   function limpiarTextoPdf() {
     if (!texto.trim()) return;
     setTexto(cleanPdfImportText(texto));
+  }
+
+  async function copiarPrompt() {
+    try {
+      await navigator.clipboard.writeText(EXTRACT_PROMPT_TEMPLATE);
+      setCopiedPrompt(true);
+      setTimeout(() => setCopiedPrompt(false), 1800);
+    } catch {
+      setErr("No se pudo copiar el prompt automáticamente.");
+    }
   }
 
   async function guardarBanco() {
@@ -122,6 +152,19 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
         <p className="muted" style={{ marginBottom: 0 }}>
           Copia el test desde un PDF y pégalo en texto plano. Tú pegas, la web guarda el banco.
         </p>
+      </div>
+
+      <div className="card">
+        <h2>Extracción guiada desde PDF</h2>
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Usa este prompt en tu extractor IA para convertir lotes de PDF al formato que
+          entiende el importador, luego pega aquí el resultado y guarda en uno o varios bancos.
+        </p>
+        <div className="form-actions" style={{ marginTop: "0.35rem" }}>
+          <button type="button" className="btn-secondary" onClick={copiarPrompt}>
+            {copiedPrompt ? "Prompt copiado" : "Copiar prompt estricto"}
+          </button>
+        </div>
       </div>
 
       {!schemaOk && (
