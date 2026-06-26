@@ -1,5 +1,6 @@
 const FAV_KEY = "opo_jex_favoritos_v1";
 const FAILS_KEY = "opo_jex_fails_v1";
+const ANSWERED_KEY = "opo_jex_answered_v1";
 
 type Store = Record<string, string[]>;
 
@@ -79,6 +80,10 @@ export function getFalloIds(bancoId: string): Set<string> {
   return new Set(readStore(FAILS_KEY)[bancoId] ?? []);
 }
 
+export function getRespondidasIds(bancoId: string): Set<string> {
+  return new Set(readStore(ANSWERED_KEY)[bancoId] ?? []);
+}
+
 export function getGlobalFalloCount(): number {
   return getAllFalloEntries().length;
 }
@@ -106,6 +111,13 @@ export function markFallo(bancoId: string, preguntaId: string) {
   list.add(preguntaId);
   store[bancoId] = [...list];
   writeStore(FAILS_KEY, store);
+
+  const answeredStore = readStore(ANSWERED_KEY);
+  const answered = new Set(answeredStore[bancoId] ?? []);
+  answered.add(preguntaId);
+  answeredStore[bancoId] = [...answered];
+  writeStore(ANSWERED_KEY, answeredStore);
+
   emitProgressChanged();
   void postIntento(bancoId, preguntaId, false);
 }
@@ -117,6 +129,13 @@ export function markAcerto(bancoId: string, preguntaId: string) {
   if (list.size) store[bancoId] = [...list];
   else delete store[bancoId];
   writeStore(FAILS_KEY, store);
+
+  const answeredStore = readStore(ANSWERED_KEY);
+  const answered = new Set(answeredStore[bancoId] ?? []);
+  answered.add(preguntaId);
+  answeredStore[bancoId] = [...answered];
+  writeStore(ANSWERED_KEY, answeredStore);
+
   emitProgressChanged();
   void postIntento(bancoId, preguntaId, true);
 }
