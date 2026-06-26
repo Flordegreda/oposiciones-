@@ -19,6 +19,8 @@ const ANSWER_RE =
 const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
+const QUESTION_NUMBER_RE = /^(\d+)[\.\)]\s+/;
+const KEY_ENTRY_RE = /^\s*(\d+)\s*[\.\)]\s*\(?\s*([A-Da-d])\s*\)?(?:\D.*)?$/;
 
 function normalizeText(texto: string): string {
   return texto
@@ -50,14 +52,42 @@ function isIntroLine(line: string): boolean {
   );
 }
 
+function extractAnswerKeyMap(texto: string): Map<number, number> {
+  const map = new Map<number, number>();
+  const lines = texto.split("\n");
+  const claveIndex = lines.findIndex((l) => /\bclave\b/i.test(l));
+  if (claveIndex < 0) return map;
+
+  for (let i = claveIndex + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const m = line.match(KEY_ENTRY_RE);
+    if (!m) continue;
+
+    const qNum = Number(m[1]);
+    if (!Number.isFinite(qNum) || qNum <= 0) continue;
+    const answerIdx = m[2].toUpperCase().charCodeAt(0) - 65;
+    if (answerIdx < 0 || answerIdx > 3) continue;
+
+    map.set(qNum, answerIdx);
+  }
+
+  return map;
+}
+
 function parseNumberedBlocks(texto: string): ParsedQuestion[] {
   const blocks = splitQuestionBlocks(texto);
+  const keyAnswers = extractAnswerKeyMap(texto);
 
   const preguntas: ParsedQuestion[] = [];
 
   for (const block of blocks) {
     const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length < 3) continue;
+
+    const numMatch = lines[0].match(QUESTION_NUMBER_RE);
+    const qNum = numMatch ? Number(numMatch[1]) : undefined;
 
     const head = lines[0]
       .replace(NUMBERED_HEAD_RE, "")
@@ -83,6 +113,10 @@ function parseNumberedBlocks(texto: string): ParsedQuestion[] {
       }
       const opt = line.match(OPTION_RE);
       if (opt) opciones.push(opt[2].trim());
+    }
+
+    if (respuesta < 0 && qNum !== undefined && keyAnswers.has(qNum)) {
+      respuesta = keyAnswers.get(qNum) ?? -1;
     }
 
     if (opciones.length >= 2 && respuesta >= 0 && respuesta < opciones.length) {
