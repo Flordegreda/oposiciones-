@@ -60,6 +60,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
   const [busy, setBusy] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [batchSize, setBatchSize] = useState(100);
+  const [batchPrefix, setBatchPrefix] = useState("");
   const previewCount = useMemo(
     () => (texto.trim() ? parseImportText(texto).length : 0),
     [texto],
@@ -114,17 +115,20 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
 
     let created = 0;
     try {
+      const baseName = (batchPrefix.trim() || nombre.trim() || "Banco").trim();
+      const digits = String(chunks.length).length;
+
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        const chunkName = (nombre?.trim() || "Banco").trim();
-        const suffix = ` · Parte ${i + 1}/${chunks.length}`;
+        const partNum = String(i + 1).padStart(digits, "0");
+        const chunkName = `${baseName} - Parte ${partNum}`;
 
         const res = await fetch("/api/admin/import-parsed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...ctx,
-            nombre: `${chunkName}${suffix}`,
+            nombre: chunkName,
             preguntas: chunk,
           }),
         });
@@ -300,6 +304,14 @@ R: B`}</pre>
         {previewCount > 0 && (
           <div className="form-grid-fields carga-campos" style={{ marginTop: "0.7rem" }}>
             <label>
+              Prefijo de nombre para lotes
+              <input
+                value={batchPrefix}
+                onChange={(e) => setBatchPrefix(e.target.value)}
+                placeholder={nombre.trim() || "Tema 34"}
+              />
+            </label>
+            <label>
               Tamaño por banco (lotes)
               <input
                 type="number"
@@ -317,6 +329,9 @@ R: B`}</pre>
                 readOnly
               />
             </label>
+            <p className="muted small" style={{ margin: "0.2rem 0 0" }}>
+              Ejemplo: {(batchPrefix.trim() || nombre.trim() || "Banco")} - Parte {String(1).padStart(String(Math.ceil(previewCount / Math.max(1, batchSize))).length, "0")}
+            </p>
             <div className="form-actions" style={{ marginTop: "1.6rem" }}>
               <button
                 type="button"
