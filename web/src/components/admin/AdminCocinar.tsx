@@ -58,9 +58,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [extractingPdf, setExtractingPdf] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [batchSize, setBatchSize] = useState(100);
   const [batchPrefix, setBatchPrefix] = useState("");
+  const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const previewCount = useMemo(
     () => (texto.trim() ? parseImportText(texto).length : 0),
     [texto],
@@ -80,6 +82,36 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
       setTimeout(() => setCopiedPrompt(false), 1800);
     } catch {
       setErr("No se pudo copiar el prompt automáticamente.");
+    }
+  }
+
+  async function extraerDesdePdf() {
+    if (!pdfFiles.length) return;
+    setExtractingPdf(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const form = new FormData();
+      pdfFiles.forEach((f) => form.append("files", f));
+
+      const res = await fetch("/api/admin/extract-pdf", {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo extraer el PDF");
+
+      const extracted = String(data.text ?? "").trim();
+      if (!extracted) throw new Error("No se extrajo texto útil del PDF");
+
+      setTexto((prev) => (prev.trim() ? `${prev}\n\n${extracted}` : extracted));
+      setMsg(
+        `PDF procesado: ${pdfFiles.length} archivo${pdfFiles.length !== 1 ? "s" : ""} y ${Number(data.totalChars || 0).toLocaleString("es-ES")} caracteres extraídos.`,
+      );
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error extrayendo PDF");
+    } finally {
+      setExtractingPdf(false);
     }
   }
 
@@ -161,14 +193,36 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
       <div className="card">
         <h2>Extracción guiada desde PDF</h2>
         <p className="muted small" style={{ marginTop: 0 }}>
-          Usa este prompt en tu extractor IA para convertir lotes de PDF al formato que
-          entiende el importador, luego pega aquí el resultado y guarda en uno o varios bancos.
+          Puedes hacerlo de dos formas: extracción automática subiendo PDFs (texto) o
+          prompt estricto para extractor IA.
         </p>
+        <div className="form-grid-fields carga-campos" style={{ marginTop: "0.4rem" }}>
+          <label>
+            Subir PDF(s)
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              multiple
+              onChange={(e) => setPdfFiles(Array.from(e.target.files ?? []))}
+            />
+          </label>
+        </div>
         <div className="form-actions" style={{ marginTop: "0.35rem" }}>
+          <button
+            type="button"
+            className="btn-primary btn-sm"
+            disabled={!pdfFiles.length || extractingPdf}
+            onClick={() => void extraerDesdePdf()}
+          >
+            {extractingPdf ? "Extrayendo PDF…" : `Extraer ${pdfFiles.length || ""} PDF`}
+          </button>
           <button type="button" className="btn-secondary" onClick={copiarPrompt}>
             {copiedPrompt ? "Prompt copiado" : "Copiar prompt estricto"}
           </button>
         </div>
+        <p className="muted small" style={{ marginTop: "0.45rem", marginBottom: 0 }}>
+          Nota: si el PDF está escaneado como imagen, necesitará OCR previo.
+        </p>
       </div>
 
       {!schemaOk && (
