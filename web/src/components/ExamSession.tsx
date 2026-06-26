@@ -308,10 +308,10 @@ export function ExamSession({
     }).then((r) => setSavedOnline(r.ok));
   }, [phase, sessionMeta, active, answers, flags, examMode, answerMeta]);
 
-  const isFav = useMemo(
-    () => (current ? isFavorito(current.bancoId, current.id) : false),
-    [current, favTick],
-  );
+  const isFav = useMemo(() => {
+    void favTick;
+    return current ? isFavorito(current.bancoId, current.id) : false;
+  }, [current, favTick]);
   const flagged = flags[index] ?? false;
   const dudosaCount = flags.filter(Boolean).length;
 
