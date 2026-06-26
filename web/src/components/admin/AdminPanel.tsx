@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AdminCocinar } from "@/components/admin/AdminCocinar";
 import { AdminBancos } from "@/components/admin/AdminBancos";
 import { AdminBackup } from "@/components/admin/AdminBackup";
-import { AdminImportGoal } from "@/components/admin/AdminImportGoal";
 import { AdminMaterias, AdminMaterialStats } from "@/components/admin/AdminMaterias";
 import type { BancoRow, MaterialStats } from "@/lib/queries/bancos";
 
@@ -73,8 +72,6 @@ export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
       </div>
 
       {schemaOk && tab !== "materias" && <AdminMaterialStats stats={stats} />}
-
-      {schemaOk && tab === "cocinar" && <AdminImportGoal imported={stats.preguntas} />}
 
       {tab === "cocinar" && <AdminCocinar materias={materias} schemaOk={schemaOk} />}
       {tab === "materias" && <AdminMaterias stats={stats} schemaOk={schemaOk} />}

@@ -5,35 +5,12 @@ export type ParsedQuestion = {
   explicacion?: string;
 };
 
-export type ImportTextAnalysis = {
-  parsedCount: number;
-  estimatedBlocks: number;
-  blocksWithoutAnswer: number;
-  blocksWithoutOptions: number;
-  warnings: string[];
-};
-
-type DraftQuestion = {
-  qNum?: number;
-  enunciado: string;
-  opciones: string[];
-  respuesta: number;
-  explicacion?: string;
-};
-
-type KeyEntry = {
-  qNum: number;
-  answer: number;
-};
-
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
 const ANSWER_RE =
   /^(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:?\s*([A-Da-d])\s*$/i;
 const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
-const QUESTION_NUMBER_RE = /^(\d+)[\.\)]\s+/;
-const KEY_ENTRY_RE = /^\s*(\d+)\s*[\.\)]\s*\(?\s*([A-Da-d])\s*\)?(?:\D.*)?$/;
 
 function normalizeText(texto: string): string {
   return texto
@@ -41,14 +18,7 @@ function normalizeText(texto: string): string {
     .replace(/\r/g, "\n")
     .replace(/\u00a0/g, " ")
     .replace(/\t/g, " ")
-    .replace(/([^\n])\s+([A-Da-d][\.\)\]:\-]\s+)/g, "$1\n$2")
-    .replace(/([^\n])\s+((?:Respuesta|R|Soluci[oó]n|Correcta|Clave|Explicaci[oó]n|E)\s*:)/gi, "$1\n$2")
-    .replace(/\n{3,}/g, "\n\n")
     .trim();
-}
-
-export function cleanPdfImportText(texto: string): string {
-  return normalizeText(texto);
 }
 
 function isIntroLine(line: string): boolean {
@@ -65,53 +35,17 @@ function isIntroLine(line: string): boolean {
   );
 }
 
-function extractAnswerKeyEntries(texto: string): KeyEntry[] {
-  const entries: KeyEntry[] = [];
-  const lines = texto.split("\n");
-  const claveIndex = lines.findIndex((l) => /\bclave\b/i.test(l));
-  if (claveIndex < 0) return entries;
-
-  for (let i = claveIndex + 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    const m = line.match(KEY_ENTRY_RE);
-    if (!m) continue;
-
-    const qNum = Number(m[1]);
-    if (!Number.isFinite(qNum) || qNum <= 0) continue;
-    const answerIdx = m[2].toUpperCase().charCodeAt(0) - 65;
-    if (answerIdx < 0 || answerIdx > 3) continue;
-
-    entries.push({ qNum, answer: answerIdx });
-  }
-
-  return entries;
-}
-
 function parseNumberedBlocks(texto: string): ParsedQuestion[] {
-  const blocks = splitQuestionBlocks(texto);
-  const keyEntries = extractAnswerKeyEntries(texto);
-  const keyAnswers = new Map<number, number>();
-  const seenKeyNums = new Set<number>();
-  let hasDuplicateKeyNums = false;
+  const blocks = texto
+    .split(/\n(?=\d+[\.\)]\s+|P:\s)/i)
+    .map((b) => b.trim())
+    .filter(Boolean);
 
-  for (const k of keyEntries) {
-    if (seenKeyNums.has(k.qNum)) hasDuplicateKeyNums = true;
-    seenKeyNums.add(k.qNum);
-    if (!keyAnswers.has(k.qNum)) {
-      keyAnswers.set(k.qNum, k.answer);
-    }
-  }
-
-  const drafts: DraftQuestion[] = [];
+  const preguntas: ParsedQuestion[] = [];
 
   for (const block of blocks) {
     const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length < 3) continue;
-
-    const numMatch = lines[0].match(QUESTION_NUMBER_RE);
-    const qNum = numMatch ? Number(numMatch[1]) : undefined;
 
     const head = lines[0]
       .replace(NUMBERED_HEAD_RE, "")
@@ -139,44 +73,12 @@ function parseNumberedBlocks(texto: string): ParsedQuestion[] {
       if (opt) opciones.push(opt[2].trim());
     }
 
-    drafts.push({ qNum, enunciado: head, opciones, respuesta, explicacion });
-  }
-
-  if (hasDuplicateKeyNums && keyEntries.length >= drafts.length) {
-    // Fallback por orden para lotes concatenados con claves reiniciadas (1..10, 1..10, ...).
-    for (let i = 0; i < drafts.length; i++) {
-      if (drafts[i].respuesta < 0) {
-        drafts[i].respuesta = keyEntries[i]?.answer ?? -1;
-      }
-    }
-  } else {
-    for (const d of drafts) {
-      if (d.respuesta < 0 && d.qNum !== undefined && keyAnswers.has(d.qNum)) {
-        d.respuesta = keyAnswers.get(d.qNum) ?? -1;
-      }
-    }
-  }
-
-  const preguntas: ParsedQuestion[] = [];
-  for (const d of drafts) {
-    if (d.opciones.length >= 2 && d.respuesta >= 0 && d.respuesta < d.opciones.length) {
-      preguntas.push({
-        enunciado: d.enunciado,
-        opciones: d.opciones,
-        respuesta: d.respuesta,
-        explicacion: d.explicacion,
-      });
+    if (opciones.length >= 2 && respuesta >= 0 && respuesta < opciones.length) {
+      preguntas.push({ enunciado: head, opciones, respuesta, explicacion });
     }
   }
 
   return preguntas;
-}
-
-function splitQuestionBlocks(texto: string): string[] {
-  return texto
-    .split(/\n(?=\d+[\.\)]\s+|P:\s)/i)
-    .map((b) => b.trim())
-    .filter(Boolean);
 }
 
 /** Formato PDF/IA: enunciado(s) + A) B) C) D) + Respuesta: X (sin numerar) */
@@ -244,55 +146,4 @@ export function parseImportText(texto: string): ParsedQuestion[] {
 
   if (numbered.length >= optionStyle.length) return numbered;
   return optionStyle;
-}
-
-export function analyzeImportText(texto: string): ImportTextAnalysis {
-  const normalized = normalizeText(texto);
-  if (!normalized) {
-    return {
-      parsedCount: 0,
-      estimatedBlocks: 0,
-      blocksWithoutAnswer: 0,
-      blocksWithoutOptions: 0,
-      warnings: [],
-    };
-  }
-
-  const parsed = parseImportText(normalized);
-  const blocks = splitQuestionBlocks(normalized);
-
-  let blocksWithoutAnswer = 0;
-  let blocksWithoutOptions = 0;
-
-  for (const block of blocks) {
-    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (!lines.length) continue;
-    const hasAnswer = lines.some((l) => ANSWER_RE.test(l));
-    const optionsCount = lines.filter((l) => OPTION_RE.test(l)).length;
-    if (!hasAnswer) blocksWithoutAnswer++;
-    if (optionsCount < 2) blocksWithoutOptions++;
-  }
-
-  const warnings: string[] = [];
-  if (parsed.length === 0) {
-    warnings.push("No se detectan preguntas válidas con el formato actual.");
-  }
-  if (blocksWithoutAnswer > 0) {
-    warnings.push(
-      `${blocksWithoutAnswer} bloque${blocksWithoutAnswer !== 1 ? "s" : ""} sin línea de respuesta (Respuesta: X o R: X).`,
-    );
-  }
-  if (blocksWithoutOptions > 0) {
-    warnings.push(
-      `${blocksWithoutOptions} bloque${blocksWithoutOptions !== 1 ? "s" : ""} con menos de 2 opciones detectadas.`,
-    );
-  }
-
-  return {
-    parsedCount: parsed.length,
-    estimatedBlocks: blocks.length,
-    blocksWithoutAnswer,
-    blocksWithoutOptions,
-    warnings,
-  };
 }
