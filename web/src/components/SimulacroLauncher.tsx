@@ -240,6 +240,7 @@ export function SimulacroLauncher({ meta }: Props) {
         <TestPrintButton
           title={printTitle}
           label="🖨️ Imprimir simulacro"
+          printUrl={printUrl}
           disabled={!selected.canStart}
           className="btn-secondary"
         />
