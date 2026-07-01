@@ -179,7 +179,7 @@ export function TestPrintButton({
     [preguntas, sectionsProp],
   );
 
-  const dialogSections = materiaId || bancoId ? (loadedSections ?? []) : staticSections;
+  const dialogSections = materiaId || bancoId || printUrl ? (loadedSections ?? []) : staticSections;
   const dialogCount = totalPreguntas(dialogSections);
   const dialogTitle = loadedTitle ?? title;
   const dialogSubtitle = loadedSubtitle ?? subtitleProp;
