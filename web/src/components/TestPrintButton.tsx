@@ -33,6 +33,8 @@ type Props = {
   materiaId?: string;
   /** Carga un banco al abrir el diálogo (solucionario solo al imprimir) */
   bancoId?: string;
+  /** URL personalizada de la que cargar el bundle de impresión */
+  printUrl?: string;
   className?: string;
   label?: string;
   disabled?: boolean;
@@ -156,6 +158,7 @@ export function TestPrintButton({
   sections: sectionsProp,
   materiaId,
   bancoId,
+  printUrl,
   className = "",
   label = "Imprimir",
   disabled = false,
@@ -184,13 +187,15 @@ export function TestPrintButton({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!open || (!materiaId && !bancoId)) return;
+    if (!open || (!materiaId && !bancoId && !printUrl)) return;
 
     setLoading(true);
     setFetchErr(null);
     setLoadedSections(null);
 
-    const url = materiaId
+    const url = printUrl
+      ? printUrl
+      : materiaId
       ? `/api/print/materia?materiaId=${encodeURIComponent(materiaId)}`
       : `/api/print/banco/${encodeURIComponent(bancoId!)}`;
 
@@ -233,7 +238,7 @@ export function TestPrintButton({
     window.setTimeout(() => window.print(), 120);
   }
 
-  const canShow = materiaId || bancoId ? true : staticSections.length > 0;
+  const canShow = materiaId || bancoId || printUrl ? true : staticSections.length > 0;
   if (!canShow) return null;
 
   return (
@@ -258,11 +263,13 @@ export function TestPrintButton({
           <div className="settings-panel card card-elevated print-options-panel">
             <div className="settings-panel-head">
               <h2 style={{ margin: 0 }}>
-                {materiaId
+                {printUrl
+                  ? title
+                  : materiaId
                   ? "Imprimir materia completa"
                   : bancoId
-                    ? "Imprimir banco"
-                    : "Imprimir test"}
+                  ? "Imprimir banco"
+                  : "Imprimir test"}
               </h2>
               <button type="button" className="btn-link btn-sm" onClick={() => setOpen(false)}>
                 Cerrar
