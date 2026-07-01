@@ -17,30 +17,29 @@ export function MateriaFilter({ materias, value, onChange, label = "Materia" }: 
 
   return (
     <div className="materia-filter-wrap">
-      <span className="materia-filter-label">{label}</span>
-      <div className="materia-filter" role="tablist" aria-label={label}>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={value === null}
-          className={`materia-filter-btn${value === null ? " active" : ""}`}
-          onClick={() => onChange(null)}
-        >
-          Todas
-        </button>
+      <label className="materia-filter-label" htmlFor="materia-select">{label}</label>
+      <select
+        id="materia-select"
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value || null)}
+        style={{
+          padding: "0.5rem 0.75rem",
+          font: "inherit",
+          fontSize: "0.9rem",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-sm)",
+          background: "#fff",
+          cursor: "pointer",
+          minWidth: "200px",
+        }}
+      >
+        <option value="">Todas las materias</option>
         {materias.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            role="tab"
-            aria-selected={value === m.id}
-            className={`materia-filter-btn${value === m.id ? " active" : ""}`}
-            onClick={() => onChange(m.id)}
-          >
+          <option key={m.id} value={m.id}>
             {m.nombre}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
     </div>
   );
 }
