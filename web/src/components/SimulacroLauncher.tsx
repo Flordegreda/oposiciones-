@@ -10,6 +10,7 @@ import {
   simulacroTimerSeconds,
 } from "@/lib/exam-utils";
 import { ExamSession } from "@/components/ExamSession";
+import { TestPrintButton } from "@/components/TestPrintButton";
 import type { SimulacroMeta } from "@/lib/queries/simulacro";
 
 type Props = {
@@ -130,6 +131,10 @@ export function SimulacroLauncher({ meta }: Props) {
 
   const selected = presets.find((p) => p.id === presetId)!;
 
+  // Build print URL for current config
+  const printUrl = `/api/print/simulacro?presetId=${presetId}${materiaId ? `&materiaId=${encodeURIComponent(materiaId)}` : ""}`;
+  const printTitle = `${selected.label}${materiaLabel ? ` · ${materiaLabel}` : " · Todo el Temario"}`;
+
   return (
     <div className="card card-elevated">
       <h2 className="test-start-title">Configura el simulacro</h2>
@@ -220,17 +225,31 @@ export function SimulacroLauncher({ meta }: Props) {
 
       {startErr && <p className="error">{startErr}</p>}
 
-      <button
-        type="button"
-        className="btn-primary"
-        style={{ marginTop: "1rem" }}
-        disabled={!selected.canStart || starting}
-        onClick={() => void iniciarSimulacro()}
-      >
-        {starting
-          ? "Preparando simulacro…"
-          : `Iniciar · ${presetSummary(presetId, selected.pick)} · ${selected.minutes} min`}
-      </button>
+      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "1rem", alignItems: "center" }}>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={!selected.canStart || starting}
+          onClick={() => void iniciarSimulacro()}
+        >
+          {starting
+            ? "Preparando simulacro…"
+            : `Iniciar · ${presetSummary(presetId, selected.pick)} · ${selected.minutes} min`}
+        </button>
+
+        <TestPrintButton
+          title={printTitle}
+          label="🖨️ Imprimir simulacro"
+          disabled={!selected.canStart}
+          className="btn-secondary"
+        />
+      </div>
+
+      {selected.canStart && (
+        <p className="muted small" style={{ marginTop: "0.5rem" }}>
+          El botón de impresión genera un simulacro aleatorio con las mismas preguntas que el examen para imprimir o guardar como PDF.
+        </p>
+      )}
     </div>
   );
 }
