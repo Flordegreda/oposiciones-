@@ -42,6 +42,11 @@ export type TipoStats = {
   preguntas: number;
 };
 
+export type EncadenadosStats = {
+  preguntas: number;
+  supuestos: number;
+};
+
 export type MateriaStatsRow = {
   id: string;
   nombre: string;
@@ -49,6 +54,7 @@ export type MateriaStatsRow = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
+  encadenados: EncadenadosStats;
 };
 
 export type MaterialStats = {
@@ -57,10 +63,12 @@ export type MaterialStats = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
+  encadenados: EncadenadosStats;
   porMateria: MateriaStatsRow[];
 };
 
 const emptyTipoStats = (): TipoStats => ({ bancos: 0, preguntas: 0 });
+const emptyEncadenadosStats = (): EncadenadosStats => ({ preguntas: 0, supuestos: 0 });
 
 const PAGE_SIZE = 1000;
 
@@ -117,6 +125,56 @@ export async function fetchPreguntaCountsByBanco(
   }
 
   return fetchPreguntaCountsParallel(bancoIds);
+}
+
+/** Preguntas con supuesto y número de supuestos por banco. */
+async function fetchEncadenadosByBanco(): Promise<{
+  preguntasByBanco: Map<string, number>;
+  supuestosByBanco: Map<string, number>;
+}> {
+  const preguntasByBanco = new Map<string, number>();
+  const supuestosByBanco = new Map<string, number>();
+
+  if (!(await supuestosSchemaReady())) {
+    return { preguntasByBanco, supuestosByBanco };
+  }
+
+  const supabase = getSupabase();
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("supuestos")
+      .select("banco_id")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    if (!data?.length) break;
+
+    for (const row of data) {
+      supuestosByBanco.set(row.banco_id, (supuestosByBanco.get(row.banco_id) ?? 0) + 1);
+    }
+
+    if (data.length < PAGE_SIZE) break;
+  }
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("preguntas")
+      .select("banco_id")
+      .not("supuesto_id", "is", null)
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    if (!data?.length) break;
+
+    for (const row of data) {
+      preguntasByBanco.set(row.banco_id, (preguntasByBanco.get(row.banco_id) ?? 0) + 1);
+    }
+
+    if (data.length < PAGE_SIZE) break;
+  }
+
+  return { preguntasByBanco, supuestosByBanco };
 }
 
 async function fetchPreguntaCountsParallel(bancoIds?: string[]): Promise<Map<string, number>> {
@@ -378,6 +436,9 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const counts = hasPreguntas
     ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
     : new Map<string, number>();
+  const encadenados = hasPreguntas
+    ? await fetchEncadenadosByBanco()
+    : { preguntasByBanco: new Map(), supuestosByBanco: new Map() };
 
   const materiaMap = new Map<string, MateriaStatsRow>();
   for (const m of materias ?? []) {
@@ -388,6 +449,7 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
       preguntas: 0,
       teorico: emptyTipoStats(),
       practico: emptyTipoStats(),
+      encadenados: emptyEncadenadosStats(),
     });
   }
 
@@ -397,15 +459,20 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     preguntas: 0,
     teorico: emptyTipoStats(),
     practico: emptyTipoStats(),
+    encadenados: emptyEncadenadosStats(),
     porMateria: [],
   };
 
   for (const b of bancos ?? []) {
     const n = counts.get(b.id) ?? 0;
+    const encP = encadenados.preguntasByBanco.get(b.id) ?? 0;
+    const encS = encadenados.supuestosByBanco.get(b.id) ?? 0;
     const tipo = b.tipo === "practico" ? "practico" : "teorico";
     totals.preguntas += n;
     totals[tipo].bancos += 1;
     totals[tipo].preguntas += n;
+    totals.encadenados.preguntas += encP;
+    totals.encadenados.supuestos += encS;
 
     let row = materiaMap.get(b.materia_id);
     if (!row) {
@@ -416,6 +483,7 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
         preguntas: 0,
         teorico: emptyTipoStats(),
         practico: emptyTipoStats(),
+        encadenados: emptyEncadenadosStats(),
       };
       materiaMap.set(b.materia_id, row);
     }
@@ -424,6 +492,8 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     row.preguntas += n;
     row[tipo].bancos += 1;
     row[tipo].preguntas += n;
+    row.encadenados.preguntas += encP;
+    row.encadenados.supuestos += encS;
   }
 
   totals.porMateria = [...materiaMap.values()].sort((a, b) =>

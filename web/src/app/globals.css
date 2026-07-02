@@ -2154,7 +2154,7 @@ code {
 .admin-materias-head,
 .admin-materias-row {
   display: grid;
-  grid-template-columns: 1.4fr 0.6fr 0.7fr 0.9fr 0.9fr 1.6fr;
+  grid-template-columns: 1.4fr 0.6fr 0.7fr 0.85fr 0.85fr 0.85fr 1.5fr;
   gap: 0.5rem 0.75rem;
   align-items: center;
   padding: 0.55rem 0;
@@ -2212,6 +2212,7 @@ code {
       "nombre nombre"
       "bancos preguntas"
       "teorico practico"
+      "encadenados encadenados"
       "acciones acciones";
     padding: 0.85rem 0;
   }
@@ -2234,6 +2235,10 @@ code {
 
   .admin-materias-row span:nth-child(5) {
     grid-area: practico;
+  }
+
+  .admin-materias-row span:nth-child(6) {
+    grid-area: encadenados;
   }
 
   .admin-materias-actions {
@@ -2488,7 +2493,7 @@ code {
 
 .admin-overview-types {
  display: grid;
- grid-template-columns: 1fr 1fr;
+ grid-template-columns: repeat(3, 1fr);
  gap: 0.75rem;
 }
 
@@ -2507,6 +2512,10 @@ code {
  border-left: 4px solid var(--accent);
 }
 
+.admin-overview-type--encadenados {
+ border-left: 4px solid #7c3aed;
+}
+
 .admin-overview-type-label {
  display: block;
  font-size: 0.75rem;
@@ -2522,6 +2531,12 @@ code {
  font-weight: 700;
  line-height: 1.1;
  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .admin-overview-types {
+    grid-template-columns: 1fr;
+  }
 }
 
 .admin-section-title {

@@ -46,6 +46,16 @@ export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
           </span>
           <span className="muted small">{stats.practico.bancos} bancos</span>
         </div>
+        <div className="admin-overview-type admin-overview-type--encadenados">
+          <span className="admin-overview-type-label">Encadenados</span>
+          <span className="admin-overview-type-value">
+            {stats.encadenados.preguntas.toLocaleString("es-ES")}
+          </span>
+          <span className="muted small">
+            {stats.encadenados.supuestos} supuesto
+            {stats.encadenados.supuestos !== 1 ? "s" : ""}
+          </span>
+        </div>
       </div>
     </section>
   );
@@ -171,6 +181,7 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                 <span role="columnheader">Preguntas</span>
                 <span role="columnheader">Teórico</span>
                 <span role="columnheader">Práctico</span>
+                <span role="columnheader">Encadenados</span>
                 <span role="columnheader">Acciones</span>
               </div>
               {rows.map((row) => {
@@ -199,6 +210,10 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                     <span role="cell" className="muted small">
                       {row.practico.preguntas}
                       <span className="admin-materias-sub"> ({row.practico.bancos})</span>
+                    </span>
+                    <span role="cell" className="muted small">
+                      {row.encadenados.preguntas}
+                      <span className="admin-materias-sub"> ({row.encadenados.supuestos})</span>
                     </span>
                     <span className="admin-materias-actions" role="cell">
                       {editing ? (
