@@ -41,7 +41,6 @@ export default async function AdminPage() {
     preguntas: 0,
     teorico: { bancos: 0, preguntas: 0 },
     practico: { bancos: 0, preguntas: 0 },
-    encadenados: { bancos: 0, preguntas: 0, supuestos: 0 },
     porMateria: [],
   };
 

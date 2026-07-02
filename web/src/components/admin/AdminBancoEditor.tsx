@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BancoRow, PreguntaRow } from "@/lib/queries/bancos";
 import { TestPrintButton } from "@/components/TestPrintButton";
-import { isEncadenadoBankName } from "@/lib/encadenado-utils";
 
 type Materia = { id: string; nombre: string };
 
@@ -54,9 +53,7 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
   );
   const [supuestoBusy, setSupuestoBusy] = useState(false);
   const savedRef = useRef<Map<string, string>>(new Map());
-  const esEncadenado =
-    isEncadenadoBankName(banco.nombre) ||
-    preguntas.some((p) => p.supuesto_id || p.supuesto_texto);
+  const tieneSupuesto = preguntas.some((p) => p.supuesto_id || p.supuesto_texto);
 
   useEffect(() => {
     const map = new Map<string, string>();
@@ -313,7 +310,7 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
         </div>
       </div>
 
-      {esEncadenado && (
+      {tieneSupuesto && (
         <div className="card admin-supuesto-card">
           <h3 className="admin-preguntas-title">Enunciado del supuesto (caso compartido)</h3>
           <p className="muted small">

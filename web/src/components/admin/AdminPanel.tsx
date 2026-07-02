@@ -77,7 +77,7 @@ export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
         <div className="admin-temario">
           <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
           <hr className="admin-section-divider" />
-          <AdminBancos bancos={bancos} stats={stats} />
+          <AdminBancos bancos={bancos} />
         </div>
       )}
       {tab === "importar" && <AdminCocinar materias={materias} schemaOk={schemaOk} />}

@@ -6,7 +6,6 @@ import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
 } from "@/lib/supuesto-utils";
-import { isEncadenadoBank } from "@/lib/encadenado-utils";
 
 export type BancoRow = {
   id: string;
@@ -43,12 +42,6 @@ export type TipoStats = {
   preguntas: number;
 };
 
-export type EncadenadosStats = {
-  bancos: number;
-  preguntas: number;
-  supuestos: number;
-};
-
 export type MateriaStatsRow = {
   id: string;
   nombre: string;
@@ -56,7 +49,6 @@ export type MateriaStatsRow = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
-  encadenados: EncadenadosStats;
 };
 
 export type MaterialStats = {
@@ -65,12 +57,10 @@ export type MaterialStats = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
-  encadenados: EncadenadosStats;
   porMateria: MateriaStatsRow[];
 };
 
 const emptyTipoStats = (): TipoStats => ({ bancos: 0, preguntas: 0 });
-const emptyEncadenadosStats = (): EncadenadosStats => ({ bancos: 0, preguntas: 0, supuestos: 0 });
 
 const PAGE_SIZE = 1000;
 
@@ -127,56 +117,6 @@ export async function fetchPreguntaCountsByBanco(
   }
 
   return fetchPreguntaCountsParallel(bancoIds);
-}
-
-/** Preguntas con supuesto y número de supuestos por banco. */
-async function fetchEncadenadosByBanco(): Promise<{
-  preguntasByBanco: Map<string, number>;
-  supuestosByBanco: Map<string, number>;
-}> {
-  const preguntasByBanco = new Map<string, number>();
-  const supuestosByBanco = new Map<string, number>();
-
-  if (!(await supuestosSchemaReady())) {
-    return { preguntasByBanco, supuestosByBanco };
-  }
-
-  const supabase = getSupabase();
-
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("supuestos")
-      .select("banco_id")
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw error;
-    if (!data?.length) break;
-
-    for (const row of data) {
-      supuestosByBanco.set(row.banco_id, (supuestosByBanco.get(row.banco_id) ?? 0) + 1);
-    }
-
-    if (data.length < PAGE_SIZE) break;
-  }
-
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("preguntas")
-      .select("banco_id")
-      .not("supuesto_id", "is", null)
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw error;
-    if (!data?.length) break;
-
-    for (const row of data) {
-      preguntasByBanco.set(row.banco_id, (preguntasByBanco.get(row.banco_id) ?? 0) + 1);
-    }
-
-    if (data.length < PAGE_SIZE) break;
-  }
-
-  return { preguntasByBanco, supuestosByBanco };
 }
 
 async function fetchPreguntaCountsParallel(bancoIds?: string[]): Promise<Map<string, number>> {
@@ -428,7 +368,7 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const supabase = getSupabase();
   const [{ data: materias, error: mErr }, { data: bancos, error: bErr }] = await Promise.all([
     supabase.from("materias").select("id, nombre").order("nombre"),
-    supabase.from("bancos").select("id, materia_id, tipo, nombre"),
+    supabase.from("bancos").select("id, materia_id, tipo"),
   ]);
 
   if (mErr) throw mErr;
@@ -438,9 +378,6 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const counts = hasPreguntas
     ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
     : new Map<string, number>();
-  const encadenados = hasPreguntas
-    ? await fetchEncadenadosByBanco()
-    : { preguntasByBanco: new Map(), supuestosByBanco: new Map() };
 
   const materiaMap = new Map<string, MateriaStatsRow>();
   for (const m of materias ?? []) {
@@ -451,7 +388,6 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
       preguntas: 0,
       teorico: emptyTipoStats(),
       practico: emptyTipoStats(),
-      encadenados: emptyEncadenadosStats(),
     });
   }
 
@@ -461,27 +397,15 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     preguntas: 0,
     teorico: emptyTipoStats(),
     practico: emptyTipoStats(),
-    encadenados: emptyEncadenadosStats(),
     porMateria: [],
   };
 
   for (const b of bancos ?? []) {
     const n = counts.get(b.id) ?? 0;
-    const encP = encadenados.preguntasByBanco.get(b.id) ?? 0;
-    const encS = encadenados.supuestosByBanco.get(b.id) ?? 0;
-    const isEnc = isEncadenadoBank(b.nombre, encP, encS);
     const tipo = b.tipo === "practico" ? "practico" : "teorico";
     totals.preguntas += n;
     totals[tipo].bancos += 1;
     totals[tipo].preguntas += n;
-    if (isEnc) {
-      totals.encadenados.bancos += 1;
-      totals.encadenados.preguntas += n;
-      totals.encadenados.supuestos += encS;
-    } else {
-      totals.encadenados.preguntas += encP;
-      totals.encadenados.supuestos += encS;
-    }
 
     let row = materiaMap.get(b.materia_id);
     if (!row) {
@@ -492,7 +416,6 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
         preguntas: 0,
         teorico: emptyTipoStats(),
         practico: emptyTipoStats(),
-        encadenados: emptyEncadenadosStats(),
       };
       materiaMap.set(b.materia_id, row);
     }
@@ -501,14 +424,6 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     row.preguntas += n;
     row[tipo].bancos += 1;
     row[tipo].preguntas += n;
-    if (isEnc) {
-      row.encadenados.bancos += 1;
-      row.encadenados.preguntas += n;
-      row.encadenados.supuestos += encS;
-    } else {
-      row.encadenados.preguntas += encP;
-      row.encadenados.supuestos += encS;
-    }
   }
 
   totals.porMateria = [...materiaMap.values()].sort((a, b) =>
@@ -528,13 +443,6 @@ function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {
     supuestoTitulo: p.supuesto_titulo,
     supuestoTexto: p.supuesto_texto,
   };
-}
-
-function encadenadosSummary(rows: PreguntaRow[]): string {
-  const preguntas = rows.filter((p) => p.supuesto_id).length;
-  if (!preguntas) return "";
-  const supuestos = new Set(rows.map((p) => p.supuesto_id).filter(Boolean)).size;
-  return ` · ${preguntas} encadenada${preguntas !== 1 ? "s" : ""} (${supuestos} supuesto${supuestos !== 1 ? "s" : ""})`;
 }
 
 export async function getPrintBundleForMateria(materiaId: string): Promise<PrintBundle> {
@@ -558,7 +466,6 @@ export async function getPrintBundleForMateria(materiaId: string): Promise<Print
   const hasPreguntas = await preguntasTableExists();
   const sections: PrintBundle["sections"] = [];
   let totalPreguntas = 0;
-  let totalEncadenadas = 0;
 
   for (const b of bancos ?? []) {
     if (!hasPreguntas) continue;
@@ -566,7 +473,6 @@ export async function getPrintBundleForMateria(materiaId: string): Promise<Print
     if (!rows.length) continue;
 
     const preguntas = rows.map(mapPrintablePregunta);
-    totalEncadenadas += rows.filter((p) => p.supuesto_id).length;
     totalPreguntas += preguntas.length;
     sections.push({
       bancoId: b.id,
@@ -576,14 +482,9 @@ export async function getPrintBundleForMateria(materiaId: string): Promise<Print
     });
   }
 
-  const encSuffix =
-    totalEncadenadas > 0
-      ? ` · ${totalEncadenadas} encadenada${totalEncadenadas !== 1 ? "s" : ""}`
-      : "";
-
   return {
     title: materia.nombre,
-    subtitle: `${sections.length} banco(s) · ${totalPreguntas} pregunta(s)${encSuffix}`,
+    subtitle: `${sections.length} banco(s) · ${totalPreguntas} pregunta(s)`,
     sections,
     totalPreguntas,
   };
@@ -609,7 +510,7 @@ export async function getPrintBundleForBanco(bancoId: string): Promise<PrintBund
 
   return {
     title: banco.nombre,
-    subtitle: `${preguntas.length} pregunta${preguntas.length !== 1 ? "s" : ""}${encadenadosSummary(rows)}`,
+    subtitle: `${preguntas.length} pregunta${preguntas.length !== 1 ? "s" : ""}`,
     sections: [
       {
         bancoId: banco.id,

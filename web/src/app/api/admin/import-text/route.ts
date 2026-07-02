@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
-import { countParsedQuestions, parseImportDocumentWithPreamble } from "@/lib/parse-import-text";
-import { isEncadenadoBankName } from "@/lib/encadenado-utils";
+import { countParsedQuestions, parseImportDocument } from "@/lib/parse-import-text";
 import { getJexLineaId } from "@/lib/queries/bancos";
 import { supuestosSchemaReady } from "@/lib/queries/schema";
 
@@ -15,10 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan materia o texto" }, { status: 400 });
     }
 
-    const draftNombre = nombre?.trim() || "";
-    const doc = parseImportDocumentWithPreamble(texto, {
-      titulo: isEncadenadoBankName(draftNombre) ? draftNombre : undefined,
-    });
+    const doc = parseImportDocument(texto);
     const total = countParsedQuestions(doc);
     if (!total) {
       return NextResponse.json(
@@ -28,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     const bancoNombre =
-      draftNombre || `Banco ${new Date().toLocaleDateString("es-ES")} (${total})`;
+      nombre?.trim() || `Banco ${new Date().toLocaleDateString("es-ES")} (${total})`;
 
     if (doc.supuestos.length > 0 && !(await supuestosSchemaReady())) {
       return NextResponse.json(
