@@ -7,10 +7,11 @@ import { MateriaFilter } from "@/components/MateriaFilter";
 import { TestPrintButton } from "@/components/TestPrintButton";
 import type { BancoRow, MaterialStats } from "@/lib/queries/bancos";
 import { materiaNombre, sortBancosByNombre } from "@/lib/queries/bancos";
+import { isEncadenadoBankName } from "@/lib/encadenado-utils";
 
 type Props = { bancos: BancoRow[]; stats: MaterialStats };
 
-export function AdminBancos({ bancos: initial, stats }: Props) {
+export function AdminBancos({ bancos: initial }: Props) {
   const router = useRouter();
   const [bancos, setBancos] = useState(initial);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -59,12 +60,15 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
   }, [filtered]);
 
   const filteredEncadenados = useMemo(() => {
-    if (search.trim()) return 0;
-    if (materiaId) {
-      return stats.porMateria.find((m) => m.id === materiaId)?.encadenados.preguntas ?? 0;
-    }
-    return stats.encadenados.preguntas;
-  }, [stats, materiaId, search]);
+    const encBancos = filtered.filter((b) => isEncadenadoBankName(b.nombre));
+    return encBancos.reduce((n, b) => n + (b.numPreguntas ?? 0), 0);
+  }, [filtered]);
+
+  const encadenadoBancosSinSupuesto = useMemo(
+    () => bancos.filter((b) => isEncadenadoBankName(b.nombre)),
+    [bancos],
+  );
+  const [repairing, setRepairing] = useState(false);
 
   const emptyBancos = useMemo(
     () => bancos.filter((b) => (b.numPreguntas ?? 0) === 0),
@@ -143,6 +147,33 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
       alert(e instanceof Error ? e.message : "Error al limpiar");
     } finally {
       setCleaningJunk(false);
+    }
+  }
+
+  async function repararEncadenados() {
+    const nombres = encadenadoBancosSinSupuesto.map((b) => b.nombre);
+    const ok = confirm(
+      `¿Vincular preguntas a supuesto en ${nombres.length} banco(s) encadenado?\n\n${nombres.join("\n")}\n\nDespués edita el texto del caso en cada banco.`,
+    );
+    if (!ok) return;
+
+    setRepairing(true);
+    try {
+      const res = await fetch("/api/admin/bancos/repair-encadenados", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombres: ["EBEP ENCADENADO", "EBEP ENCADENADO 1"],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo reparar");
+      router.refresh();
+      alert(data.message || "Bancos reparados");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error al reparar");
+    } finally {
+      setRepairing(false);
     }
   }
 
@@ -225,6 +256,25 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
             onClick={() => void limpiarPruebaYDuplicados()}
           >
             {cleaningJunk ? "Analizando…" : "Limpiar prueba y duplicados"}
+          </button>
+        </div>
+      )}
+
+      {encadenadoBancosSinSupuesto.length > 0 && (
+        <div className="info-box sim-info" style={{ marginBottom: "1rem" }}>
+          <p style={{ margin: 0 }}>
+            <strong>{encadenadoBancosSinSupuesto.length} banco(s) encadenado</strong> detectado(s)
+            por nombre. Si al imprimir no sale el enunciado del caso, vincula las preguntas al
+            supuesto y luego edita el texto en cada banco.
+          </p>
+          <button
+            type="button"
+            className="btn-primary btn-sm"
+            style={{ marginTop: "0.65rem" }}
+            disabled={repairing}
+            onClick={() => void repararEncadenados()}
+          >
+            {repairing ? "Reparando…" : "Reparar EBEP ENCADENADO y EBEP ENCADENADO 1"}
           </button>
         </div>
       )}

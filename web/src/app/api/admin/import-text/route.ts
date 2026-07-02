@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
-import { countParsedQuestions, parseImportDocument } from "@/lib/parse-import-text";
+import { countParsedQuestions, parseImportDocumentWithPreamble } from "@/lib/parse-import-text";
+import { isEncadenadoBankName } from "@/lib/encadenado-utils";
 import { getJexLineaId } from "@/lib/queries/bancos";
 import { supuestosSchemaReady } from "@/lib/queries/schema";
 
@@ -14,7 +15,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan materia o texto" }, { status: 400 });
     }
 
-    const doc = parseImportDocument(texto);
+    const draftNombre = nombre?.trim() || "";
+    const doc = parseImportDocumentWithPreamble(texto, {
+      titulo: isEncadenadoBankName(draftNombre) ? draftNombre : undefined,
+    });
     const total = countParsedQuestions(doc);
     if (!total) {
       return NextResponse.json(
@@ -22,6 +26,9 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    const bancoNombre =
+      draftNombre || `Banco ${new Date().toLocaleDateString("es-ES")} (${total})`;
 
     if (doc.supuestos.length > 0 && !(await supuestosSchemaReady())) {
       return NextResponse.json(
@@ -35,10 +42,6 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabase();
     const jexId = await getJexLineaId();
-
-    const bancoNombre =
-      nombre?.trim() ||
-      `Banco ${new Date().toLocaleDateString("es-ES")} (${total})`;
 
     const { data: banco, error: bErr } = await supabase
       .from("bancos")

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BancoRow, PreguntaRow } from "@/lib/queries/bancos";
 import { TestPrintButton } from "@/components/TestPrintButton";
+import { isEncadenadoBankName } from "@/lib/encadenado-utils";
 
 type Materia = { id: string; nombre: string };
 
@@ -45,13 +46,25 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [allExpanded, setAllExpanded] = useState(false);
   const [autosave, setAutosave] = useState<AutosaveState>("idle");
+  const [supuestoTitulo, setSupuestoTitulo] = useState(
+    () => preguntas.find((p) => p.supuesto_titulo)?.supuesto_titulo ?? banco.nombre,
+  );
+  const [supuestoTexto, setSupuestoTexto] = useState(
+    () => preguntas.find((p) => p.supuesto_texto)?.supuesto_texto ?? "",
+  );
+  const [supuestoBusy, setSupuestoBusy] = useState(false);
   const savedRef = useRef<Map<string, string>>(new Map());
+  const esEncadenado =
+    isEncadenadoBankName(banco.nombre) ||
+    preguntas.some((p) => p.supuesto_id || p.supuesto_texto);
 
   useEffect(() => {
     const map = new Map<string, string>();
     for (const p of initial) map.set(p.id, questionSnapshot(p));
     savedRef.current = map;
-  }, [initial]);
+    setSupuestoTitulo(initial.find((p) => p.supuesto_titulo)?.supuesto_titulo ?? banco.nombre);
+    setSupuestoTexto(initial.find((p) => p.supuesto_texto)?.supuesto_texto ?? "");
+  }, [initial, banco.nombre]);
 
   const persistPregunta = useCallback(async (p: PreguntaRow, silent = false) => {
     if (!silent) setErr(null);
@@ -119,6 +132,26 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [preguntas, dirtyIds]);
+
+  async function guardarSupuesto() {
+    if (!supuestoTexto.trim()) {
+      setErr("Escribe el enunciado del supuesto (texto del caso compartido).");
+      return;
+    }
+    setSupuestoBusy(true);
+    setErr(null);
+    setMsg(null);
+    const res = await fetch(`/api/admin/bancos/${banco.id}/supuesto`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ titulo: supuestoTitulo, texto: supuestoTexto }),
+    });
+    const data = await res.json();
+    setSupuestoBusy(false);
+    if (!res.ok) return setErr(data.error || "Error al guardar supuesto");
+    setMsg("Supuesto guardado — ya aparecerá al practicar e imprimir");
+    router.refresh();
+  }
 
   async function guardarBanco() {
     setBusy(true);
@@ -264,6 +297,9 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
               opciones: p.opciones,
               respuesta: p.respuesta,
               explicacion: p.explicacion,
+              supuestoId: p.supuesto_id,
+              supuestoTitulo: p.supuesto_titulo ?? supuestoTitulo,
+              supuestoTexto: p.supuesto_texto ?? supuestoTexto,
             }))}
           />
           <button
@@ -276,6 +312,43 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
           </button>
         </div>
       </div>
+
+      {esEncadenado && (
+        <div className="card admin-supuesto-card">
+          <h3 className="admin-preguntas-title">Enunciado del supuesto (caso compartido)</h3>
+          <p className="muted small">
+            Este texto se muestra encima de las preguntas encadenadas y al imprimir el test.
+          </p>
+          <div className="form">
+            <label>
+              Título (opcional)
+              <input
+                value={supuestoTitulo}
+                onChange={(e) => setSupuestoTitulo(e.target.value)}
+              />
+            </label>
+            <label>
+              Texto del caso
+              <textarea
+                rows={8}
+                value={supuestoTexto}
+                onChange={(e) => setSupuestoTexto(e.target.value)}
+                placeholder="Pega aquí el enunciado del supuesto práctico…"
+              />
+            </label>
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-primary btn-sm"
+              disabled={supuestoBusy || !supuestoTexto.trim()}
+              onClick={() => void guardarSupuesto()}
+            >
+              {supuestoBusy ? "Guardando…" : "Guardar supuesto"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="card admin-preguntas-card">
         <div className="admin-preguntas-sticky">

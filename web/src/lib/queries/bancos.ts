@@ -6,6 +6,7 @@ import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
 } from "@/lib/supuesto-utils";
+import { isEncadenadoBank } from "@/lib/encadenado-utils";
 
 export type BancoRow = {
   id: string;
@@ -43,6 +44,7 @@ export type TipoStats = {
 };
 
 export type EncadenadosStats = {
+  bancos: number;
   preguntas: number;
   supuestos: number;
 };
@@ -68,7 +70,7 @@ export type MaterialStats = {
 };
 
 const emptyTipoStats = (): TipoStats => ({ bancos: 0, preguntas: 0 });
-const emptyEncadenadosStats = (): EncadenadosStats => ({ preguntas: 0, supuestos: 0 });
+const emptyEncadenadosStats = (): EncadenadosStats => ({ bancos: 0, preguntas: 0, supuestos: 0 });
 
 const PAGE_SIZE = 1000;
 
@@ -426,7 +428,7 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const supabase = getSupabase();
   const [{ data: materias, error: mErr }, { data: bancos, error: bErr }] = await Promise.all([
     supabase.from("materias").select("id, nombre").order("nombre"),
-    supabase.from("bancos").select("id, materia_id, tipo"),
+    supabase.from("bancos").select("id, materia_id, tipo, nombre"),
   ]);
 
   if (mErr) throw mErr;
@@ -467,12 +469,19 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     const n = counts.get(b.id) ?? 0;
     const encP = encadenados.preguntasByBanco.get(b.id) ?? 0;
     const encS = encadenados.supuestosByBanco.get(b.id) ?? 0;
+    const isEnc = isEncadenadoBank(b.nombre, encP, encS);
     const tipo = b.tipo === "practico" ? "practico" : "teorico";
     totals.preguntas += n;
     totals[tipo].bancos += 1;
     totals[tipo].preguntas += n;
-    totals.encadenados.preguntas += encP;
-    totals.encadenados.supuestos += encS;
+    if (isEnc) {
+      totals.encadenados.bancos += 1;
+      totals.encadenados.preguntas += n;
+      totals.encadenados.supuestos += encS;
+    } else {
+      totals.encadenados.preguntas += encP;
+      totals.encadenados.supuestos += encS;
+    }
 
     let row = materiaMap.get(b.materia_id);
     if (!row) {
@@ -492,8 +501,14 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     row.preguntas += n;
     row[tipo].bancos += 1;
     row[tipo].preguntas += n;
-    row.encadenados.preguntas += encP;
-    row.encadenados.supuestos += encS;
+    if (isEnc) {
+      row.encadenados.bancos += 1;
+      row.encadenados.preguntas += n;
+      row.encadenados.supuestos += encS;
+    } else {
+      row.encadenados.preguntas += encP;
+      row.encadenados.supuestos += encS;
+    }
   }
 
   totals.porMateria = [...materiaMap.values()].sort((a, b) =>

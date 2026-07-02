@@ -165,6 +165,47 @@ export function countParsedQuestions(doc: ParsedImportDocument): number {
   );
 }
 
+/** Texto antes de la primera pregunta numerada (1. / P:). */
+export function splitPreambleAndQuestions(texto: string): { preamble: string; body: string } {
+  const normalized = normalizeText(texto);
+  if (!normalized) return { preamble: "", body: "" };
+
+  const lines = normalized.split("\n");
+  let splitAt = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\d+[\.\)]\s+/.test(lines[i]) || /^P:\s/i.test(lines[i])) {
+      splitAt = i;
+      break;
+    }
+  }
+
+  if (splitAt <= 0) return { preamble: "", body: normalized };
+  return {
+    preamble: lines.slice(0, splitAt).join("\n").trim(),
+    body: lines.slice(splitAt).join("\n"),
+  };
+}
+
+/** Si no hay bloques === SUPUESTO ===, usa el texto previo a la 1. pregunta como supuesto. */
+export function parseImportDocumentWithPreamble(
+  texto: string,
+  opts?: { titulo?: string },
+): ParsedImportDocument {
+  const doc = parseImportDocument(texto);
+  if (doc.supuestos.length) return doc;
+
+  const { preamble, body } = splitPreambleAndQuestions(texto);
+  if (!preamble || !body.trim()) return doc;
+
+  const preguntas = parseQuestionsFromText(body);
+  if (!preguntas.length) return doc;
+
+  return {
+    sueltas: doc.sueltas,
+    supuestos: [{ titulo: opts?.titulo, texto: preamble, preguntas }],
+  };
+}
+
 export function parseImportDocument(texto: string): ParsedImportDocument {
   const normalized = normalizeText(texto);
   if (!normalized) return { sueltas: [], supuestos: [] };

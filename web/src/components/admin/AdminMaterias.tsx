@@ -52,8 +52,14 @@ export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
             {stats.encadenados.preguntas.toLocaleString("es-ES")}
           </span>
           <span className="muted small">
-            {stats.encadenados.supuestos} supuesto
-            {stats.encadenados.supuestos !== 1 ? "s" : ""}
+            {stats.encadenados.bancos} banco{stats.encadenados.bancos !== 1 ? "s" : ""}
+            {stats.encadenados.supuestos > 0 && (
+              <>
+                {" "}
+                · {stats.encadenados.supuestos} supuesto
+                {stats.encadenados.supuestos !== 1 ? "s" : ""}
+              </>
+            )}
           </span>
         </div>
       </div>
@@ -213,7 +219,7 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                     </span>
                     <span role="cell" className="muted small">
                       {row.encadenados.preguntas}
-                      <span className="admin-materias-sub"> ({row.encadenados.supuestos})</span>
+                      <span className="admin-materias-sub"> ({row.encadenados.bancos} bancos)</span>
                     </span>
                     <span className="admin-materias-actions" role="cell">
                       {editing ? (
