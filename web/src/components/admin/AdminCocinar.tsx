@@ -58,13 +58,6 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
 
   return (
     <>
-      <div className="card cafe-card">
-        <h2>Cargar material</h2>
-        <p className="muted" style={{ marginBottom: 0 }}>
-          Pega el test en texto plano. Tú pegas, la web guarda el banco.
-        </p>
-      </div>
-
       {!schemaOk && (
         <div className="card card-warning">
           <p className="muted small">
@@ -78,7 +71,10 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
       {err && <p className="error">{err}</p>}
 
       <div className="card card-elevated">
-        <h2>Pegar test (texto plano)</h2>
+        <h2 className="admin-section-title">Pegar test en texto plano</h2>
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Pega el bloque del test y la web lo guarda como banco en la materia elegida.
+        </p>
         <div className="cafe-highlight" style={{ marginTop: "0.75rem" }}>
           <strong>Formatos aceptados:</strong>
           <pre className="format-ejemplo">{`1. ¿Enunciado?
@@ -169,12 +165,9 @@ R: B`}</pre>
         </div>
       </div>
 
-      <div className="card">
-        <p className="muted small" style={{ margin: 0 }}>
-          ¿Nueva materia? Ve a la pestaña <strong>Materias</strong> para crear, renombrar o ver
-          totales por categoría.
-        </p>
-      </div>
+      <p className="muted small">
+        ¿Nueva materia? Ve a la pestaña <strong>Temario</strong> para crearla.
+      </p>
     </>
   );
 }

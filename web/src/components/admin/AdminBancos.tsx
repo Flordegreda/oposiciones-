@@ -10,7 +10,7 @@ import { materiaNombre, sortBancosByNombre } from "@/lib/queries/bancos";
 
 type Props = { bancos: BancoRow[]; stats: MaterialStats };
 
-export function AdminBancos({ bancos: initial, stats }: Props) {
+export function AdminBancos({ bancos: initial }: Props) {
   const router = useRouter();
   const [bancos, setBancos] = useState(initial);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -62,7 +62,15 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
     () => bancos.filter((b) => (b.numPreguntas ?? 0) === 0),
     [bancos],
   );
+  const stubBancos = useMemo(
+    () => bancos.filter((b) => {
+      const n = b.numPreguntas ?? 0;
+      return n > 0 && n <= 1;
+    }),
+    [bancos],
+  );
   const [cleaning, setCleaning] = useState(false);
+  const [cleaningJunk, setCleaningJunk] = useState(false);
 
   async function limpiarVacios() {
     if (
@@ -85,6 +93,51 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
     alert(`Eliminados ${data.deleted} banco(s) vacío(s).`);
   }
 
+  async function limpiarPruebaYDuplicados() {
+    setCleaningJunk(true);
+    try {
+      const previewRes = await fetch("/api/admin/bancos/cleanup-junk");
+      const preview = await previewRes.json();
+      if (!previewRes.ok) throw new Error(preview.error || "No se pudo analizar");
+
+      if (!preview.count) {
+        alert("No hay bancos de prueba ni duplicados que limpiar.");
+        return;
+      }
+
+      const lines = (preview.items as { nombre: string; numPreguntas: number; reason: string }[])
+        .slice(0, 40)
+        .map(
+          (j) =>
+            `· ${j.nombre} (${j.numPreguntas} preg.) — ${j.reason === "stub" ? "prueba" : "duplicado"}`,
+        );
+      const more =
+        preview.count > 40 ? `\n… y ${preview.count - 40} más` : "";
+      const ok = confirm(
+        `¿Eliminar ${preview.count} banco(s)?\n` +
+          `${preview.stubs} de prueba (≤1 preg.) · ${preview.duplicates} duplicados\n\n` +
+          `${lines.join("\n")}${more}\n\n` +
+          `En duplicados se conserva el banco con más preguntas.`,
+      );
+      if (!ok) return;
+
+      const res = await fetch("/api/admin/bancos/cleanup-junk", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo limpiar");
+
+      const removed = new Set(
+        (data.items as { id: string }[] | undefined)?.map((j) => j.id) ?? [],
+      );
+      setBancos((list) => list.filter((b) => !removed.has(b.id)));
+      router.refresh();
+      alert(`Eliminados ${data.deleted} banco(s) de prueba o duplicados.`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error al limpiar");
+    } finally {
+      setCleaningJunk(false);
+    }
+  }
+
   async function eliminar(id: string, nombre: string) {
     if (!confirm(`¿Eliminar el banco «${nombre}» y todas sus preguntas?`)) return;
     setDeleting(id);
@@ -98,10 +151,12 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
     router.refresh();
   }
 
+  const showingAll = filtered.length === bancos.length && !search.trim() && !materiaId;
+
   return (
-    <div className="card">
-      <h2>Bancos</h2>
-      <p className="muted small">Temario jurídicas JEX — Junta de Extremadura.</p>
+    <div className="card card-elevated">
+      <h2 className="admin-section-title">Tests por banco</h2>
+      <p className="muted small">Edita, prueba o elimina cada bloque de preguntas.</p>
 
       <label className="admin-filter">
         Buscar banco
@@ -138,6 +193,30 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
             onClick={() => void limpiarVacios()}
           >
             {cleaning ? "Eliminando…" : "Eliminar solo bancos vacíos"}
+          </button>
+        </div>
+      )}
+
+      {(stubBancos.length > 0 || bancos.length > 1) && (
+        <div className="info-box sim-info" style={{ marginBottom: "1rem" }}>
+          <p style={{ margin: 0 }}>
+            <strong>Limpieza de temario:</strong> elimina bancos de prueba con ≤1 pregunta y
+            duplicados por nombre (se conserva el que tiene más preguntas).
+            {stubBancos.length > 0 && (
+              <>
+                {" "}
+                Ahora hay <strong>{stubBancos.length}</strong> banco(s) con solo 1 pregunta.
+              </>
+            )}
+          </p>
+          <button
+            type="button"
+            className="btn-danger btn-sm"
+            style={{ marginTop: "0.65rem" }}
+            disabled={cleaningJunk}
+            onClick={() => void limpiarPruebaYDuplicados()}
+          >
+            {cleaningJunk ? "Analizando…" : "Limpiar prueba y duplicados"}
           </button>
         </div>
       )}
@@ -181,23 +260,14 @@ export function AdminBancos({ bancos: initial, stats }: Props) {
         </ul>
       )}
 
-      <p className="muted small admin-bancos-totals">
-        {filtered.length === bancos.length && !search.trim() && !materiaId ? (
-          <>
-            Total: <strong>{stats.preguntas}</strong> preguntas en{" "}
-            <strong>{stats.bancos}</strong> bancos · teórico{" "}
-            <strong>{stats.teorico.preguntas}</strong> · práctico{" "}
-            <strong>{stats.practico.preguntas}</strong>
-          </>
-        ) : (
-          <>
-            Mostrando: <strong>{filteredTotals.preguntas}</strong> preguntas en{" "}
-            <strong>{filteredTotals.bancos}</strong> bancos · teórico{" "}
-            <strong>{filteredTotals.teorico}</strong> · práctico{" "}
-            <strong>{filteredTotals.practico}</strong>
-          </>
-        )}
-      </p>
+      {!showingAll && (
+        <p className="muted small admin-bancos-totals">
+          Mostrando: <strong>{filteredTotals.preguntas}</strong> preguntas en{" "}
+          <strong>{filteredTotals.bancos}</strong> bancos · teórico{" "}
+          <strong>{filteredTotals.teorico}</strong> · práctico{" "}
+          <strong>{filteredTotals.practico}</strong>
+        </p>
+      )}
     </div>
   );
 }

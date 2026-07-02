@@ -283,42 +283,24 @@ h1 {
   color: var(--muted);
 }
 
-.materia-filter {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.45rem;
-  overflow-x: auto;
-  padding-bottom: 0.15rem;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.materia-filter::-webkit-scrollbar {
-  display: none;
-}
-
-.materia-filter-btn {
-  flex-shrink: 0;
-  padding: 0.45rem 0.85rem;
+.materia-filter-select {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.6rem 0.75rem;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
-  color: var(--text-soft);
+  color: var(--text);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
-.materia-filter-btn.active {
+.materia-filter-select:focus {
+  outline: none;
   border-color: var(--primary);
-  background: rgba(30, 77, 123, 0.1);
-  color: var(--primary);
-}
-
-.materia-filter-btn:active {
-  background: rgba(30, 77, 123, 0.15);
+  box-shadow: 0 0 0 3px rgba(30, 77, 123, 0.12);
 }
 
 .materia-section {
@@ -2438,7 +2420,96 @@ code {
 }
 
 .banco-progress-text {
-  letter-spacing: 0.3px;
+ letter-spacing: 0.3px;
+}
+
+.admin-overview {
+ display: grid;
+ gap: 1.25rem;
+ margin-bottom: 1.25rem;
+}
+
+@media (min-width: 720px) {
+ .admin-overview {
+ grid-template-columns: 1fr 1.2fr;
+ align-items: center;
+ }
+}
+
+.admin-overview-label {
+ margin: 0 0 0.25rem;
+ font-size: 0.82rem;
+ font-weight: 700;
+ text-transform: uppercase;
+ color: var(--muted);
+ letter-spacing: 0.04em;
+}
+
+.admin-overview-total {
+ margin: 0;
+ font-family: var(--font-serif), Georgia, serif;
+ font-size: 2.75rem;
+ line-height: 1;
+ color: var(--primary);
+}
+
+.admin-overview-meta {
+ margin: 0.5rem 0 0;
+}
+
+.admin-overview-types {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 0.75rem;
+}
+
+.admin-overview-type {
+ padding: 0.85rem 1rem;
+ border-radius: var(--radius-sm);
+ border: 1px solid var(--border);
+ background: var(--option-bg);
+}
+
+.admin-overview-type--teorico {
+ border-left: 4px solid var(--primary);
+}
+
+.admin-overview-type--practico {
+ border-left: 4px solid var(--accent);
+}
+
+.admin-overview-type-label {
+ display: block;
+ font-size: 0.75rem;
+ font-weight: 700;
+ text-transform: uppercase;
+ color: var(--muted);
+ margin-bottom: 0.25rem;
+}
+
+.admin-overview-type-value {
+ display: block;
+ font-size: 1.65rem;
+ font-weight: 700;
+ line-height: 1.1;
+ color: var(--text);
+}
+
+.admin-section-title {
+ margin: 0 0 0.35rem;
+ font-size: 1.1rem;
+}
+
+.admin-section-divider {
+ border: none;
+ border-top: 1px solid var(--border);
+ margin: 1.5rem 0;
+}
+
+.admin-temario {
+ display: flex;
+ flex-direction: column;
+ gap: 0;
 }
 
 @media print {

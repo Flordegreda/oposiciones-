@@ -16,15 +16,24 @@ type Props = {
   schemaOk: boolean;
 };
 
-const tabs = ["cocinar", "materias", "bancos", "copia"] as const;
+const tabs = ["temario", "importar", "copia"] as const;
+
+const legacyTabMap: Record<string, (typeof tabs)[number]> = {
+  cocinar: "importar",
+  materias: "temario",
+  bancos: "temario",
+};
 
 export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const tabParam = params.get("tab");
-  const tab = tabs.includes(tabParam as (typeof tabs)[number])
-    ? (tabParam as (typeof tabs)[number])
-    : "cocinar";
+  const tab =
+    tabParam && tabs.includes(tabParam as (typeof tabs)[number])
+      ? (tabParam as (typeof tabs)[number])
+      : tabParam && legacyTabMap[tabParam]
+        ? legacyTabMap[tabParam]
+        : "temario";
 
   function setTab(t: (typeof tabs)[number]) {
     router.replace(`/admin?tab=${t}`, { scroll: false });
@@ -32,33 +41,26 @@ export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
 
   return (
     <>
-      <div className="admin-tabs" role="tablist" aria-label="Material">
+      {schemaOk && <AdminMaterialStats stats={stats} />}
+
+      <div className="admin-tabs" role="tablist" aria-label="Administración">
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "cocinar"}
-          className={tab === "cocinar" ? "active" : ""}
-          onClick={() => setTab("cocinar")}
+          aria-selected={tab === "temario"}
+          className={tab === "temario" ? "active" : ""}
+          onClick={() => setTab("temario")}
         >
-          Cargar material
+          Temario
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "materias"}
-          className={tab === "materias" ? "active" : ""}
-          onClick={() => setTab("materias")}
+          aria-selected={tab === "importar"}
+          className={tab === "importar" ? "active" : ""}
+          onClick={() => setTab("importar")}
         >
-          Materias
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "bancos"}
-          className={tab === "bancos" ? "active" : ""}
-          onClick={() => setTab("bancos")}
-        >
-          Bancos
+          Importar
         </button>
         <button
           type="button"
@@ -71,11 +73,14 @@ export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
         </button>
       </div>
 
-      {schemaOk && tab !== "materias" && <AdminMaterialStats stats={stats} />}
-
-      {tab === "cocinar" && <AdminCocinar materias={materias} schemaOk={schemaOk} />}
-      {tab === "materias" && <AdminMaterias stats={stats} schemaOk={schemaOk} />}
-      {tab === "bancos" && <AdminBancos bancos={bancos} stats={stats} />}
+      {tab === "temario" && (
+        <div className="admin-temario">
+          <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
+          <hr className="admin-section-divider" />
+          <AdminBancos bancos={bancos} stats={stats} />
+        </div>
+      )}
+      {tab === "importar" && <AdminCocinar materias={materias} schemaOk={schemaOk} />}
       {tab === "copia" && <AdminBackup schemaOk={schemaOk} />}
     </>
   );

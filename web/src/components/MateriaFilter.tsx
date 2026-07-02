@@ -1,4 +1,6 @@
-"use client"; // v2
+"use client";
+
+import { useId } from "react";
 
 export type MateriaOption = {
   id: string;
@@ -13,25 +15,20 @@ type Props = {
 };
 
 export function MateriaFilter({ materias, value, onChange, label = "Materia" }: Props) {
+  const selectId = useId();
+
   if (materias.length <= 1) return null;
 
   return (
     <div className="materia-filter-wrap">
-      <label className="materia-filter-label" htmlFor="materia-select">{label}</label>
+      <label className="materia-filter-label" htmlFor={selectId}>
+        {label}
+      </label>
       <select
-        id="materia-select"
+        id={selectId}
+        className="materia-filter-select"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        style={{
-          padding: "0.5rem 0.75rem",
-          font: "inherit",
-          fontSize: "0.9rem",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-sm)",
-          background: "#fff",
-          cursor: "pointer",
-          minWidth: "200px",
-        }}
       >
         <option value="">Todas las materias</option>
         {materias.map((m) => (

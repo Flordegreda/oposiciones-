@@ -8,6 +8,7 @@ import type { MaterialStats, MateriaStatsRow } from "@/lib/queries/bancos";
 type Props = {
   stats: MaterialStats;
   schemaOk: boolean;
+  hideStats?: boolean;
 };
 
 function downloadJson(data: unknown, filename: string) {
@@ -22,38 +23,35 @@ function downloadJson(data: unknown, filename: string) {
 
 export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
   return (
-    <div className="result-grid admin-stats-grid">
-      <div className="result-stat">
-        <span className="result-stat-label">Materias</span>
-        <span className="result-stat-value">{stats.materias}</span>
+    <section className="admin-overview card card-elevated" aria-label="Resumen del temario">
+      <div className="admin-overview-main">
+        <p className="admin-overview-label">Total de preguntas</p>
+        <p className="admin-overview-total">{stats.preguntas.toLocaleString("es-ES")}</p>
+        <p className="muted small admin-overview-meta">
+          {stats.materias} materias · {stats.bancos} bancos
+        </p>
       </div>
-      <div className="result-stat">
-        <span className="result-stat-label">Bancos</span>
-        <span className="result-stat-value">{stats.bancos}</span>
+      <div className="admin-overview-types">
+        <div className="admin-overview-type admin-overview-type--teorico">
+          <span className="admin-overview-type-label">Teórico</span>
+          <span className="admin-overview-type-value">
+            {stats.teorico.preguntas.toLocaleString("es-ES")}
+          </span>
+          <span className="muted small">{stats.teorico.bancos} bancos</span>
+        </div>
+        <div className="admin-overview-type admin-overview-type--practico">
+          <span className="admin-overview-type-label">Práctico</span>
+          <span className="admin-overview-type-value">
+            {stats.practico.preguntas.toLocaleString("es-ES")}
+          </span>
+          <span className="muted small">{stats.practico.bancos} bancos</span>
+        </div>
       </div>
-      <div className="result-stat">
-        <span className="result-stat-label">Preguntas</span>
-        <span className="result-stat-value ok">{stats.preguntas}</span>
-      </div>
-      <div className="result-stat">
-        <span className="result-stat-label">Teórico</span>
-        <span className="result-stat-value">
-          {stats.teorico.preguntas}
-          <span className="result-stat-sub">{stats.teorico.bancos} bancos</span>
-        </span>
-      </div>
-      <div className="result-stat">
-        <span className="result-stat-label">Práctico</span>
-        <span className="result-stat-value">
-          {stats.practico.preguntas}
-          <span className="result-stat-sub">{stats.practico.bancos} bancos</span>
-        </span>
-      </div>
-    </div>
+    </section>
   );
 }
 
-export function AdminMaterias({ stats: initial, schemaOk }: Props) {
+export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState<MateriaStatsRow[]>(initial.porMateria);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -151,7 +149,7 @@ export function AdminMaterias({ stats: initial, schemaOk }: Props) {
 
   return (
     <>
-      <AdminMaterialStats stats={initial} />
+      {!hideStats && <AdminMaterialStats stats={initial} />}
 
       {msg && <p className="ok">{msg}</p>}
       {err && <p className="error">{err}</p>}

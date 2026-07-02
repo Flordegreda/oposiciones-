@@ -62,7 +62,7 @@ export default async function AdminPage() {
       <main className="site-main">
         <section className="hero hero--compact">
           <p className="hero-eyebrow">Administración</p>
-          <h1 className="page-title">Material</h1>
+          <h1 className="page-title">Temario</h1>
           <p className="lead lead--compact">{JEX_SUBTITLE}</p>
         </section>
 
@@ -85,7 +85,7 @@ export default async function AdminPage() {
           <div className="card card-warning">
             <p className="muted small">
               Los bancos existen pero tienen <strong>0 preguntas</strong>. Importa de
-              nuevo el material en <strong>Cargar material</strong> o edita cada banco.
+              nuevo en la pestaña <strong>Importar</strong> o edita cada banco.
             </p>
           </div>
         )}

@@ -465,3 +465,56 @@ export async function findEmptyBancoIds(): Promise<{ id: string; nombre: string 
   const counts = await fetchPreguntaCountsByBanco();
   return (bancos ?? []).filter((b) => (counts.get(b.id) ?? 0) === 0);
 }
+
+export type JunkBancoRow = {
+  id: string;
+  nombre: string;
+  numPreguntas: number;
+  reason: "stub" | "duplicate";
+};
+
+/** Bancos de prueba (≤ maxPreguntas) y duplicados por nombre+materia (conserva el más completo). */
+export async function findJunkBancoIds(maxStubPreguntas = 1): Promise<JunkBancoRow[]> {
+  const supabase = getSupabase();
+  const { data: bancos, error: bErr } = await supabase
+    .from("bancos")
+    .select("id, nombre, materia_id")
+    .order("nombre");
+
+  if (bErr) throw bErr;
+
+  const counts = await fetchPreguntaCountsByBanco();
+  const junk = new Map<string, JunkBancoRow>();
+
+  for (const b of bancos ?? []) {
+    const n = counts.get(b.id) ?? 0;
+    if (n > 0 && n <= maxStubPreguntas) {
+      junk.set(b.id, { id: b.id, nombre: b.nombre, numPreguntas: n, reason: "stub" });
+    }
+  }
+
+  const groups = new Map<string, { id: string; nombre: string; numPreguntas: number }[]>();
+  for (const b of bancos ?? []) {
+    const key = `${b.materia_id}::${b.nombre.trim().toLowerCase()}`;
+    const row = { id: b.id, nombre: b.nombre, numPreguntas: counts.get(b.id) ?? 0 };
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(row);
+  }
+
+  for (const list of groups.values()) {
+    if (list.length <= 1) continue;
+    list.sort((a, b) => b.numPreguntas - a.numPreguntas || a.id.localeCompare(b.id));
+    for (const loser of list.slice(1)) {
+      junk.set(loser.id, {
+        id: loser.id,
+        nombre: loser.nombre,
+        numPreguntas: loser.numPreguntas,
+        reason: "duplicate",
+      });
+    }
+  }
+
+  return [...junk.values()].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base", numeric: true }),
+  );
+}
