@@ -25,6 +25,7 @@ import {
 import { JEX_SUBTITLE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export default async function AdminPage() {
   let bancos: BancoRow[] = [];

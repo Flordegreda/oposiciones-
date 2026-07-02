@@ -314,7 +314,7 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
         <div className="card admin-supuesto-card">
           <h3 className="admin-preguntas-title">Enunciado del supuesto (caso compartido)</h3>
           <p className="muted small">
-            Este texto se muestra encima de las preguntas encadenadas y al imprimir el test.
+            Este texto se muestra encima de las preguntas del supuesto y al imprimir el test.
           </p>
           <div className="form">
             <label>
