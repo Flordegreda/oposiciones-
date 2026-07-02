@@ -12,6 +12,7 @@ export async function GET() {
         mediaPorcentaje: 0,
         mediaNota: 0,
         recientes: [],
+        desde: null,
         porTipo: {},
         semanal: { sesiones: 0, simulacros: 0, mediaPorcentaje: 0, minutos: 0 },
       });

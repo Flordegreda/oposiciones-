@@ -6,6 +6,7 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 import { AdminIntentosSetup } from "@/components/admin/AdminIntentosSetup";
 import { AdminResultadosSetup } from "@/components/admin/AdminResultadosSetup";
+import { AdminProgresoReset } from "@/components/admin/AdminProgresoReset";
 import {
   getAdminBancos,
   getMateriasWithCounts,
@@ -80,6 +81,8 @@ export default async function AdminPage() {
         {schemaOk && !intentosOk && <AdminIntentosSetup />}
 
         {schemaOk && !resultadosOk && <AdminResultadosSetup />}
+
+        {schemaOk && resultadosOk && <AdminProgresoReset />}
 
         {schemaOk && preguntasCount === 0 && bancos.length > 0 && (
           <div className="card card-warning">

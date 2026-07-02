@@ -66,13 +66,54 @@ export async function saveResultado(input: SaveResultadoInput): Promise<Resultad
       porcentaje: input.porcentaje,
       tiempo_segundos: input.tiempoSegundos ?? null,
       exam_mode: input.examMode,
-      detalle: input.detalle,
+      detalle: [],
     })
     .select("*")
     .single();
 
   if (error) throw error;
   return data as ResultadoRow;
+}
+
+type ResultadoStatsRow = Pick<
+  ResultadoRow,
+  "tipo" | "porcentaje" | "nota" | "created_at" | "tiempo_segundos"
+>;
+
+async function listResultadosForStats(): Promise<ResultadoStatsRow[]> {
+  if (!(await resultadosTableExists())) return [];
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("resultados")
+    .select("tipo, porcentaje, nota, created_at, tiempo_segundos")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as ResultadoStatsRow[];
+}
+
+export async function resetProgresoStats(): Promise<{ deleted: number; desde: string }> {
+  if (!(await resultadosTableExists())) {
+    throw new Error("Falta tabla resultados");
+  }
+
+  const supabase = getSupabase();
+  const { data, error: countErr } = await supabase
+    .from("resultados")
+    .select("id");
+  if (countErr) throw countErr;
+
+  const deleted = data?.length ?? 0;
+  if (deleted > 0) {
+    const { error: delErr } = await supabase
+      .from("resultados")
+      .delete()
+      .not("id", "is", null);
+    if (delErr) throw delErr;
+  }
+
+  return { deleted, desde: new Date().toISOString() };
 }
 
 export async function listResultados(limit = 30): Promise<ResultadoRow[]> {
@@ -99,15 +140,15 @@ export async function getResultado(id: string): Promise<ResultadoRow | null> {
 }
 
 export async function getProgresoStats() {
-  const rows = await listResultados(100);
+  const rows = await listResultadosForStats();
   if (!rows.length) {
     return {
       totalSesiones: 0,
       mediaPorcentaje: 0,
       mediaNota: 0,
-      recientes: [] as ResultadoRow[],
       porTipo: {} as Record<string, number>,
       semanal: emptyWeekly(),
+      desde: null as string | null,
     };
   }
 
@@ -125,9 +166,9 @@ export async function getProgresoStats() {
     totalSesiones: rows.length,
     mediaPorcentaje: Math.round(sumPct / rows.length),
     mediaNota: Number((sumNota / rows.length).toFixed(2)),
-    recientes: rows.slice(0, 15),
     porTipo,
     semanal: getWeeklyStats(rows),
+    desde: rows[rows.length - 1]?.created_at ?? null,
   };
 }
 
@@ -140,7 +181,9 @@ function emptyWeekly() {
   };
 }
 
-export function getWeeklyStats(rows: ResultadoRow[]) {
+export function getWeeklyStats(
+  rows: Pick<ResultadoRow, "porcentaje" | "created_at" | "tiempo_segundos" | "tipo">[],
+) {
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const week = rows.filter((r) => new Date(r.created_at).getTime() >= weekAgo);
 

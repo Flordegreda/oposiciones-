@@ -28,7 +28,7 @@ export function AdminResultadosSetup() {
 
   return (
     <div className="card">
-      <h2>Historial y estadísticas</h2>
+      <h2>Estadísticas y favoritos</h2>
       <p className="muted small">
         Crea las tablas <code>resultados</code> y <code>favoritos</code> para guardar notas,
         simulacros y favoritos sincronizados entre dispositivos.

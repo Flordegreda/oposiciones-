@@ -421,7 +421,7 @@ export function ExamSession({
             {onFinish ? "Volver" : "Repetir"}
           </button>
           <Link href="/estadisticas" className="btn-secondary">
-            Ver historial
+            Ver estadísticas
           </Link>
           <button type="button" className="btn-link" onClick={exitSession}>
             Salir

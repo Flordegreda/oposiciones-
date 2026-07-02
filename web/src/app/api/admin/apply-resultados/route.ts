@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     await runSqlFile("RESULTADOS-FAVORITOS.sql", dbPassword);
 
     return NextResponse.json({
-      message: "Tablas resultados y favoritos creadas. Historial y sync activos.",
+      message: "Tablas resultados y favoritos creadas. Estadísticas y sync activos.",
     });
   } catch (e) {
     return NextResponse.json(
