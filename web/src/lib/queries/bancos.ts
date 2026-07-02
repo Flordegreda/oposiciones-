@@ -241,10 +241,14 @@ async function fetchPreguntasForBanco(bancoId: string): Promise<PreguntaRow[]> {
 
   const supuestoById = await fetchSupuestosForBancos([bancoId]);
   const sorted = sortPreguntasWithSupuestos(rows, supuestoById);
+  const fallback = supuestoById.size === 1 ? [...supuestoById.values()][0] : null;
+
   return sorted.map((p) => {
-    const sup = p.supuesto_id ? supuestoById.get(p.supuesto_id) : undefined;
+    const linked = p.supuesto_id ? supuestoById.get(p.supuesto_id) : undefined;
+    const sup = linked ?? fallback;
     return {
       ...p,
+      supuesto_id: p.supuesto_id ?? sup?.id ?? null,
       supuesto_titulo: sup?.titulo ?? null,
       supuesto_texto: sup?.texto ?? null,
     };
@@ -445,6 +449,33 @@ function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {
   };
 }
 
+function printSupuestosFromRows(rows: PreguntaRow[]): PrintBundle["sections"][number]["supuestos"] {
+  const seen = new Set<string>();
+  const out: NonNullable<PrintBundle["sections"][number]["supuestos"]> = [];
+  for (const p of rows) {
+    const texto = p.supuesto_texto?.trim();
+    if (!texto) continue;
+    const key = p.supuesto_id ?? texto;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ id: p.supuesto_id, titulo: p.supuesto_titulo, texto });
+  }
+  return out;
+}
+
+function buildPrintSection(
+  banco: { id: string; nombre: string; tipo: string },
+  rows: PreguntaRow[],
+): PrintBundle["sections"][number] {
+  return {
+    bancoId: banco.id,
+    bancoNombre: banco.nombre,
+    tipo: banco.tipo,
+    preguntas: rows.map(mapPrintablePregunta),
+    supuestos: printSupuestosFromRows(rows),
+  };
+}
+
 export async function getPrintBundleForMateria(materiaId: string): Promise<PrintBundle> {
   const supabase = getSupabase();
   const { data: materia, error: mErr } = await supabase
@@ -474,12 +505,7 @@ export async function getPrintBundleForMateria(materiaId: string): Promise<Print
 
     const preguntas = rows.map(mapPrintablePregunta);
     totalPreguntas += preguntas.length;
-    sections.push({
-      bancoId: b.id,
-      bancoNombre: b.nombre,
-      tipo: b.tipo,
-      preguntas,
-    });
+    sections.push(buildPrintSection(b, rows));
   }
 
   return {
@@ -506,20 +532,13 @@ export async function getPrintBundleForBanco(bancoId: string): Promise<PrintBund
   }
 
   const rows = await fetchPreguntasForBanco(bancoId);
-  const preguntas = rows.map(mapPrintablePregunta);
+  const section = buildPrintSection(banco, rows);
 
   return {
     title: banco.nombre,
-    subtitle: `${preguntas.length} pregunta${preguntas.length !== 1 ? "s" : ""}`,
-    sections: [
-      {
-        bancoId: banco.id,
-        bancoNombre: banco.nombre,
-        tipo: banco.tipo,
-        preguntas,
-      },
-    ],
-    totalPreguntas: preguntas.length,
+    subtitle: `${section.preguntas.length} pregunta${section.preguntas.length !== 1 ? "s" : ""}`,
+    sections: [section],
+    totalPreguntas: section.preguntas.length,
   };
 }
 

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   bundleToSections,
+  collectPrintSupuestos,
   flattenSections,
   totalPreguntas,
   type PrintablePregunta,
@@ -74,7 +75,11 @@ function TestPrintSheet({
         </p>
       </header>
 
-      {sections.map((section, si) => (
+      {sections.map((section, si) => {
+        const sectionSupuestos = collectPrintSupuestos(section);
+        const supuestoAtTop = sectionSupuestos.length === 1;
+
+        return (
         <div key={`${section.title}-${si}`} className="print-banco-block">
           {section.title && (
             <h2 className="print-banco-title">
@@ -85,12 +90,20 @@ function TestPrintSheet({
               </span>
             </h2>
           )}
+          {supuestoAtTop &&
+            sectionSupuestos.map((s, sxi) => (
+              <div key={`${si}-sup-${sxi}`} className="print-supuesto-block print-supuesto-block--section">
+                {s.titulo && <p className="print-supuesto-title">{s.titulo}</p>}
+                <p className="print-supuesto-text">{s.texto}</p>
+              </div>
+            ))}
           <ol className="print-question-list">
             {section.preguntas.map((q, qi) => {
               counter += 1;
               const num = counter;
               const prev = qi > 0 ? section.preguntas[qi - 1] : null;
               const showSupuesto =
+                !supuestoAtTop &&
                 !!q.supuestoTexto &&
                 (!prev || prev.supuestoId !== q.supuestoId);
               return (
@@ -134,7 +147,8 @@ function TestPrintSheet({
             })}
           </ol>
         </div>
-      ))}
+        );
+      })}
 
       {!inline && (
         <section className="print-answer-key">

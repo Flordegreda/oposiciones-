@@ -2329,6 +2329,12 @@ code {
   border-left: 4px solid #7c3aed;
   border-radius: 4px;
   background: #f8f6ff;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-supuesto-block--section {
+  margin-bottom: 1rem;
 }
 
 .print-supuesto-title {
