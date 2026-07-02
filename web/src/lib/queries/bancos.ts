@@ -503,6 +503,25 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   return totals;
 }
 
+function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {
+  return {
+    enunciado: p.enunciado,
+    opciones: p.opciones,
+    respuesta: p.respuesta,
+    explicacion: p.explicacion,
+    supuestoId: p.supuesto_id,
+    supuestoTitulo: p.supuesto_titulo,
+    supuestoTexto: p.supuesto_texto,
+  };
+}
+
+function encadenadosSummary(rows: PreguntaRow[]): string {
+  const preguntas = rows.filter((p) => p.supuesto_id).length;
+  if (!preguntas) return "";
+  const supuestos = new Set(rows.map((p) => p.supuesto_id).filter(Boolean)).size;
+  return ` · ${preguntas} encadenada${preguntas !== 1 ? "s" : ""} (${supuestos} supuesto${supuestos !== 1 ? "s" : ""})`;
+}
+
 export async function getPrintBundleForMateria(materiaId: string): Promise<PrintBundle> {
   const supabase = getSupabase();
   const { data: materia, error: mErr } = await supabase
@@ -524,19 +543,15 @@ export async function getPrintBundleForMateria(materiaId: string): Promise<Print
   const hasPreguntas = await preguntasTableExists();
   const sections: PrintBundle["sections"] = [];
   let totalPreguntas = 0;
+  let totalEncadenadas = 0;
 
   for (const b of bancos ?? []) {
     if (!hasPreguntas) continue;
     const rows = await fetchPreguntasForBanco(b.id);
     if (!rows.length) continue;
 
-    const preguntas: PrintablePregunta[] = rows.map((p) => ({
-      enunciado: p.enunciado,
-      opciones: p.opciones,
-      respuesta: p.respuesta,
-      explicacion: p.explicacion,
-    }));
-
+    const preguntas = rows.map(mapPrintablePregunta);
+    totalEncadenadas += rows.filter((p) => p.supuesto_id).length;
     totalPreguntas += preguntas.length;
     sections.push({
       bancoId: b.id,
@@ -546,9 +561,14 @@ export async function getPrintBundleForMateria(materiaId: string): Promise<Print
     });
   }
 
+  const encSuffix =
+    totalEncadenadas > 0
+      ? ` · ${totalEncadenadas} encadenada${totalEncadenadas !== 1 ? "s" : ""}`
+      : "";
+
   return {
     title: materia.nombre,
-    subtitle: `${sections.length} banco(s) · ${totalPreguntas} pregunta(s)`,
+    subtitle: `${sections.length} banco(s) · ${totalPreguntas} pregunta(s)${encSuffix}`,
     sections,
     totalPreguntas,
   };
@@ -570,16 +590,11 @@ export async function getPrintBundleForBanco(bancoId: string): Promise<PrintBund
   }
 
   const rows = await fetchPreguntasForBanco(bancoId);
-  const preguntas: PrintablePregunta[] = rows.map((p) => ({
-    enunciado: p.enunciado,
-    opciones: p.opciones,
-    respuesta: p.respuesta,
-    explicacion: p.explicacion,
-  }));
+  const preguntas = rows.map(mapPrintablePregunta);
 
   return {
     title: banco.nombre,
-    subtitle: `${preguntas.length} pregunta${preguntas.length !== 1 ? "s" : ""}`,
+    subtitle: `${preguntas.length} pregunta${preguntas.length !== 1 ? "s" : ""}${encadenadosSummary(rows)}`,
     sections: [
       {
         bancoId: banco.id,

@@ -10,7 +10,7 @@ import { materiaNombre, sortBancosByNombre } from "@/lib/queries/bancos";
 
 type Props = { bancos: BancoRow[]; stats: MaterialStats };
 
-export function AdminBancos({ bancos: initial }: Props) {
+export function AdminBancos({ bancos: initial, stats }: Props) {
   const router = useRouter();
   const [bancos, setBancos] = useState(initial);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -57,6 +57,14 @@ export function AdminBancos({ bancos: initial }: Props) {
     }
     return { bancos: filtered.length, preguntas, teorico, practico };
   }, [filtered]);
+
+  const filteredEncadenados = useMemo(() => {
+    if (search.trim()) return 0;
+    if (materiaId) {
+      return stats.porMateria.find((m) => m.id === materiaId)?.encadenados.preguntas ?? 0;
+    }
+    return stats.encadenados.preguntas;
+  }, [stats, materiaId, search]);
 
   const emptyBancos = useMemo(
     () => bancos.filter((b) => (b.numPreguntas ?? 0) === 0),
@@ -266,6 +274,12 @@ export function AdminBancos({ bancos: initial }: Props) {
           <strong>{filteredTotals.bancos}</strong> bancos · teórico{" "}
           <strong>{filteredTotals.teorico}</strong> · práctico{" "}
           <strong>{filteredTotals.practico}</strong>
+          {filteredEncadenados > 0 && (
+            <>
+              {" "}
+              · encadenados <strong>{filteredEncadenados}</strong>
+            </>
+          )}
         </p>
       )}
     </div>

@@ -2319,6 +2319,36 @@ code {
   list-style: none;
 }
 
+.print-question-wrap {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.print-supuesto-block {
+  margin: 0 0 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #ccc;
+  border-left: 4px solid #7c3aed;
+  border-radius: 4px;
+  background: #f8f6ff;
+}
+
+.print-supuesto-title {
+  margin: 0 0 0.35rem;
+  font-size: 10pt;
+  font-weight: 700;
+}
+
+.print-supuesto-text {
+  margin: 0;
+  font-size: 9.5pt;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .print-question-item {
   break-inside: avoid;
   page-break-inside: avoid;

@@ -3,6 +3,9 @@ export type PrintablePregunta = {
   opciones: string[];
   respuesta: number;
   explicacion?: string | null;
+  supuestoId?: string | null;
+  supuestoTitulo?: string | null;
+  supuestoTexto?: string | null;
 };
 
 export type PrintSection = {

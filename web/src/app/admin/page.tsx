@@ -14,7 +14,7 @@ import {
   type BancoRow,
   type MaterialStats,
 } from "@/lib/queries/bancos";
-import { getMaterialStats } from "@/lib/queries/bancos-cached";
+import { getMaterialStatsUncached } from "@/lib/queries/bancos";
 import {
   getPreguntasCount,
   intentosTableExists,
@@ -56,7 +56,7 @@ export default async function AdminPage() {
     [bancos, materias, stats] = await Promise.all([
       getAdminBancos(),
       getMateriasWithCounts(),
-      getMaterialStats(),
+      getMaterialStatsUncached(),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Error";

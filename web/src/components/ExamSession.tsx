@@ -102,6 +102,9 @@ export function ExamSession({
           opciones: q.opciones,
           respuesta: meta?.respuesta ?? 0,
           explicacion: meta?.explicacion,
+          supuestoId: q.supuestoId,
+          supuestoTitulo: q.supuestoTitulo,
+          supuestoTexto: q.supuestoTexto,
         };
       }),
     [active, answerMeta],

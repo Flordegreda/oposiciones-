@@ -89,32 +89,46 @@ function TestPrintSheet({
             {section.preguntas.map((q, qi) => {
               counter += 1;
               const num = counter;
+              const prev = qi > 0 ? section.preguntas[qi - 1] : null;
+              const showSupuesto =
+                !!q.supuestoTexto &&
+                (!prev || prev.supuestoId !== q.supuestoId);
               return (
-                <li key={`${si}-${qi}`} className="print-question-item">
-                  <p className="print-question-text">
-                    <span className="print-question-num">{num}.</span> {q.enunciado}
-                  </p>
-                  <ul className="print-option-list">
-                    {q.opciones.map((opt, oi) => {
-                      const correct = oi === q.respuesta;
-                      return (
-                        <li
-                          key={oi}
-                          className={`print-option${inline && correct ? " print-option--correct" : ""}`}
-                        >
-                          <span className="print-option-letter">{LETTERS[oi]})</span> {opt}
-                          {inline && correct && (
-                            <span className="print-option-mark"> ✓ Correcta</span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  {inline && showExplanations && q.explicacion?.trim() && (
-                    <p className="print-explanation">
-                      <strong>Explicación:</strong> {q.explicacion}
-                    </p>
+                <li key={`${si}-${qi}`} className="print-question-wrap">
+                  {showSupuesto && (
+                    <div className="print-supuesto-block">
+                      {q.supuestoTitulo && (
+                        <p className="print-supuesto-title">{q.supuestoTitulo}</p>
+                      )}
+                      <p className="print-supuesto-text">{q.supuestoTexto}</p>
+                    </div>
                   )}
+                  <div className="print-question-item">
+                    <p className="print-question-text">
+                      <span className="print-question-num">{num}.</span> {q.enunciado}
+                    </p>
+                    <ul className="print-option-list">
+                      {q.opciones.map((opt, oi) => {
+                        const correct = oi === q.respuesta;
+                        return (
+                          <li
+                            key={oi}
+                            className={`print-option${inline && correct ? " print-option--correct" : ""}`}
+                          >
+                            <span className="print-option-letter">{LETTERS[oi]})</span> {opt}
+                            {inline && correct && (
+                              <span className="print-option-mark"> ✓ Correcta</span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {inline && showExplanations && q.explicacion?.trim() && (
+                      <p className="print-explanation">
+                        <strong>Explicación:</strong> {q.explicacion}
+                      </p>
+                    )}
+                  </div>
                 </li>
               );
             })}
