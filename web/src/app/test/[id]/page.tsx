@@ -28,6 +28,9 @@ export default async function TestPage({ params }: Props) {
     enunciado: p.enunciado,
     opciones: p.opciones,
     orden: p.orden ?? i,
+    supuestoId: p.supuesto_id,
+    supuestoTitulo: p.supuesto_titulo,
+    supuestoTexto: p.supuesto_texto ?? undefined,
   }));
 
   return (

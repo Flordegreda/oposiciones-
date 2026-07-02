@@ -5,12 +5,25 @@ export type ParsedQuestion = {
   explicacion?: string;
 };
 
+export type ParsedSupuesto = {
+  titulo?: string;
+  texto: string;
+  preguntas: ParsedQuestion[];
+};
+
+export type ParsedImportDocument = {
+  sueltas: ParsedQuestion[];
+  supuestos: ParsedSupuesto[];
+};
+
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
 const ANSWER_RE =
   /^(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:?\s*([A-Da-d])\s*$/i;
 const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
+const SUPUESTO_START_RE = /^===\s*SUPUESTO(?:\s*:\s*(.*))?\s*$/i;
+const SUPUESTO_END_RE = /^===\s*$/;
 
 function normalizeText(texto: string): string {
   return texto
@@ -81,7 +94,6 @@ function parseNumberedBlocks(texto: string): ParsedQuestion[] {
   return preguntas;
 }
 
-/** Formato PDF/IA: enunciado(s) + A) B) C) D) + Respuesta: X (sin numerar) */
 function parseOptionBlocks(texto: string): ParsedQuestion[] {
   const preguntas: ParsedQuestion[] = [];
   const lines = texto.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -129,7 +141,6 @@ function parseOptionBlocks(texto: string): ParsedQuestion[] {
     ) {
       preguntas.push({ enunciado, opciones, respuesta, explicacion });
     } else if (enunciadoParts.length && opciones.length === 0) {
-      // Líneas sueltas sin opciones: seguir buscando
       continue;
     }
   }
@@ -137,7 +148,7 @@ function parseOptionBlocks(texto: string): ParsedQuestion[] {
   return preguntas;
 }
 
-export function parseImportText(texto: string): ParsedQuestion[] {
+function parseQuestionsFromText(texto: string): ParsedQuestion[] {
   const normalized = normalizeText(texto);
   if (!normalized) return [];
 
@@ -146,4 +157,76 @@ export function parseImportText(texto: string): ParsedQuestion[] {
 
   if (numbered.length >= optionStyle.length) return numbered;
   return optionStyle;
+}
+
+export function countParsedQuestions(doc: ParsedImportDocument): number {
+  return (
+    doc.sueltas.length + doc.supuestos.reduce((n, s) => n + s.preguntas.length, 0)
+  );
+}
+
+export function parseImportDocument(texto: string): ParsedImportDocument {
+  const normalized = normalizeText(texto);
+  if (!normalized) return { sueltas: [], supuestos: [] };
+
+  if (!SUPUESTO_START_RE.test(normalized)) {
+    return { sueltas: parseQuestionsFromText(normalized), supuestos: [] };
+  }
+
+  const lines = normalized.split("\n");
+  const sueltas: ParsedQuestion[] = [];
+  const supuestos: ParsedSupuesto[] = [];
+  const preamble: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const startMatch = lines[i].match(SUPUESTO_START_RE);
+    if (!startMatch) {
+      preamble.push(lines[i]);
+      i++;
+      continue;
+    }
+
+    if (preamble.length) {
+      const text = preamble.join("\n").trim();
+      if (text) sueltas.push(...parseQuestionsFromText(text));
+      preamble.length = 0;
+    }
+
+    const titulo = startMatch[1]?.trim() || undefined;
+    i++;
+
+    const textoLines: string[] = [];
+    while (i < lines.length && !SUPUESTO_END_RE.test(lines[i])) {
+      textoLines.push(lines[i]);
+      i++;
+    }
+    if (i < lines.length) i++;
+
+    const questionLines: string[] = [];
+    while (i < lines.length && !SUPUESTO_START_RE.test(lines[i])) {
+      questionLines.push(lines[i]);
+      i++;
+    }
+
+    const textoSupuesto = textoLines.join("\n").trim();
+    const preguntas = parseQuestionsFromText(questionLines.join("\n"));
+
+    if (textoSupuesto && preguntas.length > 0) {
+      supuestos.push({ titulo, texto: textoSupuesto, preguntas });
+    } else if (preguntas.length > 0) {
+      sueltas.push(...preguntas);
+    }
+  }
+
+  return { sueltas, supuestos };
+}
+
+/** Lista plana de preguntas (útil para vista previa rápida). */
+export function parseImportText(texto: string): ParsedQuestion[] {
+  const doc = parseImportDocument(texto);
+  return [
+    ...doc.sueltas,
+    ...doc.supuestos.flatMap((s) => s.preguntas),
+  ];
 }

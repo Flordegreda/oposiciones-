@@ -1,4 +1,5 @@
 import { getSupabase } from "@/lib/supabase/server";
+import { supuestosSchemaReady } from "@/lib/queries/schema";
 
 export type ImportMode = "append" | "overwrite";
 
@@ -8,6 +9,15 @@ export type BackupPregunta = {
   respuesta: number;
   explicacion?: string | null;
   orden?: number;
+  supuesto_id?: string | null;
+};
+
+export type BackupSupuesto = {
+  id?: string;
+  titulo?: string | null;
+  texto: string;
+  orden?: number;
+  preguntas?: BackupPregunta[];
 };
 
 export type BackupBanco = {
@@ -17,6 +27,7 @@ export type BackupBanco = {
   active?: boolean;
   linea_id?: string | null;
   materia_id?: string;
+  supuestos?: BackupSupuesto[];
   preguntas?: BackupPregunta[];
 };
 
@@ -90,6 +101,76 @@ function findExistingBancoId(
   return byName?.id ?? null;
 }
 
+async function deleteBancoContent(bancoId: string) {
+  const supabase = getSupabase();
+  await supabase.from("preguntas").delete().eq("banco_id", bancoId);
+  if (await supuestosSchemaReady()) {
+    await supabase.from("supuestos").delete().eq("banco_id", bancoId);
+  }
+}
+
+async function insertBancoContent(
+  bancoId: string,
+  banco: BackupBanco,
+  supabase: ReturnType<typeof getSupabase>,
+) {
+  const hasSupuestos = (banco.supuestos?.length ?? 0) > 0;
+  if (hasSupuestos && !(await supuestosSchemaReady())) {
+    throw new Error("El backup incluye supuestos pero falta la tabla supuestos en la base de datos");
+  }
+
+  let orden = 0;
+
+  if (hasSupuestos) {
+    for (let sIdx = 0; sIdx < (banco.supuestos?.length ?? 0); sIdx++) {
+      const sup = banco.supuestos![sIdx];
+      const { data: supuesto, error: sErr } = await supabase
+        .from("supuestos")
+        .insert({
+          banco_id: bancoId,
+          titulo: sup.titulo ?? null,
+          texto: sup.texto,
+          orden: sup.orden ?? sIdx,
+        })
+        .select("id")
+        .single();
+      if (sErr || !supuesto) throw new Error(sErr?.message ?? "Error al crear supuesto");
+
+      const rows = (sup.preguntas ?? []).map((p) => ({
+        banco_id: bancoId,
+        enunciado: p.enunciado,
+        opciones: p.opciones,
+        respuesta: p.respuesta,
+        explicacion: p.explicacion ?? null,
+        orden: orden++,
+        supuesto_id: supuesto.id,
+      }));
+      if (rows.length) {
+        const { error: pErr } = await supabase.from("preguntas").insert(rows);
+        if (pErr) throw new Error(pErr.message);
+      }
+    }
+  }
+
+  const sueltas = hasSupuestos
+    ? (banco.preguntas ?? [])
+    : (banco.preguntas ?? []);
+
+  if (sueltas.length) {
+    const rows = sueltas.map((p, i) => ({
+      banco_id: bancoId,
+      enunciado: p.enunciado,
+      opciones: p.opciones,
+      respuesta: p.respuesta,
+      explicacion: p.explicacion ?? null,
+      orden: p.orden ?? orden + i,
+      ...(p.supuesto_id ? { supuesto_id: p.supuesto_id } : {}),
+    }));
+    const { error: pErr } = await supabase.from("preguntas").insert(rows);
+    if (pErr) throw new Error(pErr.message);
+  }
+}
+
 export async function previewImport(body: BackupBody, mode: ImportMode): Promise<ImportPreview> {
   const existing = await loadExistingBancos();
   const supabase = getSupabase();
@@ -115,7 +196,10 @@ export async function previewImport(body: BackupBody, mode: ImportMode): Promise
 
     for (const banco of materia.bancos ?? []) {
       if (!banco.nombre?.trim()) continue;
-      const preguntas = banco.preguntas ?? [];
+      const preguntas = [
+        ...(banco.preguntas ?? []),
+        ...(banco.supuestos ?? []).flatMap((s) => s.preguntas ?? []),
+      ];
       if (!preguntas.length) {
         bancosVacios++;
         continue;
@@ -165,7 +249,10 @@ export async function runImport(body: BackupBody, mode: ImportMode) {
 
     for (const banco of materia.bancos ?? []) {
       if (!banco.nombre?.trim()) continue;
-      const preguntas = banco.preguntas ?? [];
+      const preguntas = [
+        ...(banco.preguntas ?? []),
+        ...(banco.supuestos ?? []).flatMap((s) => s.preguntas ?? []),
+      ];
       if (!preguntas.length) {
         skipped++;
         continue;
@@ -177,14 +264,6 @@ export async function runImport(body: BackupBody, mode: ImportMode) {
         skipped++;
         continue;
       }
-
-      const rows = preguntas.map((p, orden) => ({
-        enunciado: p.enunciado,
-        opciones: p.opciones,
-        respuesta: p.respuesta,
-        explicacion: p.explicacion ?? null,
-        orden: p.orden ?? orden,
-      }));
 
       if (existingId && mode === "overwrite") {
         const { error: uErr } = await supabase
@@ -199,12 +278,8 @@ export async function runImport(body: BackupBody, mode: ImportMode) {
           .eq("id", existingId);
         if (uErr) throw new Error(uErr.message);
 
-        await supabase.from("preguntas").delete().eq("banco_id", existingId);
-
-        const { error: pErr } = await supabase.from("preguntas").insert(
-          rows.map((r) => ({ ...r, banco_id: existingId })),
-        );
-        if (pErr) throw new Error(pErr.message);
+        await deleteBancoContent(existingId);
+        await insertBancoContent(existingId, banco, supabase);
         updated++;
         continue;
       }
@@ -223,12 +298,11 @@ export async function runImport(body: BackupBody, mode: ImportMode) {
 
       if (bErr || !newBanco) throw new Error(bErr?.message ?? "Error al crear banco");
 
-      const { error: pErr } = await supabase.from("preguntas").insert(
-        rows.map((r) => ({ ...r, banco_id: newBanco.id })),
-      );
-      if (pErr) {
+      try {
+        await insertBancoContent(newBanco.id, banco, supabase);
+      } catch (e) {
         await supabase.from("bancos").delete().eq("id", newBanco.id);
-        throw new Error(pErr.message);
+        throw e;
       }
 
       inserted++;

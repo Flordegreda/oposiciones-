@@ -6,7 +6,12 @@ import {
 } from "@/lib/exam-utils";
 import { getSupabase } from "@/lib/supabase/server";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
-import { preguntasTableExists } from "@/lib/queries/schema";
+import { preguntasTableExists, supuestosSchemaReady } from "@/lib/queries/schema";
+import {
+  attachSupuestoToExamPregunta,
+  sortPreguntasWithSupuestos,
+  type SupuestoRow,
+} from "@/lib/supuesto-utils";
 
 export type SimulacroMateriaPool = {
   id: string;
@@ -24,33 +29,96 @@ type PreguntaRow = {
   id: string;
   banco_id: string;
   enunciado: string;
-  opciones: unknown;
+  opciones: string[];
   respuesta: number;
   explicacion: string | null;
+  orden: number;
+  supuesto_id: string | null;
 };
+
+const PAGE_SIZE = 1000;
+const PREGUNTA_SELECT_BASE =
+  "id, banco_id, enunciado, opciones, respuesta, explicacion, orden";
+const PREGUNTA_SELECT_WITH_SUPUESTO = `${PREGUNTA_SELECT_BASE}, supuesto_id`;
+
+async function fetchSupuestosForBancos(bancoIds: string[]): Promise<Map<string, SupuestoRow>> {
+  const map = new Map<string, SupuestoRow>();
+  if (!bancoIds.length || !(await supuestosSchemaReady())) return map;
+
+  const supabase = getSupabase();
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("supuestos")
+      .select("id, banco_id, titulo, texto, orden")
+      .in("banco_id", bancoIds)
+      .order("orden")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    if (!data?.length) break;
+    for (const row of data as SupuestoRow[]) map.set(row.id, row);
+    if (data.length < PAGE_SIZE) break;
+  }
+
+  return map;
+}
 
 async function fetchPreguntasForBancos(bancoIds: string[]): Promise<PreguntaRow[]> {
   if (!bancoIds.length) return [];
   const supabase = getSupabase();
-  const pageSize = 1000;
+  const withSupuesto = await supuestosSchemaReady();
   const rows: PreguntaRow[] = [];
 
-  for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabase
-      .from("preguntas")
-      .select("id, banco_id, enunciado, opciones, respuesta, explicacion")
-      .in("banco_id", bancoIds)
-      .order("banco_id")
-      .order("orden")
-      .range(from, from + pageSize - 1);
+  for (let from = 0; ; from += PAGE_SIZE) {
+    let batchLen = 0;
 
-    if (error) throw error;
-    if (!data?.length) break;
-    rows.push(...(data as PreguntaRow[]));
-    if (data.length < pageSize) break;
+    if (withSupuesto) {
+      const { data, error } = await supabase
+        .from("preguntas")
+        .select(PREGUNTA_SELECT_WITH_SUPUESTO)
+        .in("banco_id", bancoIds)
+        .order("banco_id")
+        .order("orden")
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      if (!data?.length) break;
+      batchLen = data.length;
+      rows.push(
+        ...data.map((p) => ({
+          ...p,
+          opciones: p.opciones as string[],
+          supuesto_id: p.supuesto_id ?? null,
+        })),
+      );
+    } else {
+      const { data, error } = await supabase
+        .from("preguntas")
+        .select(PREGUNTA_SELECT_BASE)
+        .in("banco_id", bancoIds)
+        .order("banco_id")
+        .order("orden")
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      if (!data?.length) break;
+      batchLen = data.length;
+      rows.push(
+        ...data.map((p) => ({
+          ...p,
+          opciones: p.opciones as string[],
+          supuesto_id: null,
+        })),
+      );
+    }
+
+    if (batchLen < PAGE_SIZE) break;
   }
 
-  return rows;
+  if (!withSupuesto) return rows;
+
+  const supuestoById = await fetchSupuestosForBancos(bancoIds);
+  return sortPreguntasWithSupuestos(rows, supuestoById);
 }
 
 function buildMetaFromSections(
@@ -121,20 +189,15 @@ export async function startSimulacroSession(
     throw new Error("No hay preguntas disponibles para este simulacro");
   }
 
+  const supuestoById = await fetchSupuestosForBancos(bancoIds);
   const data = await fetchPreguntasForBancos(bancoIds);
   const all: ExamPregunta[] = data.map((p) => {
     const materia = materiaByBanco.get(p.banco_id);
-    return {
-      id: p.id,
-      bancoId: p.banco_id,
+    return attachSupuestoToExamPregunta(p, supuestoById, {
       tipo: tipoByBanco.get(p.banco_id) ?? "teorico",
       materiaId: materia?.id,
       materiaNombre: materia?.nombre,
-      enunciado: p.enunciado,
-      opciones: p.opciones as string[],
-      respuesta: p.respuesta,
-      explicacion: p.explicacion ?? undefined,
-    };
+    });
   });
 
   const pick = pickSimulacroMix(all, presetId);

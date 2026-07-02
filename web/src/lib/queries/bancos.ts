@@ -1,7 +1,11 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
-import { preguntasTableExists } from "@/lib/queries/schema";
+import { preguntasTableExists, supuestosSchemaReady } from "@/lib/queries/schema";
+import {
+  sortPreguntasWithSupuestos,
+  type SupuestoRow,
+} from "@/lib/supuesto-utils";
 
 export type BancoRow = {
   id: string;
@@ -22,6 +26,9 @@ export type PreguntaRow = {
   respuesta: number;
   explicacion: string | null;
   orden: number;
+  supuesto_id: string | null;
+  supuesto_titulo?: string | null;
+  supuesto_texto?: string | null;
 };
 
 export type MateriaSection = {
@@ -153,32 +160,95 @@ async function fetchPreguntaCountsParallel(bancoIds?: string[]): Promise<Map<str
   return tally;
 }
 
-async function fetchPreguntasForBanco(bancoId: string): Promise<PreguntaRow[]> {
-  const supabase = getSupabase();
-  const rows: PreguntaRow[] = [];
+async function fetchSupuestosForBancos(bancoIds: string[]): Promise<Map<string, SupuestoRow>> {
+  const map = new Map<string, SupuestoRow>();
+  if (!bancoIds.length || !(await supuestosSchemaReady())) return map;
 
+  const supabase = getSupabase();
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabase
-      .from("preguntas")
-      .select("id, banco_id, enunciado, opciones, respuesta, explicacion, orden")
-      .eq("banco_id", bancoId)
+      .from("supuestos")
+      .select("id, banco_id, titulo, texto, orden")
+      .in("banco_id", bancoIds)
       .order("orden")
       .range(from, from + PAGE_SIZE - 1);
 
     if (error) throw error;
     if (!data?.length) break;
-
-    rows.push(
-      ...data.map((p) => ({
-        ...p,
-        opciones: p.opciones as string[],
-      })),
-    );
-
+    for (const row of data as SupuestoRow[]) map.set(row.id, row);
     if (data.length < PAGE_SIZE) break;
   }
 
-  return rows;
+  return map;
+}
+
+const PREGUNTA_SELECT_BASE =
+  "id, banco_id, enunciado, opciones, respuesta, explicacion, orden";
+const PREGUNTA_SELECT_WITH_SUPUESTO = `${PREGUNTA_SELECT_BASE}, supuesto_id`;
+
+async function fetchPreguntasForBanco(bancoId: string): Promise<PreguntaRow[]> {
+  const supabase = getSupabase();
+  const rows: PreguntaRow[] = [];
+  const withSupuesto = await supuestosSchemaReady();
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    let batchLen = 0;
+
+    if (withSupuesto) {
+      const { data, error } = await supabase
+        .from("preguntas")
+        .select(PREGUNTA_SELECT_WITH_SUPUESTO)
+        .eq("banco_id", bancoId)
+        .order("orden")
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      if (!data?.length) break;
+      batchLen = data.length;
+
+      rows.push(
+        ...data.map((p) => ({
+          ...p,
+          opciones: p.opciones as string[],
+          supuesto_id: p.supuesto_id ?? null,
+        })),
+      );
+    } else {
+      const { data, error } = await supabase
+        .from("preguntas")
+        .select(PREGUNTA_SELECT_BASE)
+        .eq("banco_id", bancoId)
+        .order("orden")
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      if (!data?.length) break;
+      batchLen = data.length;
+
+      rows.push(
+        ...data.map((p) => ({
+          ...p,
+          opciones: p.opciones as string[],
+          supuesto_id: null,
+        })),
+      );
+    }
+
+    if (batchLen < PAGE_SIZE) break;
+  }
+
+  if (!withSupuesto) return rows;
+
+  const supuestoById = await fetchSupuestosForBancos([bancoId]);
+  const sorted = sortPreguntasWithSupuestos(rows, supuestoById);
+  return sorted.map((p) => {
+    const sup = p.supuesto_id ? supuestoById.get(p.supuesto_id) : undefined;
+    return {
+      ...p,
+      supuesto_titulo: sup?.titulo ?? null,
+      supuesto_texto: sup?.texto ?? null,
+    };
+  });
 }
 
 function groupByMateria(rows: BancoRow[]): MateriaSection[] {

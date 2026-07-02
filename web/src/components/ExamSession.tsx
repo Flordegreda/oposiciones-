@@ -497,6 +497,15 @@ export function ExamSession({
         })}
       </div>
 
+      {current.supuestoTexto && (
+        <div className="supuesto-panel">
+          {current.supuestoTitulo && (
+            <p className="supuesto-panel-title">{current.supuestoTitulo}</p>
+          )}
+          <div className="supuesto-panel-text">{current.supuestoTexto}</div>
+        </div>
+      )}
+
       <p className="test-question">{current.enunciado}</p>
       <ul className="options">
         {current.opciones.map((opt, i) => {

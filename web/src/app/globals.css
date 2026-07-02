@@ -1282,6 +1282,35 @@ h1 {
   margin: 0 0 1.25rem;
 }
 
+.supuesto-panel {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 2;
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent, #2563eb);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card) 92%, var(--accent, #2563eb) 8%);
+  max-height: min(40vh, 320px);
+  overflow-y: auto;
+}
+
+.supuesto-panel-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.supuesto-panel-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  color: var(--foreground);
+}
+
 .options {
   list-style: none;
   padding: 0;

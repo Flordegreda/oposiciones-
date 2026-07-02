@@ -81,3 +81,24 @@ export async function favoritosTableExists(): Promise<boolean> {
     (msg.includes("favoritos") && msg.includes("does not exist"))
   );
 }
+
+export async function supuestosTableExists(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("supuestos").select("id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "supuestos" does not exist') ||
+    (msg.includes("supuestos") && msg.includes("does not exist"))
+  );
+}
+
+export async function supuestosSchemaReady(): Promise<boolean> {
+  if (!(await supuestosTableExists())) return false;
+  const supabase = getSupabase();
+  const { error } = await supabase.from("preguntas").select("supuesto_id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(msg.includes("supuesto_id") && msg.includes("does not exist"));
+}

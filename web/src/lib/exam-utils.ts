@@ -1,3 +1,5 @@
+import { pickSimulacroBlocks } from "@/lib/supuesto-utils";
+
 export type ExamPregunta = {
   id: string;
   bancoId: string;
@@ -8,6 +10,11 @@ export type ExamPregunta = {
   opciones: string[];
   respuesta: number;
   explicacion?: string;
+  orden?: number;
+  supuestoId?: string | null;
+  supuestoTitulo?: string | null;
+  supuestoTexto?: string | null;
+  supuestoOrden?: number | null;
 };
 
 /** Pregunta enviada al cliente sin solución (test/simulacro en curso). */
@@ -22,6 +29,11 @@ export function stripExamAnswer(p: ExamPregunta): PublicExamPregunta {
     materiaNombre: p.materiaNombre,
     enunciado: p.enunciado,
     opciones: p.opciones,
+    orden: p.orden,
+    supuestoId: p.supuestoId,
+    supuestoTitulo: p.supuestoTitulo,
+    supuestoTexto: p.supuestoTexto,
+    supuestoOrden: p.supuestoOrden,
   };
 }
 
@@ -92,28 +104,7 @@ export function pickSimulacroMix(
   presetId: SimulacroPresetId,
 ): SimulacroPick {
   const preset = SIMULACRO_PRESETS.find((p) => p.id === presetId)!;
-  const teoricas = shuffle(all.filter((p) => p.tipo !== "practico"));
-  const practicas = shuffle(all.filter((p) => p.tipo === "practico"));
-
-  const teoricasBase = teoricas.slice(0, Math.min(preset.teorico, teoricas.length));
-  const practicasBase = practicas.slice(0, Math.min(preset.practico, practicas.length));
-  const targetTotal = preset.teorico + preset.practico;
-
-  const listBase = [...teoricasBase, ...practicasBase];
-  const usedIds = new Set(listBase.map((p) => p.id));
-
-  // Compensa faltantes con preguntas del otro bloque para mantener tamaño objetivo.
-  const faltan = Math.max(0, targetTotal - listBase.length);
-  let extras: ExamPregunta[] = [];
-
-  if (faltan > 0) {
-    const extraTeoricas = teoricas.filter((p) => !usedIds.has(p.id));
-    const extraPracticas = practicas.filter((p) => !usedIds.has(p.id));
-    const poolExtras = [...extraTeoricas, ...extraPracticas];
-    extras = poolExtras.slice(0, faltan);
-  }
-
-  const list = shuffle([...listBase, ...extras]);
+  const list = pickSimulacroBlocks(all, preset.teorico, preset.practico);
   const teoricoUsed = list.filter((p) => p.tipo !== "practico").length;
   const practicoUsed = list.length - teoricoUsed;
 

@@ -7,6 +7,7 @@ import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 import { AdminIntentosSetup } from "@/components/admin/AdminIntentosSetup";
 import { AdminResultadosSetup } from "@/components/admin/AdminResultadosSetup";
 import { AdminProgresoReset } from "@/components/admin/AdminProgresoReset";
+import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 import {
   getAdminBancos,
   getMateriasWithCounts,
@@ -19,6 +20,7 @@ import {
   intentosTableExists,
   preguntasTableExists,
   resultadosTableExists,
+  supuestosSchemaReady,
 } from "@/lib/queries/schema";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -31,6 +33,7 @@ export default async function AdminPage() {
   let schemaOk = true;
   let intentosOk = true;
   let resultadosOk = true;
+  let supuestosOk = true;
   let preguntasCount: number | null = null;
   let stats: MaterialStats = {
     materias: 0,
@@ -47,6 +50,7 @@ export default async function AdminPage() {
       preguntasCount = await getPreguntasCount();
       intentosOk = await intentosTableExists();
       resultadosOk = await resultadosTableExists();
+      supuestosOk = await supuestosSchemaReady();
     }
     [bancos, materias, stats] = await Promise.all([
       getAdminBancos(),
@@ -81,6 +85,8 @@ export default async function AdminPage() {
         {schemaOk && !intentosOk && <AdminIntentosSetup />}
 
         {schemaOk && !resultadosOk && <AdminResultadosSetup />}
+
+        {schemaOk && !supuestosOk && <AdminSupuestosSetup />}
 
         {schemaOk && resultadosOk && <AdminProgresoReset />}
 

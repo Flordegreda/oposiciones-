@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { parseImportText } from "@/lib/parse-import-text";
+import { countParsedQuestions, parseImportDocument } from "@/lib/parse-import-text";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -34,10 +34,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const previewCount = useMemo(
-    () => (texto.trim() ? parseImportText(texto).length : 0),
+  const preview = useMemo(
+    () => (texto.trim() ? parseImportDocument(texto) : { sueltas: [], supuestos: [] }),
     [texto],
   );
+  const previewCount = useMemo(() => countParsedQuestions(preview), [preview]);
 
   async function guardarBanco() {
     setBusy(true);
@@ -52,7 +53,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true }: Props) {
     setBusy(false);
     if (!res.ok) return setErr(data.error || "Error");
     setTexto("");
-    setMsg(`Banco creado: ${data.banco.nombre} (${data.num} preguntas)`);
+    setMsg(
+      `Banco creado: ${data.banco.nombre} (${data.num} preguntas` +
+        (data.supuestos ? `, ${data.supuestos} supuestos` : "") +
+        ")",
+    );
     router.refresh();
   }
 
@@ -89,11 +94,30 @@ Respuesta: B
 P: ¿Enunciado?
 A) …
 B) …
-R: B`}</pre>
+R: B
+
+— supuesto práctico —
+
+=== SUPUESTO: Caso administrativo
+Texto del supuesto que comparten
+varias preguntas (puede ocupar
+varias líneas).
+===
+
+1. Primera pregunta del supuesto
+A) …
+B) …
+Respuesta: A
+
+2. Segunda pregunta
+A) …
+B) …
+Respuesta: B`}</pre>
           <p className="muted small" style={{ marginTop: "0.5rem" }}>
             Cada pregunta debe empezar con <code>1.</code>, <code>2.</code> o{" "}
-            <code>P:</code> en una línea nueva. Si pegas desde otro formato, revisa que
-            los números no se hayan pegado en la misma línea.
+            <code>P:</code> en una línea nueva. Los supuestos usan{" "}
+            <code>=== SUPUESTO</code> … <code>===</code> y requieren activar la tabla en
+            Material.
           </p>
         </div>
 
@@ -147,7 +171,10 @@ R: B`}</pre>
         {texto.trim() && (
           <p className={previewCount > 0 ? "ok" : "error"} style={{ marginTop: "0.5rem" }}>
             {previewCount > 0
-              ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""} en el texto`
+              ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""}` +
+                (preview.supuestos.length
+                  ? ` · ${preview.supuestos.length} supuesto${preview.supuestos.length !== 1 ? "s" : ""}`
+                  : "")
               : "No se detectan preguntas válidas — revisa el formato (Respuesta: B o R: B)"}
           </p>
         )}
