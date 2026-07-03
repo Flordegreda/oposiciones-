@@ -9,6 +9,7 @@ const items = [
   { href: "/repaso", label: "Repaso", match: (p: string) => p.startsWith("/repaso") },
   { href: "/simulacro", label: "Simulacro", match: (p: string) => p.startsWith("/simulacro") },
   { href: "/estadisticas", label: "Stats", match: (p: string) => p.startsWith("/estadisticas") },
+  { href: "/admin", label: "Material", match: (p: string) => p.startsWith("/admin") },
 ];
 
 export function MobileBottomNav() {

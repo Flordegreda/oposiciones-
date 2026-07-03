@@ -54,6 +54,7 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
   const [supuestoBusy, setSupuestoBusy] = useState(false);
   const savedRef = useRef<Map<string, string>>(new Map());
   const tieneSupuesto = preguntas.some((p) => p.supuesto_id || p.supuesto_texto);
+  const muestraSupuesto = tipo === "practico" || tieneSupuesto;
 
   useEffect(() => {
     const map = new Map<string, string>();
@@ -310,11 +311,13 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
         </div>
       </div>
 
-      {tieneSupuesto && (
+      {muestraSupuesto && (
         <div className="card admin-supuesto-card">
           <h3 className="admin-preguntas-title">Enunciado del supuesto (caso compartido)</h3>
           <p className="muted small">
-            Este texto se muestra encima de las preguntas del supuesto y al imprimir el test.
+            {tieneSupuesto
+              ? "Este texto se muestra encima de las preguntas del supuesto y al imprimir el test."
+              : "Este banco práctico no tiene enunciado guardado: no saldrá en el test ni al imprimir. Pégalo aquí y guarda — las preguntas se enlazarán automáticamente."}
           </p>
           <div className="form">
             <label>

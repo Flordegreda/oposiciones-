@@ -2256,6 +2256,13 @@ code {
   margin: 0;
 }
 
+.test-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .print-options-panel {
   width: min(440px, 100%);
 }

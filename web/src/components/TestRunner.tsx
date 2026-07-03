@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
 import { ExamSession, type SessionMeta } from "@/components/ExamSession";
@@ -82,11 +83,16 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
     <div className="card">
       <div className="test-start-head">
         <h2 className="test-start-title">¿Cómo quieres practicar?</h2>
-        <TestPrintButton
-          bancoId={bancoId}
-          title={bancoNombre}
-          label={`Imprimir banco (${allPreguntas.length})`}
-        />
+        <div className="test-start-actions">
+          <TestPrintButton
+            bancoId={bancoId}
+            title={bancoNombre}
+            label={`Imprimir banco (${allPreguntas.length})`}
+          />
+          <Link href={`/admin/bancos/${bancoId}`} className="btn-secondary btn-sm">
+            Editar banco
+          </Link>
+        </div>
       </div>
       <div className="test-mode-list">
         <button
