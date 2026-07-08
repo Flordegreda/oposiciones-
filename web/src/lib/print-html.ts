@@ -34,6 +34,38 @@ const PRINT_CSS = `
     color: #111;
     background: #fff;
   }
+  .print-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 0.75rem 1rem;
+    background: #1e3a5f;
+    color: #fff;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .print-toolbar p { margin: 0; flex: 1; min-width: 200px; }
+  .print-toolbar button {
+    padding: 0.5rem 1.25rem;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #fff;
+    color: #1e3a5f;
+  }
+  .print-toolbar button:hover { background: #e8eef5; }
+  .print-sheet {
+    padding: 1.25rem 1.5rem 2rem;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
   .print-sheet-head {
     margin-bottom: 1.25rem;
     padding-bottom: 0.75rem;
@@ -75,10 +107,9 @@ const PRINT_CSS = `
   .print-option-mark { font-size: 9pt; color: #1a6b47; }
   .print-explanation { margin: 0.35rem 0 0; font-size: 9.5pt; color: #333; }
   .print-answer-key {
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     padding-top: 1rem;
     border-top: 3px double #222;
-    page-break-before: always;
   }
   .print-answer-key-title {
     margin: 0 0 0.75rem;
@@ -90,6 +121,10 @@ const PRINT_CSS = `
   .print-answer-key-item { margin: 0.25rem 0; font-size: 11pt; }
   .print-answer-key-num { color: #555; }
   .print-answer-key-explain { font-size: 9pt; color: #444; }
+  @media print {
+    .print-toolbar { display: none !important; }
+    .print-sheet { padding: 0; max-width: none; }
+  }
 `;
 
 export function buildPrintHtml(job: PrintHtmlJob): string {
@@ -195,32 +230,36 @@ export function buildPrintHtml(job: PrintHtmlJob): string {
   <style>${PRINT_CSS}</style>
 </head>
 <body>
+  <div class="print-toolbar">
+    <p>Revisa el test abajo. Cuando lo veas completo, pulsa <strong>Imprimir</strong> (o Ctrl+P).</p>
+    <button type="button" onclick="window.print()">Imprimir</button>
+  </div>
   <div class="print-sheet">${body}</div>
+  <script>
+    window.addEventListener("load", function () {
+      var btn = document.querySelector(".print-toolbar button");
+      if (btn) btn.focus();
+    });
+  </script>
 </body>
 </html>`;
 }
 
-/** Abre documento de impresión aislado (no depende del layout de la app). */
+/** Abre documento de impresión aislado; el usuario pulsa Imprimir cuando ve el contenido. */
 export function openPrintDocument(html: string): "window" | "iframe" | "blocked" {
   const w = window.open("", "_blank");
   if (w) {
     w.document.open();
     w.document.write(html);
     w.document.close();
-    const trigger = () => {
-      w.focus();
-      w.print();
-    };
-    w.onload = trigger;
-    if (w.document.readyState === "complete") trigger();
-    w.onafterprint = () => w.close();
+    w.focus();
     return "window";
   }
 
   const iframe = document.createElement("iframe");
   iframe.setAttribute("title", "Imprimir test");
   iframe.style.cssText =
-    "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+    "position:fixed;inset:0;width:100%;height:100%;border:0;z-index:99999;background:#fff";
   document.body.appendChild(iframe);
   const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
   if (!doc) {
@@ -230,15 +269,5 @@ export function openPrintDocument(html: string): "window" | "iframe" | "blocked"
   doc.open();
   doc.write(html);
   doc.close();
-  const win = iframe.contentWindow;
-  if (!win) {
-    document.body.removeChild(iframe);
-    return "blocked";
-  }
-  win.onafterprint = () => {
-    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-  };
-  win.focus();
-  win.print();
   return "iframe";
 }

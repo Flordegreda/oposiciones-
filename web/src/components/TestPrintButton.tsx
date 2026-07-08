@@ -118,6 +118,10 @@ export function TestPrintButton({
     }
 
     setOpen(false);
+    if (mode === "window") {
+      setPrintErr(null);
+      // Mensaje breve: la pestaña nueva tiene barra con botón Imprimir
+    }
   }
 
   const canShow = materiaId || bancoId || printUrl ? true : staticSections.length > 0;
