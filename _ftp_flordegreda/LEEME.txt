@@ -1,0 +1,39 @@
+Flor de Greda — Campo (plugin)
+===============================
+
+Flujo mínimo para flordegreda.es:
+
+- Móvil: /campo/ — foto, GPS, sitio, nota → guardar
+- Escritorio: menú «Campo» — cola por identificar, vincular ficha, crear borrador
+- Fichas: avistamientos en plantas/insectos + capa de capturas en /mapa/
+- Facebook: tarjeta Open Graph + botón «Compartir en Facebook» en cada ficha
+
+Instalación
+-----------
+1. Desactiva plugins antiguos si existen: «Cola de identificación», «Cuaderno de campo» (localStorage).
+2. Plugins → Subir fdg-campo-3.2.1.zip → Activar.
+3. LiteSpeed: purgar TODA la caché (importante para /campo/).
+4. Ajustes → Enlaces permanentes → Guardar.
+5. Campo → «Regenerar tarjetas de Facebook» (primera vez, para fichas ya publicadas).
+
+Compartir en Facebook
+---------------------
+- Cada ficha tiene al final: vista previa + botón «Compartir en Facebook».
+- Al compartir el enlace, Facebook usa la tarjeta 1200×630 generada automáticamente.
+- Si Facebook muestra imagen antigua: https://developers.facebook.com/tools/debug/ → pegar URL → «Scrape Again».
+
+Si /campo/ no guarda
+--------------------
+- Recarga la página tirando hacia abajo (nonce caducado).
+- Excluye /campo/ de la caché LiteSpeed en el panel del hosting.
+- Comprueba que solo está activo «Flor de Greda — Campo» (no plugins antiguos).
+
+Requisito servidor
+------------------
+- Extensión PHP GD (para generar las tarjetas de Facebook).
+
+Empaquetar
+----------
+powershell -File empaquetar-fdg-campo.ps1
+
+El catálogo público de insectos está en /catalogo-insectos/ (tema). Este plugin no toca el catálogo.

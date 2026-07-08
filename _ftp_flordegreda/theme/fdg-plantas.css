@@ -1,0 +1,373 @@
+/* ============================================================
+   FLOR DE GREDA — Fichas de plantas e insectos (fdg-plantas.css)
+   ============================================================ */
+
+.fdg-ficha-wrap * { box-sizing: border-box; }
+
+/* Quitar elementos de GeneratePress que no necesitamos */
+.single-plantas .inside-article,
+.single-insectos .inside-article,
+.single-plantas .entry-content,
+.single-insectos .entry-content {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.single-plantas .entry-header,
+.single-insectos .entry-header,
+.single-plantas .entry-footer,
+.single-insectos .entry-footer,
+.single-plantas .post-navigation,
+.single-insectos .post-navigation,
+.single-plantas .page-header,
+.single-insectos .page-header {
+  display: none !important;
+}
+
+/* ---- FONDO DE PÁGINA ---- */
+.single-plantas .site-content,
+.single-insectos .site-content,
+.single-plantas .site-main,
+.single-insectos .site-main {
+  background: #d4dcc8 !important;
+  padding: 40px 24px 64px !important;
+}
+.single-plantas .site-content .grid-container,
+.single-insectos .site-content .grid-container {
+  max-width: 1240px !important;
+  padding: 0 !important;
+}
+
+/* ---- TARJETA PRINCIPAL ---- */
+.fdg-ficha-wrap {
+  background: #fdfaf5;
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  padding-bottom: 2.5rem;
+}
+
+/* ---- HERO ---- */
+.fdg-hero {
+  position: relative;
+  width: 100%;
+  height: 340px;
+  overflow: hidden;
+  background: #2d4a1e;
+  margin-bottom: 0;
+}
+.fdg-hero__img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  max-width: none !important;
+}
+.fdg-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.65) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 32px 32px;
+}
+.fdg-hero__badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #e8f5e2;
+  font-size: 12px;
+  font-style: italic;
+  padding: 5px 13px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+.fdg-hero__titulo-principal {
+  color: #fff !important;
+  font-size: 2rem !important;
+  font-weight: 600 !important;
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.fdg-hero__nombre-cientifico {
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-size: 15px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ---- CHIPS ---- */
+.fdg-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 24px 32px 8px;
+  margin: 0;
+}
+.fdg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #eaf3de;
+  color: #3b6d11;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* Secciones */
+.fdg-seccion {
+  margin-bottom: 2rem;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+.fdg-seccion:first-of-type {
+  margin-top: 8px;
+}
+
+.fdg-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.09em !important;
+  text-transform: uppercase !important;
+  color: #aaa !important;
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+}
+
+/* Ficha neófito — ancho completo */
+.fdg-ficha-neofito {
+  display: grid;
+  gap: 20px;
+  max-width: none;
+}
+.fdg-ficha-neofito__bloque { margin: 0; }
+.fdg-ficha-neofito__texto {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #2a3a1a;
+  margin: 6px 0 0;
+}
+.fdg-ficha-neofito__bloque--curiosidad .fdg-ficha-neofito__texto {
+  font-style: italic;
+  padding: 12px 16px;
+  background: #f7f5ee;
+  border-left: 3px solid #4a7c2f;
+  border-radius: 0 8px 8px 0;
+}
+
+/* ---- DESCRIPCIÓN ---- */
+.fdg-descripcion__texto {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #555;
+  background: #f7f9f4;
+  border-left: 3px solid #4a7c2f;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.fdg-descripcion__texto p { margin: 0 !important; }
+
+/* ---- FICHA BOTÁNICA ---- */
+.fdg-tabla-wrap {
+  border: 1px solid #e8ede4;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.fdg-tabla-header {
+  background: #f7f9f4;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a7c2f;
+  border-bottom: 1px solid #e8ede4;
+}
+.fdg-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+.fdg-tabla tr { border-bottom: 1px solid #f2f5ef; }
+.fdg-tabla tr:last-child { border-bottom: none; }
+.fdg-tabla tr:hover { background: #fafcf8; }
+.fdg-tabla__key {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #777;
+  width: 38%;
+}
+.fdg-tabla__val {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #222;
+}
+.fdg-tabla__val--mono {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 400;
+  color: #555;
+}
+
+/* ---- GALERÍA ---- */
+.fdg-galeria .fdg-label { padding-left: 0; }
+.fdg-galeria__grid {
+  display: grid;
+  gap: 3px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.fdg-galeria__grid--single { grid-template-columns: 1fr; }
+.fdg-galeria__grid--duo { grid-template-columns: 1fr 1fr; }
+.fdg-galeria__grid--multi {
+  grid-template-columns: 2fr 1fr;
+  grid-auto-rows: 140px;
+}
+
+.fdg-galeria__item {
+  display: block;
+  overflow: hidden;
+  background: #dce8d4;
+  text-decoration: none;
+  min-height: 0;
+}
+.fdg-galeria__grid--multi .fdg-galeria__item--principal {
+  grid-row: 1 / span 3;
+  min-height: 420px;
+}
+.fdg-galeria__item img {
+  width: 100% !important;
+  height: 200px !important;
+  object-fit: cover !important;
+  display: block !important;
+  max-width: none !important;
+  transition: transform 0.35s ease;
+}
+.fdg-galeria__item--principal img { height: 280px !important; }
+.fdg-galeria__grid--multi .fdg-galeria__item--principal img { height: 420px !important; }
+.fdg-galeria__grid--multi .fdg-galeria__item:not(.fdg-galeria__item--principal) img {
+  height: 140px !important;
+}
+.fdg-galeria__item:hover img { transform: scale(1.04); }
+.fdg-galeria__item--video {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #1a2612;
+  text-decoration: none;
+}
+.fdg-galeria__item--video img,
+.fdg-galeria__item--video video {
+  width: 100% !important;
+  height: 200px !important;
+  object-fit: cover !important;
+  display: block !important;
+  max-width: none !important;
+  background: #1a2612;
+  pointer-events: none;
+}
+.fdg-galeria__item--principal.fdg-galeria__item--video img,
+.fdg-galeria__item--principal.fdg-galeria__item--video video { height: 280px !important; }
+.fdg-galeria__grid--multi .fdg-galeria__item--principal.fdg-galeria__item--video img,
+.fdg-galeria__grid--multi .fdg-galeria__item--principal.fdg-galeria__item--video video { height: 420px !important; }
+.fdg-galeria__grid--multi .fdg-galeria__item--video:not(.fdg-galeria__item--principal) img,
+.fdg-galeria__grid--multi .fdg-galeria__item--video:not(.fdg-galeria__item--principal) video { height: 140px !important; }
+.fdg-galeria__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, transparent 55%, rgba(26, 38, 18, 0.3) 100%);
+  pointer-events: none;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+}
+.fdg-galeria__play img,
+.fdg-galeria__play .emoji,
+.fdg-galeria__play img[role="img"] {
+  display: none !important;
+}
+.fdg-galeria__play::before {
+  content: "";
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.94);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233c5e3a'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 54% center;
+  background-size: 20px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease;
+}
+.fdg-galeria__play::after {
+  content: none !important;
+  display: none !important;
+}
+.fdg-galeria__item--video:hover img,
+.fdg-galeria__item--video:hover video { transform: scale(1.04); }
+.fdg-galeria__item--video:hover .fdg-galeria__play::before { transform: scale(1.06); }
+
+/* ---- MAPA ---- */
+.fdg-mapa__wrap {
+  border: 1px solid #e8ede4;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.fdg-mapa__header {
+  background: #f7f9f4;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e8ede4;
+}
+.fdg-mapa__titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a7c2f;
+}
+.fdg-mapa__coords {
+  font-family: monospace;
+  font-size: 12px;
+  color: #bbb;
+}
+.fdg-mapa__contenedor {
+  height: 320px;
+  width: 100%;
+}
+.fdg-mapa__contenedor .leaflet-container {
+  border-radius: 0 0 12px 12px;
+}
+.fdg-mapa-marker__pin {
+  width: 24px;
+  height: 24px;
+  background: #4a7c2f;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 640px) {
+  .single-plantas .site-content,
+  .single-insectos .site-content {
+    padding: 20px 12px 40px !important;
+  }
+  .fdg-hero { height: 240px; }
+  .fdg-hero__titulo-principal { font-size: 1.5rem !important; }
+  .fdg-chips,
+  .fdg-seccion { padding-left: 20px; padding-right: 20px; }
+  .fdg-galeria__grid--multi { grid-template-columns: 1fr; }
+  .fdg-galeria__grid--multi .fdg-galeria__item--principal img,
+  .fdg-galeria__grid--multi .fdg-galeria__item--principal.fdg-galeria__item--video img,
+  .fdg-galeria__grid--multi .fdg-galeria__item--principal.fdg-galeria__item--video video {
+    height: 280px !important;
+  }
+}

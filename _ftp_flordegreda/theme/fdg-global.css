@@ -1,0 +1,282 @@
+/* ============================================================
+   FLOR DE GREDA — Estilos globales (fdg-global.css)
+   ============================================================ */
+
+:root {
+  --fdg-content-max: 1400px;
+}
+
+/* ---- ANCHO MÁXIMO Y LATERALES ---- */
+.grid-container {
+  max-width: var(--fdg-content-max) !important;
+  padding-left: 28px !important;
+  padding-right: 28px !important;
+}
+
+.one-container .container,
+.one-container #page.site.grid-container {
+  max-width: var(--fdg-content-max) !important;
+}
+
+.site-content .content-area {
+  max-width: 100%;
+}
+
+/* ---- HEADER ---- */
+.site-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0 !important;
+  background-color: #e9e6d7 !important;
+}
+
+.site-header .inside-header {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 20px;
+  flex-wrap: wrap;
+  max-width: var(--fdg-content-max) !important;
+}
+
+.fdg-header-logo,
+.site-header .site-logo.fdg-header-logo {
+  flex: 0 0 auto;
+  margin-right: auto;
+  line-height: 0;
+  display: block !important;
+}
+
+/* Sin logo fuera de la cabecera */
+.site-branding,
+.site-content .site-logo,
+.site-content .header-image.is-logo-image,
+.fdg-ficha-page__brand,
+.fdg-footer__logo-img,
+.site-header .site-logo:not(.fdg-header-logo) {
+  display: none !important;
+}
+
+.site-header .header-image,
+.fdg-header-logo .header-image {
+  width: 200px !important;
+  max-width: min(200px, 42vw) !important;
+  height: auto !important;
+  display: block;
+}
+
+.site-header .main-navigation {
+  margin-left: auto;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.main-navigation .inside-navigation {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.main-navigation .main-nav ul li a {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  padding: 8px 16px !important;
+  color: #444 !important;
+  letter-spacing: 0.02em;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.main-navigation .main-nav ul li a:hover,
+.main-navigation .main-nav ul li a:focus {
+  background: rgba(74, 124, 47, 0.1) !important;
+  color: #3a6624 !important;
+}
+
+.main-navigation .main-nav ul li[class*="current-menu-"] > a {
+  background: rgba(74, 124, 47, 0.12) !important;
+  color: #3a6624 !important;
+}
+
+.main-navigation a {
+  text-decoration: none !important;
+}
+
+.main-navigation .main-nav ul li {
+  border: none !important;
+}
+
+@media (max-width: 768px) {
+  .site-header .inside-header {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .site-header .header-image,
+  .fdg-header-logo .header-image {
+    width: 150px !important;
+  }
+
+  .main-navigation.toggled .main-nav {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+    padding: 8px !important;
+    margin-top: 8px !important;
+  }
+
+  .main-navigation .main-nav ul li a {
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+  }
+
+  .menu-toggle {
+    background: transparent !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    color: #444 !important;
+  }
+}
+
+/* ---- FOOTER ---- */
+.site-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 20px 0 !important;
+  font-size: 13px !important;
+  color: #888 !important;
+}
+
+.fdg-footer {
+  background: #1e2e12;
+  padding: 56px 48px 32px;
+  margin-top: 0;
+}
+
+.fdg-footer__inner {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 48px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fdg-footer__logo-img {
+  width: 160px !important;
+  height: auto !important;
+  display: block !important;
+  margin-bottom: 12px;
+  opacity: 0.9;
+}
+
+.fdg-footer__nombre {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-style: italic;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.fdg-footer__tagline {
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  margin: 0 !important;
+  letter-spacing: 0.04em;
+}
+
+.fdg-footer__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.fdg-footer__nav a {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65) !important;
+  text-decoration: none !important;
+  transition: color 0.15s;
+}
+
+.fdg-footer__nav a:hover {
+  color: #a8c878 !important;
+}
+
+.fdg-footer__copy {
+  padding-top: 4px;
+}
+
+.fdg-footer__copy p {
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  margin: 0 0 6px !important;
+  line-height: 1.5 !important;
+}
+
+.site-info { display: none !important; }
+
+@media (max-width: 768px) {
+  .fdg-footer { padding: 40px 20px 24px; }
+  .fdg-footer__inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+.post-type-archive-plantas .inside-article,
+.tax-familia .inside-article {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.generate-back-to-top { display: none !important; }
+
+.fdg-back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  z-index: 9999;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #2d4a1e;
+  color: #fff;
+  font-size: 22px;
+  line-height: 44px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.fdg-back-to-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.fdg-back-to-top:hover,
+.fdg-back-to-top:focus {
+  transform: translateY(-2px);
+  background: #3c5e3a;
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  .fdg-back-to-top {
+    right: 16px;
+    bottom: 16px;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 20px;
+  }
+}

@@ -1,0 +1,189 @@
+.print-route {
+  min-height: 100vh;
+  background: #fff;
+  color: #111;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11pt;
+  line-height: 1.45;
+}
+
+.print-route-hint {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  background: #eef4fb;
+  border-bottom: 1px solid #c5d4e8;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 14px;
+  text-align: center;
+}
+
+.print-document {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.print-sheet-head {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #222;
+}
+
+.print-sheet-title {
+  margin: 0 0 0.25rem;
+  font-size: 16pt;
+}
+
+.print-sheet-sub {
+  margin: 0 0 0.35rem;
+  font-size: 11pt;
+  color: #333;
+}
+
+.print-sheet-meta {
+  margin: 0;
+  font-size: 9pt;
+  color: #555;
+}
+
+.print-banco-title {
+  margin: 1.25rem 0 0.65rem;
+  font-size: 12pt;
+  font-weight: 700;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.35rem;
+}
+
+.print-banco-block:first-of-type .print-banco-title {
+  margin-top: 0;
+}
+
+.print-banco-count {
+  font-weight: 500;
+  font-size: 10pt;
+  color: #555;
+}
+
+.print-supuesto-block {
+  margin: 0 0 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #ccc;
+  border-left: 4px solid #7c3aed;
+  background: #f8f6ff;
+}
+
+.print-supuesto-title {
+  margin: 0 0 0.35rem;
+  font-size: 10pt;
+  font-weight: 700;
+}
+
+.print-supuesto-text {
+  margin: 0;
+  font-size: 9.5pt;
+  white-space: pre-wrap;
+}
+
+.print-question-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.print-question-wrap {
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.print-question-text {
+  margin: 0 0 0.45rem;
+  font-weight: 600;
+}
+
+.print-question-num {
+  font-weight: 700;
+}
+
+.print-option-list {
+  margin: 0;
+  padding: 0 0 0 1rem;
+  list-style: none;
+}
+
+.print-option {
+  margin: 0.2rem 0;
+}
+
+.print-option-letter {
+  font-weight: 700;
+  margin-right: 0.15rem;
+}
+
+.print-option--correct {
+  font-weight: 600;
+}
+
+.print-option-mark {
+  font-size: 9pt;
+  color: #1a6b47;
+}
+
+.print-explanation {
+  margin: 0.35rem 0 0;
+  font-size: 9.5pt;
+  color: #333;
+}
+
+.print-answer-key {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 3px double #222;
+}
+
+.print-answer-key-title {
+  margin: 0 0 0.75rem;
+  font-size: 13pt;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.print-answer-key-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.print-answer-key-item {
+  margin: 0.25rem 0;
+  font-size: 11pt;
+}
+
+.print-answer-key-num {
+  color: #555;
+}
+
+.print-answer-key-explain {
+  font-size: 9pt;
+  color: #444;
+}
+
+@media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+
+  .print-route-hint,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-document {
+    padding: 0;
+    max-width: none;
+  }
+
+  .print-route {
+    min-height: auto;
+  }
+}

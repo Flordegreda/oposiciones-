@@ -132,7 +132,7 @@ export function SimulacroLauncher({ meta }: Props) {
   const selected = presets.find((p) => p.id === presetId)!;
 
   // Build print URL for current config
-  const printUrl = `/api/print/simulacro?presetId=${presetId}${materiaId ? `&materiaId=${encodeURIComponent(materiaId)}` : ""}`;
+  const printUrl = `/imprimir/simulacro?presetId=${presetId}${materiaId ? `&materiaId=${encodeURIComponent(materiaId)}` : ""}`;
   const printTitle = `${selected.label}${materiaLabel ? ` · ${materiaLabel}` : " · Todo el Temario"}`;
 
   return (

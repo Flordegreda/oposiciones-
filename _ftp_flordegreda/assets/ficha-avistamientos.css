@@ -1,0 +1,78 @@
+/* Observaciones de campo en fichas de especie */
+.fdg-avistamientos--campo {
+  margin-top: 2rem;
+}
+
+.fdg-avistamientos__lead {
+  margin: -0.25rem 0 1rem;
+  color: #50575e;
+  font-size: 0.95rem;
+}
+
+.fdg-avistamientos__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.fdg-avistamientos__item {
+  margin: 0;
+  border: 1px solid #dcdcde;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.fdg-avistamientos__link {
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.fdg-avistamientos__link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.fdg-avistamientos__link:hover img {
+  transform: scale(1.03);
+}
+
+.fdg-avistamientos__meta {
+  padding: 10px 12px 12px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.fdg-avistamientos__fecha,
+.fdg-avistamientos__habitat {
+  display: block;
+  color: #50575e;
+}
+
+.fdg-avistamientos__mapa {
+  display: inline-block;
+  margin-top: 6px;
+  color: #4a7c2f;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.fdg-avistamientos__mapa:hover {
+  text-decoration: underline;
+}
+
+.fdg-avistamientos__notas {
+  margin: 8px 0 0;
+  color: #1d2327;
+}
+
+@media (max-width: 600px) {
+  .fdg-avistamientos__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}

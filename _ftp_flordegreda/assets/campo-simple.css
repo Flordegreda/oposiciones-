@@ -1,0 +1,83 @@
+/* Oculta pestañas antiguas del tema en /campo/ */
+.fdg-campo__tabs,
+.fdg-campo__rapido,
+#tab-registrar,
+#tab-pendientes,
+#tab-recientes,
+#tab-por-identificar,
+#tab-identificar {
+  display: none !important;
+}
+
+#tab-foto-rapida {
+  display: block !important;
+}
+
+.fdg-campo-simple-hint {
+  background: #eaf3de;
+  border: 1px solid #4a7c2f;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #2c5e1a;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.fdg-campo-simple-hint a {
+  color: #2c5e1a;
+  font-weight: 600;
+}
+
+.fdg-campo__section-desc.fdg-campo-simple-desc {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.fdg-campo__header h1::after {
+  content: none;
+}
+
+.fdg-campo-toast {
+  display: none;
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 16px;
+  z-index: 99999;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.fdg-campo-toast--ok {
+  background: #4a7c2f;
+  color: #fff;
+}
+
+.fdg-campo-toast--err {
+  background: #b91c1c;
+  color: #fff;
+}
+
+#rapida-resultado {
+  display: none;
+}
+
+#rapida-resultado.fdg-campo__resultado--ok,
+#rapida-resultado.fdg-campo__resultado--error {
+  display: block !important;
+}
+
+.fdg-campo__gps-status--ok {
+  color: #2c5e1a;
+  font-weight: 600;
+}
+
+.fdg-campo__gps-status--warn {
+  color: #b45309;
+  font-weight: 600;
+}

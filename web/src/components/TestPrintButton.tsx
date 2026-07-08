@@ -7,7 +7,7 @@ import {
   type PrintablePregunta,
   type PrintSection,
 } from "@/lib/print-test";
-import { buildPrintHtml, openPrintDocument } from "@/lib/print-html";
+import { PRINT_SESSION_KEY, printQueryParams } from "@/lib/print-url";
 
 export type { PrintablePregunta, PrintSection };
 
@@ -22,7 +22,7 @@ type Props = {
   materiaId?: string;
   /** Carga un banco al abrir el diálogo (solucionario solo al imprimir) */
   bancoId?: string;
-  /** URL personalizada de la que cargar el bundle de impresión */
+  /** Ruta /imprimir/... o API JSON legacy para vista previa del diálogo */
   printUrl?: string;
   className?: string;
   label?: string;
@@ -36,6 +36,11 @@ function normalizeSections(
   if (sections?.length) return sections.filter((s) => s.preguntas.length > 0);
   if (preguntas?.length) return [{ title: "", preguntas }];
   return [];
+}
+
+function appendQuery(base: string, extra: string): string {
+  if (!extra) return base;
+  return base.includes("?") ? `${base}&${extra.slice(1)}` : `${base}${extra}`;
 }
 
 export function TestPrintButton({
@@ -65,13 +70,21 @@ export function TestPrintButton({
     [preguntas, sectionsProp],
   );
 
-  const dialogSections = materiaId || bancoId || printUrl ? (loadedSections ?? []) : staticSections;
-  const dialogCount = totalPreguntas(dialogSections);
+  const usesPrintPage = Boolean(
+    bancoId || materiaId || (printUrl && printUrl.startsWith("/imprimir/")),
+  );
+
+  const dialogSections = usesPrintPage || printUrl ? (loadedSections ?? []) : staticSections;
+  const dialogCount = totalPreguntas(
+    usesPrintPage || printUrl ? dialogSections : staticSections,
+  );
   const dialogTitle = loadedTitle ?? title;
   const dialogSubtitle = loadedSubtitle ?? subtitleProp;
 
   useEffect(() => {
-    if (!open || (!materiaId && !bancoId && !printUrl)) return;
+    if (!open) return;
+    if (printUrl?.startsWith("/imprimir/")) return;
+    if (!materiaId && !bancoId && !printUrl) return;
 
     setLoading(true);
     setFetchErr(null);
@@ -97,35 +110,77 @@ export function TestPrintButton({
       .finally(() => setLoading(false));
   }, [open, materiaId, bancoId, printUrl]);
 
+  function buildPrintPageUrl(): string {
+    const qs = printQueryParams({ answerStyle, showExplanations });
+
+    if (bancoId) {
+      return appendQuery(`/imprimir/banco/${encodeURIComponent(bancoId)}`, qs);
+    }
+    if (materiaId) {
+      return appendQuery(
+        `/imprimir/materia?materiaId=${encodeURIComponent(materiaId)}`,
+        qs,
+      );
+    }
+    if (printUrl?.startsWith("/imprimir/")) {
+      return appendQuery(printUrl, qs);
+    }
+
+    const sections = staticSections;
+    const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    try {
+      sessionStorage.setItem(
+        `${PRINT_SESSION_KEY}:${key}`,
+        JSON.stringify({
+          title: dialogTitle,
+          subtitle: dialogSubtitle,
+          sections,
+          answerStyle,
+          showExplanations,
+        }),
+      );
+    } catch {
+      throw new Error("No se pudo guardar el test para imprimir.");
+    }
+    return `/imprimir/sesion?k=${encodeURIComponent(key)}`;
+  }
+
   function startPrint() {
-    if (!dialogSections.length) return;
+    const sectionsForPrint = usesPrintPage || printUrl ? dialogSections : staticSections;
+    if (!sectionsForPrint.length && !bancoId && !materiaId && !printUrl?.startsWith("/imprimir/")) {
+      return;
+    }
+
     setPrintErr(null);
 
-    const html = buildPrintHtml({
-      title: dialogTitle,
-      subtitle: dialogSubtitle,
-      sections: dialogSections,
-      answerStyle,
-      showExplanations,
-    });
+    let url: string;
+    try {
+      url = buildPrintPageUrl();
+    } catch (e) {
+      setPrintErr(e instanceof Error ? e.message : "Error al preparar impresión");
+      return;
+    }
 
-    const mode = openPrintDocument(html);
-    if (mode === "blocked") {
+    const w = window.open(url, "_blank", "noopener");
+    if (!w) {
       setPrintErr(
-        "No se pudo abrir la ventana de impresión. Permite ventanas emergentes para este sitio e inténtalo de nuevo.",
+        "No se pudo abrir la pestaña de impresión. Permite ventanas emergentes para este sitio.",
       );
       return;
     }
 
     setOpen(false);
-    if (mode === "window") {
-      setPrintErr(null);
-      // Mensaje breve: la pestaña nueva tiene barra con botón Imprimir
-    }
   }
 
-  const canShow = materiaId || bancoId || printUrl ? true : staticSections.length > 0;
+  const canShow =
+    bancoId || materiaId || printUrl ? true : staticSections.length > 0;
   if (!canShow) return null;
+
+  const showDialogMeta = printUrl?.startsWith("/imprimir/")
+    ? true
+    : usesPrintPage
+      ? !loading && !fetchErr
+      : staticSections.length > 0;
 
   return (
     <>
@@ -169,7 +224,7 @@ export function TestPrintButton({
             {fetchErr && <p className="error">{fetchErr}</p>}
             {printErr && <p className="error">{printErr}</p>}
 
-            {!loading && !fetchErr && (
+            {showDialogMeta && (
               <>
                 <p className="muted small">
                   <strong>{dialogTitle}</strong>
@@ -189,6 +244,10 @@ export function TestPrintButton({
                     ))}
                   </ul>
                 )}
+
+                <p className="muted small">
+                  Se abrirá el test en una pestaña nueva. Usa <strong>Ctrl+P</strong> para imprimir.
+                </p>
 
                 <fieldset className="settings-group">
                   <legend>Formato</legend>
@@ -233,10 +292,10 @@ export function TestPrintButton({
                   <button
                     type="button"
                     className="btn-primary"
-                    disabled={!dialogCount}
+                    disabled={usesPrintPage && loading}
                     onClick={startPrint}
                   >
-                    Imprimir ahora
+                    Abrir para imprimir
                   </button>
                   <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
                     Cancelar
