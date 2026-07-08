@@ -2440,12 +2440,9 @@ code {
   margin: 0;
   padding: 0;
   list-style: none;
-  columns: 2;
-  column-gap: 2rem;
 }
 
 .print-answer-key-item {
-  break-inside: avoid;
   margin: 0.25rem 0;
   font-size: 11pt;
 }

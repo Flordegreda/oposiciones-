@@ -1,29 +1,17 @@
 "use client";
 
-import { createPortal } from "react-dom";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   bundleToSections,
-  collectPrintSupuestos,
-  flattenSections,
   totalPreguntas,
   type PrintablePregunta,
   type PrintSection,
 } from "@/lib/print-test";
+import { buildPrintHtml, openPrintDocument } from "@/lib/print-html";
 
 export type { PrintablePregunta, PrintSection };
 
-const LETTERS = ["A", "B", "C", "D", "E", "F"];
-
 type AnswerStyle = "key-at-end" | "inline";
-
-type PrintJob = {
-  answerStyle: AnswerStyle;
-  showExplanations: boolean;
-  sections: PrintSection[];
-  subtitle?: string;
-  title: string;
-};
 
 type Props = {
   title: string;
@@ -40,135 +28,6 @@ type Props = {
   label?: string;
   disabled?: boolean;
 };
-
-function TestPrintSheet({
-  title,
-  subtitle,
-  sections,
-  answerStyle,
-  showExplanations,
-}: {
-  title: string;
-  subtitle?: string;
-  sections: PrintSection[];
-} & Omit<PrintJob, "sections" | "title" | "subtitle">) {
-  const date = new Date().toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  const inline = answerStyle === "inline";
-  const flat = flattenSections(sections);
-  const multi = sections.length > 1 || sections.some((s) => s.title);
-
-  let counter = 0;
-
-  return (
-    <div className="print-sheet">
-      <header className="print-sheet-head">
-        <h1 className="print-sheet-title">{title}</h1>
-        {subtitle && <p className="print-sheet-sub">{subtitle}</p>}
-        <p className="print-sheet-meta">
-          {flat.length} pregunta{flat.length !== 1 ? "s" : ""} · {date}
-          {multi && sections.length > 1 ? ` · ${sections.length} bancos` : ""}
-          {inline ? " · Respuestas marcadas en cada pregunta" : " · Solucionario al final"}
-        </p>
-      </header>
-
-      {sections.map((section, si) => {
-        const sectionSupuestos = collectPrintSupuestos(section);
-        const supuestoAtTop = sectionSupuestos.length === 1;
-
-        return (
-        <div key={`${section.title}-${si}`} className="print-banco-block">
-          {section.title && (
-            <h2 className="print-banco-title">
-              {section.title}
-              <span className="print-banco-count">
-                {" "}
-                ({section.preguntas.length} preg.)
-              </span>
-            </h2>
-          )}
-          {supuestoAtTop &&
-            sectionSupuestos.map((s, sxi) => (
-              <div key={`${si}-sup-${sxi}`} className="print-supuesto-block print-supuesto-block--section">
-                {s.titulo && <p className="print-supuesto-title">{s.titulo}</p>}
-                <p className="print-supuesto-text">{s.texto}</p>
-              </div>
-            ))}
-          <ol className="print-question-list">
-            {section.preguntas.map((q, qi) => {
-              counter += 1;
-              const num = counter;
-              const prev = qi > 0 ? section.preguntas[qi - 1] : null;
-              const showSupuesto =
-                !supuestoAtTop &&
-                !!q.supuestoTexto &&
-                (!prev || prev.supuestoId !== q.supuestoId);
-              return (
-                <li key={`${si}-${qi}`} className="print-question-wrap">
-                  {showSupuesto && (
-                    <div className="print-supuesto-block">
-                      {q.supuestoTitulo && (
-                        <p className="print-supuesto-title">{q.supuestoTitulo}</p>
-                      )}
-                      <p className="print-supuesto-text">{q.supuestoTexto}</p>
-                    </div>
-                  )}
-                  <div className="print-question-item">
-                    <p className="print-question-text">
-                      <span className="print-question-num">{num}.</span> {q.enunciado}
-                    </p>
-                    <ul className="print-option-list">
-                      {q.opciones.map((opt, oi) => {
-                        const correct = oi === q.respuesta;
-                        return (
-                          <li
-                            key={oi}
-                            className={`print-option${inline && correct ? " print-option--correct" : ""}`}
-                          >
-                            <span className="print-option-letter">{LETTERS[oi]})</span> {opt}
-                            {inline && correct && (
-                              <span className="print-option-mark"> ✓ Correcta</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    {inline && showExplanations && q.explicacion?.trim() && (
-                      <p className="print-explanation">
-                        <strong>Explicación:</strong> {q.explicacion}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-        );
-      })}
-
-      {!inline && (
-        <section className="print-answer-key">
-          <h2 className="print-answer-key-title">Plantilla de respuestas correctas</h2>
-          <ol className="print-answer-key-list">
-            {flat.map((q, i) => (
-              <li key={i} className="print-answer-key-item">
-                <span className="print-answer-key-num">{i + 1}.</span>{" "}
-                <strong>{LETTERS[q.respuesta] ?? "?"}</strong>
-                {showExplanations && q.explicacion?.trim() && (
-                  <span className="print-answer-key-explain"> — {q.explicacion}</span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-    </div>
-  );
-}
 
 function normalizeSections(
   preguntas?: PrintablePregunta[],
@@ -194,10 +53,9 @@ export function TestPrintButton({
   const [open, setOpen] = useState(false);
   const [answerStyle, setAnswerStyle] = useState<AnswerStyle>("key-at-end");
   const [showExplanations, setShowExplanations] = useState(false);
-  const [printJob, setPrintJob] = useState<PrintJob | null>(null);
-  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
+  const [printErr, setPrintErr] = useState<string | null>(null);
   const [loadedSections, setLoadedSections] = useState<PrintSection[] | null>(null);
   const [loadedSubtitle, setLoadedSubtitle] = useState<string | undefined>();
   const [loadedTitle, setLoadedTitle] = useState<string | null>(null);
@@ -212,8 +70,6 @@ export function TestPrintButton({
   const dialogTitle = loadedTitle ?? title;
   const dialogSubtitle = loadedSubtitle ?? subtitleProp;
 
-  useEffect(() => setMounted(true), []);
-
   useEffect(() => {
     if (!open || (!materiaId && !bancoId && !printUrl)) return;
 
@@ -224,8 +80,8 @@ export function TestPrintButton({
     const url = printUrl
       ? printUrl
       : materiaId
-      ? `/api/print/materia?materiaId=${encodeURIComponent(materiaId)}`
-      : `/api/print/banco/${encodeURIComponent(bancoId!)}`;
+        ? `/api/print/materia?materiaId=${encodeURIComponent(materiaId)}`
+        : `/api/print/banco/${encodeURIComponent(bancoId!)}`;
 
     void fetch(url)
       .then(async (res) => {
@@ -239,52 +95,30 @@ export function TestPrintButton({
         setFetchErr(e instanceof Error ? e.message : "Error al cargar");
       })
       .finally(() => setLoading(false));
-  }, [open, materiaId, bancoId]);
-
-  const clearPrint = useCallback(() => {
-    setPrintJob(null);
-    document.body.classList.remove("is-printing");
-  }, []);
-
-  useEffect(() => {
-    const onAfterPrint = () => clearPrint();
-    window.addEventListener("afterprint", onAfterPrint);
-    return () => window.removeEventListener("afterprint", onAfterPrint);
-  }, [clearPrint]);
+  }, [open, materiaId, bancoId, printUrl]);
 
   function startPrint() {
     if (!dialogSections.length) return;
-    setOpen(false);
-    setPrintJob({
+    setPrintErr(null);
+
+    const html = buildPrintHtml({
+      title: dialogTitle,
+      subtitle: dialogSubtitle,
+      sections: dialogSections,
       answerStyle,
       showExplanations,
-      sections: dialogSections,
-      subtitle: dialogSubtitle,
-      title: dialogTitle,
     });
+
+    const mode = openPrintDocument(html);
+    if (mode === "blocked") {
+      setPrintErr(
+        "No se pudo abrir la ventana de impresión. Permite ventanas emergentes para este sitio e inténtalo de nuevo.",
+      );
+      return;
+    }
+
+    setOpen(false);
   }
-
-  useEffect(() => {
-    if (!printJob) return;
-
-    document.body.classList.add("is-printing");
-    let cancelled = false;
-
-    // Esperar a que React monte el portal antes de abrir el diálogo de impresión.
-    const timer = window.setTimeout(() => {
-      if (cancelled) return;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (!cancelled) window.print();
-        });
-      });
-    }, 150);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [printJob]);
 
   const canShow = materiaId || bancoId || printUrl ? true : staticSections.length > 0;
   if (!canShow) return null;
@@ -295,7 +129,10 @@ export function TestPrintButton({
         type="button"
         className={`btn-secondary btn-sm no-print ${className}`.trim()}
         disabled={disabled}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setPrintErr(null);
+          setOpen(true);
+        }}
       >
         {label}
       </button>
@@ -314,10 +151,10 @@ export function TestPrintButton({
                 {printUrl
                   ? title
                   : materiaId
-                  ? "Imprimir materia completa"
-                  : bancoId
-                  ? "Imprimir banco"
-                  : "Imprimir test"}
+                    ? "Imprimir materia completa"
+                    : bancoId
+                      ? "Imprimir banco"
+                      : "Imprimir test"}
               </h2>
               <button type="button" className="btn-link btn-sm" onClick={() => setOpen(false)}>
                 Cerrar
@@ -326,6 +163,7 @@ export function TestPrintButton({
 
             {loading && <p className="muted small">Cargando preguntas…</p>}
             {fetchErr && <p className="error">{fetchErr}</p>}
+            {printErr && <p className="error">{printErr}</p>}
 
             {!loading && !fetchErr && (
               <>
@@ -405,21 +243,6 @@ export function TestPrintButton({
           </div>
         </div>
       )}
-
-      {mounted &&
-        printJob &&
-        createPortal(
-          <div className="print-portal" aria-hidden>
-            <TestPrintSheet
-              title={printJob.title}
-              subtitle={printJob.subtitle}
-              sections={printJob.sections}
-              answerStyle={printJob.answerStyle}
-              showExplanations={printJob.showExplanations}
-            />
-          </div>,
-          document.body,
-        )}
     </>
   );
 }
