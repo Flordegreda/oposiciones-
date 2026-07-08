@@ -2267,12 +2267,15 @@ code {
 
 .print-portal {
   position: fixed;
-  left: -10000px;
-  top: 0;
-  width: 0;
-  height: 0;
-  overflow: hidden;
+  inset: 0;
+  width: 100%;
+  max-width: 210mm;
+  margin: 0 auto;
+  overflow: visible;
+  visibility: hidden;
+  z-index: -1;
   pointer-events: none;
+  background: #fff;
 }
 
 .print-sheet {
@@ -2315,8 +2318,6 @@ code {
 }
 
 .print-question-wrap {
-  break-inside: avoid;
-  page-break-inside: avoid;
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
   border-bottom: 1px solid #ddd;
@@ -2329,8 +2330,6 @@ code {
   border-left: 4px solid #7c3aed;
   border-radius: 4px;
   background: #f8f6ff;
-  break-inside: avoid;
-  page-break-inside: avoid;
 }
 
 .print-supuesto-block--section {
@@ -2351,11 +2350,9 @@ code {
 }
 
 .print-question-item {
-  break-inside: avoid;
-  page-break-inside: avoid;
-  margin-bottom: 1rem;
-  padding-bottom: 0.85rem;
-  border-bottom: 1px solid #ddd;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .print-question-text {
@@ -2588,18 +2585,29 @@ code {
     margin: 14mm 12mm;
   }
 
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   body.is-printing > *:not(.print-portal) {
     display: none !important;
   }
 
   body.is-printing .print-portal {
     position: static !important;
+    visibility: visible !important;
+    inset: auto !important;
     left: auto !important;
     top: auto !important;
     width: auto !important;
+    max-width: none !important;
     height: auto !important;
     overflow: visible !important;
     pointer-events: auto !important;
+    z-index: auto !important;
+    margin: 0 !important;
   }
 
   .no-print {

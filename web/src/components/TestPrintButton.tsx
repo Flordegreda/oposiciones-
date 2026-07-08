@@ -262,9 +262,29 @@ export function TestPrintButton({
       subtitle: dialogSubtitle,
       title: dialogTitle,
     });
-    document.body.classList.add("is-printing");
-    window.setTimeout(() => window.print(), 120);
   }
+
+  useEffect(() => {
+    if (!printJob) return;
+
+    document.body.classList.add("is-printing");
+    let cancelled = false;
+
+    // Esperar a que React monte el portal antes de abrir el diálogo de impresión.
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!cancelled) window.print();
+        });
+      });
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [printJob]);
 
   const canShow = materiaId || bancoId || printUrl ? true : staticSections.length > 0;
   if (!canShow) return null;
