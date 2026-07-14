@@ -1,21 +1,35 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { getBancoForAdmin } from "@/lib/queries/bancos";
+import { getBancoForTest } from "@/lib/queries/bancos-cached";
 import { TestRunner } from "@/components/TestRunner";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type Props = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const data = await getBancoForTest(id);
+    if (data?.banco.nombre) {
+      return { title: `${data.banco.nombre} — JEX` };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { title: "Test — JEX" };
+}
 
 export default async function TestPage({ params }: Props) {
   const { id } = await params;
   let error: string | null = null;
-  let data: Awaited<ReturnType<typeof getBancoForAdmin>> = null;
+  let data: Awaited<ReturnType<typeof getBancoForTest>> = null;
 
   try {
-    data = await getBancoForAdmin(id);
+    data = await getBancoForTest(id);
   } catch (e) {
     error = e instanceof Error ? e.message : "Error al cargar el test";
   }
@@ -35,19 +49,12 @@ export default async function TestPage({ params }: Props) {
 
   return (
     <div className="site site--mobile-nav site--mobile-exam">
-      <SiteHeader backHref="/practicar" backLabel="Temario" />
+      <SiteHeader
+        backHref="/practicar"
+        backLabel="Temario"
+        pageTitle={data?.banco?.nombre}
+      />
       <main className="site-main">
-        {data?.banco && (
-          <div className="test-toolbar">
-            <p className="test-toolbar-title">{data.banco.nombre}</p>
-            <div className="test-toolbar-actions">
-              <Link href="/practicar" className="btn-link">
-                Volver
-              </Link>
-            </div>
-          </div>
-        )}
-
         {error && (
           <div className="card card-warning">
             <p className="error">{error}</p>

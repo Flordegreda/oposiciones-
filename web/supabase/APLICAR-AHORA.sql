@@ -29,5 +29,18 @@ BEGIN
   END IF;
 END $$;
 
+-- Conteo rápido por banco (Material / temario)
+CREATE OR REPLACE FUNCTION public.preguntas_counts_by_banco()
+RETURNS TABLE(banco_id uuid, cnt bigint)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT banco_id, count(*)::bigint FROM preguntas GROUP BY banco_id;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.preguntas_counts_by_banco() TO anon, authenticated, service_role;
+
 -- Recargar caché de PostgREST
 NOTIFY pgrst, 'reload schema';

@@ -1,13 +1,23 @@
+"use client";
+
 import Link from "next/link";
-import { StudySettingsButton } from "@/components/StudySettingsButton";
 import { JEX_SUBTITLE, SITE_TITLE } from "@/lib/constants";
+import { usePageHeaderState } from "@/components/page-header-context";
 
 type Props = {
   backHref?: string;
   backLabel?: string;
+  pageTitle?: string;
 };
 
-export function SiteHeader({ backHref, backLabel }: Props) {
+export function SiteHeader({ backHref, backLabel, pageTitle }: Props) {
+  const dynamic = usePageHeaderState();
+
+  const title = dynamic.title ?? pageTitle ?? null;
+  const effectiveBackHref = dynamic.backHref ?? backHref;
+  const effectiveBackLabel = dynamic.backLabel ?? backLabel;
+  const showContext = Boolean(effectiveBackHref || title);
+
   return (
     <header className="site-header">
       <div className="site-header-inner">
@@ -23,16 +33,23 @@ export function SiteHeader({ backHref, backLabel }: Props) {
         <nav className="site-nav site-nav--desktop" aria-label="Principal">
           <Link href="/practicar">Tests</Link>
           <Link href="/simulacro">Simulacro</Link>
-          <Link href="/estadisticas">Estadísticas</Link>
           <Link href="/admin">Material</Link>
         </nav>
-        <StudySettingsButton />
       </div>
-      {backHref && (
+      {showContext && (
         <div className="site-header-context">
-          <Link href={backHref} className="site-header-back">
-            ← {backLabel ?? "Volver"}
-          </Link>
+          {effectiveBackHref ? (
+            <Link href={effectiveBackHref} className="site-header-back">
+              ← {effectiveBackLabel ?? "Volver"}
+            </Link>
+          ) : (
+            <span className="site-header-back-spacer" aria-hidden />
+          )}
+          {title && (
+            <p className="site-header-title" title={title}>
+              {title}
+            </p>
+          )}
         </div>
       )}
     </header>

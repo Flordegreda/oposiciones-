@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PrintSheet } from "@/components/PrintSheet";
+import { PrintDocumentView } from "@/components/PrintDocumentView";
 import { bundleToSections } from "@/lib/print-test";
 import { getPrintBundleForBanco } from "@/lib/queries/bancos";
 import { parsePrintSearchParams } from "@/lib/print-url";
@@ -18,7 +18,7 @@ export default async function PrintBancoPage({ params, searchParams }: Props) {
   if (!bundle.totalPreguntas) notFound();
 
   return (
-    <PrintSheet
+    <PrintDocumentView
       title={bundle.title}
       subtitle={bundle.subtitle}
       sections={bundleToSections(bundle)}

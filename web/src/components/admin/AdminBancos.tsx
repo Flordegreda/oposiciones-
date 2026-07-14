@@ -174,7 +174,7 @@ export function AdminBancos({ bancos: initial }: Props) {
           <TestPrintButton
             materiaId={materiaId}
             title={materias.find((m) => m.id === materiaId)?.nombre ?? "Materia"}
-            label={`Imprimir materia (${filteredTotals.preguntas} preg.)`}
+            label={`PDF materia (${filteredTotals.preguntas} preg.)`}
           />
         </div>
       )}

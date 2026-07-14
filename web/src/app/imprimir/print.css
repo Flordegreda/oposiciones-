@@ -1,20 +1,24 @@
+html:has(.print-route),
+html:has(.print-route) body,
+html,
+body {
+  background: #fff !important;
+  min-height: auto !important;
+}
+
+html:has(.print-route) body::before,
+body::before {
+  display: none !important;
+  content: none !important;
+}
+
 .print-route {
-  min-height: 100vh;
+  min-height: auto;
   background: #fff;
   color: #111;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 11pt;
   line-height: 1.45;
-}
-
-.print-route-hint {
-  margin: 0;
-  padding: 0.65rem 1rem;
-  background: #eef4fb;
-  border-bottom: 1px solid #c5d4e8;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 14px;
-  text-align: center;
 }
 
 .print-document {
@@ -46,22 +50,60 @@
   color: #555;
 }
 
-.print-banco-title {
-  margin: 1.25rem 0 0.65rem;
-  font-size: 12pt;
-  font-weight: 700;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 0.35rem;
+.print-banco-block {
+  margin-top: 1rem;
 }
 
-.print-banco-block:first-of-type .print-banco-title {
+.print-banco-block:first-of-type {
   margin-top: 0;
 }
 
-.print-banco-count {
+.print-banco-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.print-repeat-head {
+  text-align: left;
+  vertical-align: bottom;
+  padding: 0 0 0.45rem;
+  border-bottom: 1.5px solid #333;
+  font-weight: 700;
+}
+
+.print-repeat-head-title {
+  display: block;
+  font-size: 9.5pt;
+  line-height: 1.25;
+  color: #111;
+}
+
+.print-repeat-head-meta {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 8pt;
   font-weight: 500;
-  font-size: 10pt;
   color: #555;
+}
+
+.print-question-row td,
+.print-supuesto-row td,
+.print-answer-row td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.print-supuesto-row td {
+  padding-bottom: 0.35rem;
+}
+
+.print-question-row td {
+  padding-bottom: 0.85rem;
+}
+
+.print-answer-row td {
+  padding-bottom: 0.3rem;
 }
 
 .print-supuesto-block {
@@ -84,14 +126,8 @@
   white-space: pre-wrap;
 }
 
-.print-question-list {
+.print-question-item {
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.print-question-wrap {
-  margin-bottom: 1rem;
   padding-bottom: 0.85rem;
   border-bottom: 1px solid #ddd;
 }
@@ -137,15 +173,12 @@
 
 .print-answer-key {
   margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 3px double #222;
+  padding-top: 0.5rem;
 }
 
-.print-answer-key-title {
-  margin: 0 0 0.75rem;
-  font-size: 13pt;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.print-answer-key-item {
+  margin: 0;
+  font-size: 11pt;
 }
 
 .print-answer-key-list {
@@ -154,9 +187,11 @@
   list-style: none;
 }
 
-.print-answer-key-item {
-  margin: 0.25rem 0;
-  font-size: 11pt;
+.print-answer-key-title {
+  margin: 0 0 0.75rem;
+  font-size: 13pt;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .print-answer-key-num {
@@ -171,11 +206,84 @@
 @media print {
   @page {
     margin: 14mm 12mm;
+    size: auto;
   }
 
-  .print-route-hint,
+  html,
+  html:has(.print-route),
+  body {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body::before {
+    display: none !important;
+    content: none !important;
+  }
+
   .no-print {
     display: none !important;
+  }
+
+  .print-route,
+  .print-document,
+  .print-banco-block,
+  .print-question-item,
+  .print-supuesto-block,
+  .print-answer-key {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    transform: none !important;
+  }
+
+  .print-banco-table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-banco-table thead {
+    display: table-header-group !important;
+  }
+
+  .print-banco-table tbody {
+    display: table-row-group !important;
+  }
+
+  .print-banco-table tr {
+    display: table-row !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-banco-table td,
+  .print-banco-table th {
+    display: table-cell !important;
+  }
+
+  .print-question-row,
+  .print-supuesto-row,
+  .print-answer-row {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-option-list {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .print-answer-key {
+    break-before: auto !important;
+    page-break-before: auto !important;
   }
 
   .print-document {
@@ -184,6 +292,7 @@
   }
 
   .print-route {
-    min-height: auto;
+    min-height: 0 !important;
+    background: #fff !important;
   }
 }

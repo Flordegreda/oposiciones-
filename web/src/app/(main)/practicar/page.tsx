@@ -1,5 +1,4 @@
 import { PracticarTemario } from "@/components/PracticarTemario";
-import { RepasoGlobal } from "@/components/RepasoGlobal";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -22,8 +21,6 @@ export default async function PracticarPage() {
         <h1 className="page-title">Tests</h1>
         <p className="lead lead--compact">{JEX_SUBTITLE}</p>
       </section>
-
-      {!error && <RepasoGlobal compact />}
 
       {error && (
         <div className="card card-warning">

@@ -10,6 +10,7 @@ import {
   simulacroTimerSeconds,
 } from "@/lib/exam-utils";
 import { ExamSession } from "@/components/ExamSession";
+import { SetPageHeader } from "@/components/page-header-context";
 import { TestPrintButton } from "@/components/TestPrintButton";
 import type { SimulacroMeta } from "@/lib/queries/simulacro";
 
@@ -99,20 +100,22 @@ export function SimulacroLauncher({ meta }: Props) {
 
   if (running) {
     return (
-      <ExamSession
-        bancoId="simulacro"
-        title={running.title}
-        preguntas={running.list}
-        examMode={running.examMode}
-        timerSeconds={running.timerSeconds}
-        backHref="/simulacro"
-        sessionMeta={{
-          tipo: "simulacro",
-          titulo: `${running.title} · ${running.subtitle}`,
-          bancoId: null,
-        }}
-        onFinish={exitSimulacro}
-      />
+      <>
+        <SetPageHeader
+          title={running.title}
+          backHref="/simulacro"
+          backLabel="Simulacro"
+        />
+        <ExamSession
+          bancoId="simulacro"
+          title={running.title}
+          preguntas={running.list}
+          examMode={running.examMode}
+          timerSeconds={running.timerSeconds}
+          backHref="/simulacro"
+          onFinish={exitSimulacro}
+        />
+      </>
     );
   }
 
@@ -239,7 +242,7 @@ export function SimulacroLauncher({ meta }: Props) {
 
         <TestPrintButton
           title={printTitle}
-          label="🖨️ Imprimir simulacro"
+          label="PDF"
           printUrl={printUrl}
           disabled={!selected.canStart}
           className="btn-secondary"
@@ -248,7 +251,7 @@ export function SimulacroLauncher({ meta }: Props) {
 
       {selected.canStart && (
         <p className="muted small" style={{ marginTop: "0.5rem" }}>
-          El botón de impresión genera un simulacro aleatorio con las mismas preguntas que el examen para imprimir o guardar como PDF.
+          El botón PDF genera un simulacro aleatorio con las mismas preguntas que el examen para descargar.
         </p>
       )}
     </div>

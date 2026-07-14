@@ -45,7 +45,7 @@ export function PracticarTemario({ sections }: Props) {
               <TestPrintButton
                 materiaId={section.id}
                 title={section.nombre}
-                label="Imprimir todos"
+                label="PDF todos"
                 className="materia-print-btn"
               />
             </div>

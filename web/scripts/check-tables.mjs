@@ -33,6 +33,6 @@ async function tableExists(name) {
   return body.includes("does not exist") || body.includes("Could not find") ? false : `err:${res.status}`;
 }
 
-for (const t of ["intentos", "resultados", "favoritos"]) {
+for (const t of ["bancos", "materias", "preguntas"]) {
   console.log(t, await tableExists(t));
 }

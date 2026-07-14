@@ -109,7 +109,7 @@ async function deleteBancoContent(bancoId: string) {
   }
 }
 
-async function insertBancoContent(
+export async function insertBancoContent(
   bancoId: string,
   banco: BackupBanco,
   supabase: ReturnType<typeof getSupabase>,

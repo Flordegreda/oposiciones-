@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runSqlFile } from "@/lib/db/postgres";
+import { revalidateSchemaCache } from "@/lib/revalidate-content";
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,6 +8,7 @@ export async function POST(req: NextRequest) {
     const dbPassword = body.dbPassword as string | undefined;
 
     await runSqlFile("SUPUESTOS.sql", dbPassword);
+    revalidateSchemaCache();
 
     return NextResponse.json({
       message: "Tabla supuestos creada y preguntas enlazadas. Recarga la página.",

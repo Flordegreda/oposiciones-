@@ -1,7 +1,7 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
-import { preguntasTableExists, supuestosSchemaReady } from "@/lib/queries/schema";
+import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady } from "@/lib/queries/schema";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -116,29 +116,20 @@ export async function fetchPreguntaCountsByBanco(
     return tally;
   }
 
-  return fetchPreguntaCountsParallel(bancoIds);
+  // Sin RPC: un barrido paginado (mejor que N consultas count por banco).
+  const tally = await fetchPreguntaCountsParallel();
+  if (!filter) return tally;
+
+  const filtered = new Map<string, number>();
+  for (const id of filter) {
+    filtered.set(id, tally.get(id) ?? 0);
+  }
+  return filtered;
 }
 
-async function fetchPreguntaCountsParallel(bancoIds?: string[]): Promise<Map<string, number>> {
+async function fetchPreguntaCountsParallel(): Promise<Map<string, number>> {
   const tally = new Map<string, number>();
   const supabase = getSupabase();
-
-  if (bancoIds?.length) {
-    const BATCH = 20;
-    for (let i = 0; i < bancoIds.length; i += BATCH) {
-      const batch = bancoIds.slice(i, i + BATCH);
-      await Promise.all(
-        batch.map(async (id) => {
-          const { count, error } = await supabase
-            .from("preguntas")
-            .select("*", { count: "exact", head: true })
-            .eq("banco_id", id);
-          tally.set(id, error ? 0 : (count ?? 0));
-        }),
-      );
-    }
-    return tally;
-  }
 
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabase
@@ -356,35 +347,34 @@ export async function getMateriasWithCounts() {
     .order("nombre");
   if (error) throw error;
 
-  const { data: counts } = await supabase.from("bancos").select("materia_id");
+  const { data: counts, error: cErr } = await supabase.from("bancos").select("materia_id");
+  if (cErr) throw cErr;
+
+  return buildMateriasWithCounts(materias ?? [], counts ?? []);
+}
+
+function buildMateriasWithCounts(
+  materias: { id: string; nombre: string }[],
+  bancos: { materia_id: string }[],
+) {
   const tally = new Map<string, number>();
-  for (const row of counts ?? []) {
+  for (const row of bancos) {
     tally.set(row.materia_id, (tally.get(row.materia_id) ?? 0) + 1);
   }
 
-  return (materias ?? []).map((m) => ({
+  return materias.map((m) => ({
     ...m,
     bancos: tally.get(m.id) ?? 0,
   }));
 }
 
-export async function getMaterialStatsUncached(): Promise<MaterialStats> {
-  const supabase = getSupabase();
-  const [{ data: materias, error: mErr }, { data: bancos, error: bErr }] = await Promise.all([
-    supabase.from("materias").select("id, nombre").order("nombre"),
-    supabase.from("bancos").select("id, materia_id, tipo"),
-  ]);
-
-  if (mErr) throw mErr;
-  if (bErr) throw bErr;
-
-  const hasPreguntas = await preguntasTableExists();
-  const counts = hasPreguntas
-    ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
-    : new Map<string, number>();
-
+function buildMaterialStats(
+  materias: { id: string; nombre: string }[],
+  bancos: { id: string; materia_id: string; tipo: string }[],
+  counts: Map<string, number>,
+): MaterialStats {
   const materiaMap = new Map<string, MateriaStatsRow>();
-  for (const m of materias ?? []) {
+  for (const m of materias) {
     materiaMap.set(m.id, {
       id: m.id,
       nombre: m.nombre,
@@ -396,15 +386,15 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   }
 
   const totals: MaterialStats = {
-    materias: materias?.length ?? 0,
-    bancos: bancos?.length ?? 0,
+    materias: materias.length,
+    bancos: bancos.length,
     preguntas: 0,
     teorico: emptyTipoStats(),
     practico: emptyTipoStats(),
     porMateria: [],
   };
 
-  for (const b of bancos ?? []) {
+  for (const b of bancos) {
     const n = counts.get(b.id) ?? 0;
     const tipo = b.tipo === "practico" ? "practico" : "teorico";
     totals.preguntas += n;
@@ -435,6 +425,67 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   );
 
   return totals;
+}
+
+export type AdminPageData = {
+  bancos: BancoRow[];
+  materias: { id: string; nombre: string; bancos: number }[];
+  stats: MaterialStats;
+  schemaOk: boolean;
+  supuestosOk: boolean;
+  preguntasRpcOk: boolean;
+};
+
+/** Una sola pasada: bancos + materias + stats (evita consultas duplicadas en /admin). */
+export async function getAdminPageDataUncached(): Promise<AdminPageData> {
+  const supabase = getSupabase();
+
+  const [schemaOk, supuestosOk, preguntasRpcOk, materiasRes, bancosRes] = await Promise.all([
+    preguntasTableExists(),
+    supuestosSchemaReady(),
+    preguntasRpcReady(),
+    supabase.from("materias").select("id, nombre").order("nombre"),
+    supabase
+      .from("bancos")
+      .select("id, nombre, tipo, materia_id, active, linea_id, materias(nombre)")
+      .order("nombre"),
+  ]);
+
+  if (materiasRes.error) throw materiasRes.error;
+  if (bancosRes.error) throw bancosRes.error;
+
+  const materias = materiasRes.data ?? [];
+  const bancos = (bancosRes.data ?? []) as unknown as BancoRow[];
+  const counts = schemaOk
+    ? await fetchPreguntaCountsByBanco(bancos.map((b) => b.id))
+    : new Map<string, number>();
+
+  return {
+    bancos: sortBancosByNombre(attachPreguntaCounts(bancos, counts)),
+    materias: buildMateriasWithCounts(materias, bancos),
+    stats: buildMaterialStats(materias, bancos, counts),
+    schemaOk,
+    supuestosOk,
+    preguntasRpcOk,
+  };
+}
+
+export async function getMaterialStatsUncached(): Promise<MaterialStats> {
+  const supabase = getSupabase();
+  const [{ data: materias, error: mErr }, { data: bancos, error: bErr }] = await Promise.all([
+    supabase.from("materias").select("id, nombre").order("nombre"),
+    supabase.from("bancos").select("id, materia_id, tipo"),
+  ]);
+
+  if (mErr) throw mErr;
+  if (bErr) throw bErr;
+
+  const hasPreguntas = await preguntasTableExists();
+  const counts = hasPreguntas
+    ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
+    : new Map<string, number>();
+
+  return buildMaterialStats(materias ?? [], bancos ?? [], counts);
 }
 
 function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {

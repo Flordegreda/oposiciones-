@@ -22,4 +22,3 @@ export function parsePrintSearchParams(
   };
 }
 
-export const PRINT_SESSION_KEY = "opo_jex_print_job";

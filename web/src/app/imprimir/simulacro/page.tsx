@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PrintSheet } from "@/components/PrintSheet";
+import { PrintDocumentView } from "@/components/PrintDocumentView";
 import type { SimulacroPresetId } from "@/lib/exam-utils";
 import { startSimulacroSession } from "@/lib/queries/simulacro";
 import { parsePrintSearchParams } from "@/lib/print-url";
@@ -52,7 +52,7 @@ export default async function PrintSimulacroPage({ searchParams }: Props) {
   const materiaLabel = session.materiaLabel;
 
   return (
-    <PrintSheet
+    <PrintDocumentView
       title={presetLabel + (materiaLabel ? ` · ${materiaLabel}` : " · Todo el Temario")}
       subtitle={session.subtitle}
       sections={sections.map((s) => ({

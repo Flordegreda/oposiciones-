@@ -7,7 +7,7 @@ import {
   type PrintablePregunta,
   type PrintSection,
 } from "@/lib/print-test";
-import { PRINT_SESSION_KEY, printQueryParams } from "@/lib/print-url";
+import { printQueryParams } from "@/lib/print-url";
 
 export type { PrintablePregunta, PrintSection };
 
@@ -18,11 +18,9 @@ type Props = {
   subtitle?: string;
   preguntas?: PrintablePregunta[];
   sections?: PrintSection[];
-  /** Carga todos los bancos de la materia al abrir el diálogo */
   materiaId?: string;
-  /** Carga un banco al abrir el diálogo (solucionario solo al imprimir) */
   bancoId?: string;
-  /** Ruta /imprimir/... o API JSON legacy para vista previa del diálogo */
+  /** Ruta /imprimir/simulacro?... para simulacros */
   printUrl?: string;
   className?: string;
   label?: string;
@@ -43,6 +41,31 @@ function appendQuery(base: string, extra: string): string {
   return base.includes("?") ? `${base}&${extra.slice(1)}` : `${base}${extra}`;
 }
 
+function filenameFromResponse(res: Response, fallback: string): string {
+  const cd = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename="([^"]+)"/i.exec(cd);
+  return match?.[1] ?? `${fallback}.pdf`;
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function pdfEtaHint(questionCount: number): string {
+  if (questionCount >= 80) return "Puede tardar hasta 20 segundos.";
+  if (questionCount >= 25) return "Suele tardar unos 10 segundos.";
+  return "Suele tardar unos 5 segundos.";
+}
+
+function pdfEstimateMs(questionCount: number): number {
+  return Math.min(22_000, Math.max(5_000, 4_000 + questionCount * 90));
+}
+
 export function TestPrintButton({
   title,
   subtitle: subtitleProp,
@@ -52,15 +75,17 @@ export function TestPrintButton({
   bancoId,
   printUrl,
   className = "",
-  label = "Imprimir",
+  label = "PDF",
   disabled = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [answerStyle, setAnswerStyle] = useState<AnswerStyle>("key-at-end");
   const [showExplanations, setShowExplanations] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
-  const [printErr, setPrintErr] = useState<string | null>(null);
+  const [actionErr, setActionErr] = useState<string | null>(null);
   const [loadedSections, setLoadedSections] = useState<PrintSection[] | null>(null);
   const [loadedSubtitle, setLoadedSubtitle] = useState<string | undefined>();
   const [loadedTitle, setLoadedTitle] = useState<string | null>(null);
@@ -70,31 +95,25 @@ export function TestPrintButton({
     [preguntas, sectionsProp],
   );
 
-  const usesPrintPage = Boolean(
-    bancoId || materiaId || (printUrl && printUrl.startsWith("/imprimir/")),
-  );
+  const usesRemoteBundle = Boolean(bancoId || materiaId);
+  const isSimulacro = Boolean(printUrl?.startsWith("/imprimir/simulacro"));
 
-  const dialogSections = usesPrintPage || printUrl ? (loadedSections ?? []) : staticSections;
-  const dialogCount = totalPreguntas(
-    usesPrintPage || printUrl ? dialogSections : staticSections,
-  );
   const dialogTitle = loadedTitle ?? title;
   const dialogSubtitle = loadedSubtitle ?? subtitleProp;
+  const dialogCount = totalPreguntas(
+    usesRemoteBundle ? (loadedSections ?? []) : staticSections,
+  );
 
   useEffect(() => {
-    if (!open) return;
-    if (printUrl?.startsWith("/imprimir/")) return;
-    if (!materiaId && !bancoId && !printUrl) return;
+    if (!open || !usesRemoteBundle) return;
 
     setLoading(true);
     setFetchErr(null);
     setLoadedSections(null);
 
-    const url = printUrl
-      ? printUrl
-      : materiaId
-        ? `/api/print/materia?materiaId=${encodeURIComponent(materiaId)}`
-        : `/api/print/banco/${encodeURIComponent(bancoId!)}`;
+    const url = materiaId
+      ? `/api/print/materia?materiaId=${encodeURIComponent(materiaId)}`
+      : `/api/print/banco/${encodeURIComponent(bancoId!)}`;
 
     void fetch(url)
       .then(async (res) => {
@@ -108,92 +127,116 @@ export function TestPrintButton({
         setFetchErr(e instanceof Error ? e.message : "Error al cargar");
       })
       .finally(() => setLoading(false));
-  }, [open, materiaId, bancoId, printUrl]);
+  }, [open, materiaId, bancoId, usesRemoteBundle]);
 
-  function buildPrintPageUrl(): string {
+  useEffect(() => {
+    if (!downloading) {
+      setDownloadProgress(0);
+      return;
+    }
+
+    setDownloadProgress(8);
+    const start = Date.now();
+    const estimateMs = pdfEstimateMs(dialogCount);
+
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - start;
+      const ratio = Math.min(1, elapsed / estimateMs);
+      setDownloadProgress(Math.min(92, 8 + ratio * 84));
+    }, 180);
+
+    return () => window.clearInterval(timer);
+  }, [downloading, dialogCount]);
+
+  function buildPdfRequest():
+    | { url: string; method: "GET" }
+    | { url: string; method: "POST"; body: object } {
     const qs = printQueryParams({ answerStyle, showExplanations });
 
     if (bancoId) {
-      return appendQuery(`/imprimir/banco/${encodeURIComponent(bancoId)}`, qs);
+      return {
+        method: "GET",
+        url: appendQuery(`/api/print/banco/${encodeURIComponent(bancoId)}/pdf`, qs),
+      };
     }
     if (materiaId) {
-      return appendQuery(
-        `/imprimir/materia?materiaId=${encodeURIComponent(materiaId)}`,
-        qs,
-      );
+      return {
+        method: "GET",
+        url: appendQuery(
+          `/api/print/materia/pdf?materiaId=${encodeURIComponent(materiaId)}`,
+          qs,
+        ),
+      };
     }
-    if (printUrl?.startsWith("/imprimir/")) {
-      return appendQuery(printUrl, qs);
+    if (isSimulacro && printUrl) {
+      const params = new URL(printUrl, window.location.origin).searchParams.toString();
+      return {
+        method: "GET",
+        url: appendQuery(`/api/print/simulacro/pdf?${params}`, qs),
+      };
     }
 
-    const sections = staticSections;
-    const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    try {
-      sessionStorage.setItem(
-        `${PRINT_SESSION_KEY}:${key}`,
-        JSON.stringify({
-          title: dialogTitle,
-          subtitle: dialogSubtitle,
-          sections,
-          answerStyle,
-          showExplanations,
-        }),
-      );
-    } catch {
-      throw new Error("No se pudo guardar el test para imprimir.");
-    }
-    return `/imprimir/sesion?k=${encodeURIComponent(key)}`;
+    return {
+      method: "POST",
+      url: "/api/print/document/pdf",
+      body: {
+        title: dialogTitle,
+        subtitle: dialogSubtitle,
+        sections: staticSections,
+        answerStyle,
+        showExplanations,
+      },
+    };
   }
 
-  function startPrint() {
-    const sectionsForPrint = usesPrintPage || printUrl ? dialogSections : staticSections;
-    if (!sectionsForPrint.length && !bancoId && !materiaId && !printUrl?.startsWith("/imprimir/")) {
-      return;
-    }
+  async function downloadPdf() {
+    if (usesRemoteBundle && loading) return;
+    if (!usesRemoteBundle && !isSimulacro && !staticSections.length) return;
 
-    setPrintErr(null);
+    setActionErr(null);
+    setDownloading(true);
 
-    let url: string;
     try {
-      url = buildPrintPageUrl();
+      const req = buildPdfRequest();
+      const res = await fetch(req.url, {
+        method: req.method,
+        headers: req.method === "POST" ? { "Content-Type": "application/json" } : undefined,
+        body: req.method === "POST" ? JSON.stringify(req.body) : undefined,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error || "Error al generar PDF");
+      }
+
+      const blob = await res.blob();
+      setDownloadProgress(100);
+      triggerDownload(blob, filenameFromResponse(res, dialogTitle));
+      setOpen(false);
     } catch (e) {
-      setPrintErr(e instanceof Error ? e.message : "Error al preparar impresión");
-      return;
+      setActionErr(e instanceof Error ? e.message : "Error al generar PDF");
+    } finally {
+      setDownloading(false);
     }
-
-    const w = window.open(url, "_blank", "noopener");
-    if (!w) {
-      setPrintErr(
-        "No se pudo abrir la pestaña de impresión. Permite ventanas emergentes para este sitio.",
-      );
-      return;
-    }
-
-    setOpen(false);
   }
 
-  const canShow =
-    bancoId || materiaId || printUrl ? true : staticSections.length > 0;
+  const canShow = usesRemoteBundle || isSimulacro || staticSections.length > 0;
   if (!canShow) return null;
 
-  const showDialogMeta = printUrl?.startsWith("/imprimir/")
-    ? true
-    : usesPrintPage
-      ? !loading && !fetchErr
-      : staticSections.length > 0;
+  const ready = usesRemoteBundle ? !loading && !fetchErr : true;
 
   return (
     <>
       <button
         type="button"
         className={`btn-secondary btn-sm no-print ${className}`.trim()}
-        disabled={disabled}
+        disabled={disabled || downloading}
         onClick={() => {
-          setPrintErr(null);
+          setActionErr(null);
           setOpen(true);
         }}
       >
-        {label}
+        {downloading ? "Generando PDF…" : label}
       </button>
 
       {open && (
@@ -207,13 +250,13 @@ export function TestPrintButton({
           <div className="settings-panel card card-elevated print-options-panel">
             <div className="settings-panel-head">
               <h2 style={{ margin: 0 }}>
-                {printUrl
-                  ? title
-                  : materiaId
-                    ? "Imprimir materia completa"
-                    : bancoId
-                      ? "Imprimir banco"
-                      : "Imprimir test"}
+                {materiaId
+                  ? "Descargar materia en PDF"
+                  : bancoId
+                    ? "Descargar banco en PDF"
+                    : isSimulacro
+                      ? "Descargar simulacro en PDF"
+                      : "Descargar test en PDF"}
               </h2>
               <button type="button" className="btn-link btn-sm" onClick={() => setOpen(false)}>
                 Cerrar
@@ -222,9 +265,9 @@ export function TestPrintButton({
 
             {loading && <p className="muted small">Cargando preguntas…</p>}
             {fetchErr && <p className="error">{fetchErr}</p>}
-            {printErr && <p className="error">{printErr}</p>}
+            {actionErr && <p className="error">{actionErr}</p>}
 
-            {showDialogMeta && (
+            {ready && (
               <>
                 <p className="muted small">
                   <strong>{dialogTitle}</strong>
@@ -235,19 +278,15 @@ export function TestPrintButton({
                       : ""}
                 </p>
 
-                {materiaId && dialogSections.length > 1 && (
+                {materiaId && loadedSections && loadedSections.length > 1 && (
                   <ul className="print-bundle-preview muted small">
-                    {dialogSections.map((s) => (
+                    {loadedSections.map((s) => (
                       <li key={s.title}>
                         {s.title} ({s.preguntas.length})
                       </li>
                     ))}
                   </ul>
                 )}
-
-                <p className="muted small">
-                  Se abrirá el test en una pestaña nueva. Usa <strong>Ctrl+P</strong> para imprimir.
-                </p>
 
                 <fieldset className="settings-group">
                   <legend>Formato</legend>
@@ -288,14 +327,35 @@ export function TestPrintButton({
                   </span>
                 </label>
 
+                {downloading ? (
+                  <div className="print-pdf-progress">
+                    <p className="muted small print-pdf-progress-hint">
+                      Generando PDF… {pdfEtaHint(dialogCount)}
+                    </p>
+                    <div
+                      className="test-progress"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(downloadProgress)}
+                      aria-label="Generando PDF"
+                    >
+                      <div
+                        className="test-progress-bar"
+                        style={{ width: `${downloadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="form-actions">
                   <button
                     type="button"
                     className="btn-primary"
-                    disabled={usesPrintPage && loading}
-                    onClick={startPrint}
+                    disabled={downloading}
+                    onClick={() => void downloadPdf()}
                   >
-                    Abrir para imprimir
+                    {downloading ? "Generando PDF…" : "Descargar PDF"}
                   </button>
                   <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
                     Cancelar

@@ -6,7 +6,11 @@ export const CONTENT_CACHE_SECONDS = 300;
 export const CACHE_TAGS = {
   temario: "temario",
   materialStats: "material-stats",
+  schema: "schema",
 } as const;
+
+/** Comprobaciones de tablas/columnas (cambia muy poco). */
+export const SCHEMA_CACHE_SECONDS = 3600;
 
 export function cachedQuery<T>(
   key: string,

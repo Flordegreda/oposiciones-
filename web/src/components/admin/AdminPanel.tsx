@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { AdminRebalanceBancos } from "@/components/admin/AdminRebalanceBancos";
+import { AdminClearCache } from "@/components/admin/AdminClearCache";
 import { AdminCocinar } from "@/components/admin/AdminCocinar";
 import { AdminBancos } from "@/components/admin/AdminBancos";
 import { AdminBackup } from "@/components/admin/AdminBackup";
@@ -42,6 +44,7 @@ export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
   return (
     <>
       {schemaOk && <AdminMaterialStats stats={stats} />}
+      {schemaOk && <AdminClearCache />}
 
       <div className="admin-tabs" role="tablist" aria-label="Administración">
         <button
@@ -75,6 +78,7 @@ export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
 
       {tab === "temario" && (
         <div className="admin-temario">
+          {schemaOk && <AdminRebalanceBancos materias={materias} />}
           <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
           <hr className="admin-section-divider" />
           <AdminBancos bancos={bancos} />

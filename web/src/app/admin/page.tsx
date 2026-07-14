@@ -1,119 +1,167 @@
-import { Suspense } from "react";
 import Link from "next/link";
+
 import { SiteHeader } from "@/components/SiteHeader";
+
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+
 import { AdminPanel } from "@/components/admin/AdminPanel";
+
+import { AdminPreguntasRpcSetup } from "@/components/admin/AdminPreguntasRpcSetup";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
-import { AdminIntentosSetup } from "@/components/admin/AdminIntentosSetup";
-import { AdminResultadosSetup } from "@/components/admin/AdminResultadosSetup";
-import { AdminProgresoReset } from "@/components/admin/AdminProgresoReset";
+
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
-import {
-  getAdminBancos,
-  getMateriasWithCounts,
-  type BancoRow,
-  type MaterialStats,
-} from "@/lib/queries/bancos";
-import { getMaterialStatsUncached } from "@/lib/queries/bancos";
-import {
-  getPreguntasCount,
-  intentosTableExists,
-  preguntasTableExists,
-  resultadosTableExists,
-  supuestosSchemaReady,
-} from "@/lib/queries/schema";
+
+import { getAdminPageData } from "@/lib/queries/bancos-cached";
+
 import { JEX_SUBTITLE } from "@/lib/constants";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
+
+
+export const revalidate = 300;
+
+
 
 export default async function AdminPage() {
-  let bancos: BancoRow[] = [];
-  let materias: { id: string; nombre: string; bancos: number }[] = [];
+
   let error: string | null = null;
-  let schemaOk = true;
-  let intentosOk = true;
-  let resultadosOk = true;
-  let supuestosOk = true;
-  let preguntasCount: number | null = null;
-  let stats: MaterialStats = {
-    materias: 0,
-    bancos: 0,
-    preguntas: 0,
-    teorico: { bancos: 0, preguntas: 0 },
-    practico: { bancos: 0, preguntas: 0 },
-    porMateria: [],
-  };
+
+  let data: Awaited<ReturnType<typeof getAdminPageData>> | null = null;
+
+
 
   try {
-    schemaOk = await preguntasTableExists();
-    if (schemaOk) {
-      preguntasCount = await getPreguntasCount();
-      intentosOk = await intentosTableExists();
-      resultadosOk = await resultadosTableExists();
-      supuestosOk = await supuestosSchemaReady();
-    }
-    [bancos, materias, stats] = await Promise.all([
-      getAdminBancos(),
-      getMateriasWithCounts(),
-      getMaterialStatsUncached(),
-    ]);
+
+    data = await getAdminPageData();
+
   } catch (e) {
+
     error = e instanceof Error ? e.message : "Error";
+
   }
 
+
+
+  const bancos = data?.bancos ?? [];
+
+  const materias = data?.materias ?? [];
+
+  const stats = data?.stats ?? {
+
+    materias: 0,
+
+    bancos: 0,
+
+    preguntas: 0,
+
+    teorico: { bancos: 0, preguntas: 0 },
+
+    practico: { bancos: 0, preguntas: 0 },
+
+    porMateria: [],
+
+  };
+
+  const schemaOk = data?.schemaOk ?? true;
+
+  const supuestosOk = data?.supuestosOk ?? true;
+  const preguntasRpcOk = data?.preguntasRpcOk ?? true;
+
+
+
   return (
+
     <div className="site site--mobile-nav">
+
       <SiteHeader />
+
       <main className="site-main">
+
         <section className="hero hero--compact">
+
           <p className="hero-eyebrow">Administración</p>
+
           <h1 className="page-title">Temario</h1>
+
           <p className="lead lead--compact">{JEX_SUBTITLE}</p>
+
         </section>
 
+
+
         {error && (
+
           <div className="card card-warning">
+
             <p className="error">{error}</p>
+
             <p className="muted small">
+
               Configura <code>.env.local</code> con Supabase (ver <code>.env.example</code>).
+
             </p>
+
           </div>
+
         )}
+
+
+
+        {schemaOk && !preguntasRpcOk && <AdminPreguntasRpcSetup />}
 
         {!schemaOk && <AdminSchemaSetup />}
 
-        {schemaOk && !intentosOk && <AdminIntentosSetup />}
 
-        {schemaOk && !resultadosOk && <AdminResultadosSetup />}
 
         {schemaOk && !supuestosOk && <AdminSupuestosSetup />}
 
-        {schemaOk && resultadosOk && <AdminProgresoReset />}
 
-        {schemaOk && preguntasCount === 0 && bancos.length > 0 && (
+
+        {schemaOk && stats.preguntas === 0 && bancos.length > 0 && (
+
           <div className="card card-warning">
+
             <p className="muted small">
+
               Los bancos existen pero tienen <strong>0 preguntas</strong>. Importa de
+
               nuevo en la pestaña <strong>Importar</strong> o edita cada banco.
+
             </p>
+
           </div>
+
         )}
 
-        <Suspense fallback={<p className="muted">Cargando…</p>}>
-          <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} />
-        </Suspense>
+
+
+        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} />
+
+
 
         <p className="admin-mobile-only">
+
           <Link href="/practicar" className="btn-primary">
+
             Ir a tests
+
           </Link>
+
         </p>
+
       </main>
+
       <footer className="site-footer">
+
         <p>{JEX_SUBTITLE}</p>
+
       </footer>
+
       <MobileBottomNav />
+
     </div>
+
   );
+
 }
+
+

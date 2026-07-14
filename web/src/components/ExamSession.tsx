@@ -1,25 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
 import { examScore, formatExamTime } from "@/lib/exam-utils";
-import { buildDetalle, type ResultadoTipo } from "@/lib/queries/resultados";
-import { saveResultadoOnline } from "@/lib/save-resultado";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
-import {
-  isFavorito,
-  markAcerto,
-  markFallo,
-  toggleFavorito,
-} from "@/lib/test-progress";
-
-export type SessionMeta = {
-  tipo: ResultadoTipo;
-  titulo: string;
-  bancoId?: string | null;
-};
 
 type AnswerMeta = {
   respuesta: number;
@@ -33,7 +18,6 @@ type Props = {
   examMode: boolean;
   timerSeconds: number | null;
   backHref: string;
-  sessionMeta: SessionMeta;
   onFinish?: () => void;
 };
 
@@ -55,15 +39,11 @@ export function ExamSession({
   examMode,
   timerSeconds,
   backHref,
-  sessionMeta,
   onFinish,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const startedAtRef = useRef(Date.now());
-  const savedRef = useRef(false);
   const timerIdRef = useRef<number | null>(null);
-  const [savedOnline, setSavedOnline] = useState<boolean | null>(null);
   const [phase, setPhase] = useState<Phase>("test");
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(() =>
@@ -71,7 +51,6 @@ export function ExamSession({
   );
   const [flags, setFlags] = useState<boolean[]>(() => emptyFlags(active.length));
   const [answerMeta, setAnswerMeta] = useState<Map<string, AnswerMeta>>(() => new Map());
-  const [favTick, setFavTick] = useState(0);
   const [remaining, setRemaining] = useState<number | null>(timerSeconds);
   const [timerEnded, setTimerEnded] = useState(false);
   const [grading, setGrading] = useState(false);
@@ -240,12 +219,6 @@ export function ExamSession({
               explicacion: data.explicacion,
             }),
           );
-
-          if (data.correct) {
-            markAcerto(current.bancoId, current.id);
-          } else {
-            markFallo(current.bancoId, current.id);
-          }
         })
         .catch(() => {});
     },
@@ -260,61 +233,6 @@ export function ExamSession({
     });
   }, [index]);
 
-  const toggleFav = useCallback(() => {
-    if (!current) return;
-    void toggleFavorito(current.bancoId, current.id).then(() => setFavTick((t) => t + 1));
-  }, [current]);
-
-  useEffect(() => {
-    if (phase !== "result" || savedRef.current) return;
-    savedRef.current = true;
-
-    if (examMode) {
-      active.forEach((q, i) => {
-        const ans = answers[i];
-        if (ans === null) return;
-        const meta = answerMeta.get(q.id);
-        if (!meta) return;
-        if (ans !== meta.respuesta) {
-          markFallo(q.bancoId, q.id);
-        } else {
-          markAcerto(q.bancoId, q.id);
-        }
-      });
-    }
-
-    const ans = answers.filter((a) => a !== null).length;
-    const ok = answers.filter((a, i) => {
-      if (a === null) return false;
-      const meta = answerMeta.get(active[i]?.id ?? "");
-      return meta !== undefined && a === meta.respuesta;
-    }).length;
-    const fail = ans - ok;
-    const skip = active.length - ans;
-    const pct = ans > 0 ? Math.round((ok / ans) * 100) : 0;
-    const elapsed = Math.round((Date.now() - startedAtRef.current) / 1000);
-
-    void saveResultadoOnline({
-      tipo: sessionMeta.tipo,
-      titulo: sessionMeta.titulo,
-      bancoId: sessionMeta.bancoId ?? null,
-      total: active.length,
-      respondidas: ans,
-      correctas: ok,
-      incorrectas: fail,
-      sinResponder: skip,
-      nota: examScore(ok, fail),
-      porcentaje: pct,
-      tiempoSegundos: elapsed,
-      examMode,
-      detalle: buildDetalle(active, answers, flags, answerMeta),
-    }).then((r) => setSavedOnline(r.ok));
-  }, [phase, sessionMeta, active, answers, flags, examMode, answerMeta]);
-
-  const isFav = useMemo(() => {
-    void favTick;
-    return current ? isFavorito(current.bancoId, current.id) : false;
-  }, [current, favTick]);
   const flagged = flags[index] ?? false;
   const dudosaCount = flags.filter(Boolean).length;
 
@@ -340,14 +258,6 @@ export function ExamSession({
           {okCount} correctas · {failCount} incorrectas · {skipCount} sin responder · Nota:{" "}
           {nota} / {total}
         </p>
-        {savedOnline === true && (
-          <p className="ok small">Resultado guardado en la nube — visible en Estadísticas.</p>
-        )}
-        {savedOnline === false && (
-          <p className="muted small">
-            No se pudo guardar en la nube. Crea las tablas en Material si falta.
-          </p>
-        )}
 
         {dudosaCount > 0 && !examMode && (
           <div className="result-dudosas">
@@ -423,9 +333,6 @@ export function ExamSession({
           <button type="button" className="btn-primary" onClick={() => onFinish?.()}>
             {onFinish ? "Volver" : "Repetir"}
           </button>
-          <Link href="/estadisticas" className="btn-secondary">
-            Ver estadísticas
-          </Link>
           <button type="button" className="btn-link" onClick={exitSession}>
             Salir
           </button>
@@ -441,7 +348,7 @@ export function ExamSession({
       <div className="test-header-bar">
         <div>
           <p className="test-meta" style={{ margin: 0 }}>
-            {title} · Pregunta {index + 1} de {total}
+            Pregunta {index + 1} de {total}
           </p>
           {examMode && phase === "test" && (
             <span className="test-mode-badge">Modo examen</span>
@@ -559,15 +466,6 @@ export function ExamSession({
             onClick={toggleFlag}
           >
             ⚑
-          </button>
-          <button
-            type="button"
-            className={`btn-icon btn-fav ${isFav ? "active" : ""}`}
-            title="Guardar en favoritos"
-            aria-pressed={isFav}
-            onClick={toggleFav}
-          >
-            ♥
           </button>
         </div>
         <div className="test-actions-right">

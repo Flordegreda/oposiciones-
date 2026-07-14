@@ -37,7 +37,11 @@ export default async function AdminBancoPage({ params }: Props) {
 
   return (
     <div className="site site--mobile-nav">
-      <SiteHeader backHref="/admin?tab=bancos" backLabel="Bancos" />
+      <SiteHeader
+        backHref="/admin?tab=bancos"
+        backLabel="Bancos"
+        pageTitle={data?.banco?.nombre}
+      />
       <main className="site-main">
         <section className="hero hero--compact">
           <p className="hero-eyebrow">Administración</p>

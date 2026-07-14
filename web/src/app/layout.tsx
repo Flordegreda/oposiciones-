@@ -34,14 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${sans.variable} ${serif.variable}`} suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("opo_jex_theme");var s=localStorage.getItem("opo_jex_text_size");if(t==="dark")document.documentElement.dataset.theme="dark";if(s==="large")document.documentElement.dataset.textSize="large";}catch(e){}})();`,
-          }}
-        />
-      </head>
+    <html lang="es" className={`${sans.variable} ${serif.variable}`}>
       <body>
         <AppProviders>{children}</AppProviders>
       </body>

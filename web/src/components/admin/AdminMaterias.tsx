@@ -233,7 +233,7 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                             <TestPrintButton
                               materiaId={row.id}
                               title={row.nombre}
-                              label="Imprimir"
+                              label="PDF"
                               disabled={busy !== null}
                             />
                           )}

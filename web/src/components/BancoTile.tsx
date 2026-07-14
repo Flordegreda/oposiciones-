@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { getFalloIds, getRespondidasIds } from "@/lib/test-progress";
 import type { BancoRow } from "@/lib/queries/bancos";
 
 type Props = {
@@ -10,29 +8,6 @@ type Props = {
 };
 
 export function BancoTile({ banco }: Props) {
-  const [numFallos, setNumFallos] = useState<number | null>(null);
-  const [numRespondidas, setNumRespondidas] = useState<number | null>(null);
-
-  useEffect(() => {
-    const numPreguntas = banco.numPreguntas ?? 0;
-    if (numPreguntas === 0) return;
-
-    setNumFallos(getFalloIds(banco.id).size);
-    setNumRespondidas(getRespondidasIds(banco.id).size);
-
-    function handleUpdate() {
-      setNumFallos(getFalloIds(banco.id).size);
-      setNumRespondidas(getRespondidasIds(banco.id).size);
-    }
-
-    window.addEventListener("opo-progress-changed", handleUpdate);
-    window.addEventListener("opo-progress-synced", handleUpdate);
-    return () => {
-      window.removeEventListener("opo-progress-changed", handleUpdate);
-      window.removeEventListener("opo-progress-synced", handleUpdate);
-    };
-  }, [banco.id, banco.numPreguntas]);
-
   const numPreguntas = banco.numPreguntas ?? 0;
 
   return (
@@ -45,16 +20,6 @@ export function BancoTile({ banco }: Props) {
             <span className="banco-tile-count">{numPreguntas} preg.</span>
           )}
         </span>
-        {numPreguntas > 0 && numFallos !== null && numRespondidas !== null && (
-          <span className="banco-progress">
-            <span className="banco-progress-icon">
-              {numRespondidas === 0 ? "⚪" : numFallos === 0 ? "🟢" : numFallos <= Math.max(1, Math.round(numPreguntas * 0.1)) ? "🟡" : numFallos <= Math.max(2, Math.round(numPreguntas * 0.25)) ? "🟠" : "🔴"}
-            </span>
-            <span className="banco-progress-text">
-              {Math.min(numRespondidas, numPreguntas)}/{numPreguntas} respondidas · {numFallos} fallos
-            </span>
-          </span>
-        )}
       </div>
       <span className="banco-tile-chevron" aria-hidden>
         ›

@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
-import { ExamSession, type SessionMeta } from "@/components/ExamSession";
+import { ExamSession } from "@/components/ExamSession";
 import { TestPrintButton } from "@/components/TestPrintButton";
-import { getFalloIds, isFavorito } from "@/lib/test-progress";
 
 type Props = {
   bancoId: string;
@@ -15,7 +15,6 @@ type Props = {
 type Session = {
   list: PublicExamPregunta[];
   examMode: boolean;
-  meta: SessionMeta;
 };
 
 export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
@@ -26,47 +25,25 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
 
   const [session, setSession] = useState<Session | null>(null);
   const [examMode, setExamMode] = useState(false);
-  const [failIds, setFailIds] = useState<Set<string>>(() => new Set());
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setFailIds(getFalloIds(bancoId));
-    setHydrated(true);
-    const onSync = () => setFailIds(getFalloIds(bancoId));
-    window.addEventListener("opo-progress-synced", onSync);
-    return () => window.removeEventListener("opo-progress-synced", onSync);
-  }, [bancoId]);
-
-  const falloPreguntas = useMemo(
-    () => allPreguntas.filter((p) => failIds.has(p.id)),
-    [allPreguntas, failIds],
-  );
-  const favPreguntas = useMemo(() => {
-    if (!hydrated) return [];
-    return allPreguntas.filter((p) => isFavorito(bancoId, p.id));
-  }, [allPreguntas, bancoId, hydrated]);
 
   const startTest = useCallback(
-    (list: PublicExamPregunta[], meta: SessionMeta) => {
-      setSession({ list, examMode, meta });
+    (list: PublicExamPregunta[]) => {
+      setSession({ list, examMode });
     },
     [examMode],
   );
 
   if (session) {
     return (
-      <>
-        <ExamSession
-          bancoId={bancoId}
-          title={bancoNombre}
-          preguntas={session.list}
-          examMode={session.examMode}
-          timerSeconds={null}
-          backHref="/practicar"
-          sessionMeta={session.meta}
-          onFinish={() => setSession(null)}
-        />
-      </>
+      <ExamSession
+        bancoId={bancoId}
+        title={bancoNombre}
+        preguntas={session.list}
+        examMode={session.examMode}
+        timerSeconds={null}
+        backHref="/practicar"
+        onFinish={() => setSession(null)}
+      />
     );
   }
 
@@ -82,19 +59,22 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
     <div className="card">
       <div className="test-start-head">
         <h2 className="test-start-title">¿Cómo quieres practicar?</h2>
-        <TestPrintButton
-          bancoId={bancoId}
-          title={bancoNombre}
-          label={`Imprimir banco (${allPreguntas.length})`}
-        />
+        <div className="test-start-actions">
+          <Link href={`/admin/bancos/${bancoId}`} className="btn-secondary btn-sm">
+            Editar
+          </Link>
+          <TestPrintButton
+            bancoId={bancoId}
+            title={bancoNombre}
+            label={`PDF (${allPreguntas.length})`}
+          />
+        </div>
       </div>
       <div className="test-mode-list">
         <button
           type="button"
           className="test-mode-btn"
-          onClick={() =>
-            startTest(allPreguntas, { tipo: "banco", titulo: bancoNombre, bancoId })
-          }
+          onClick={() => startTest(allPreguntas)}
         >
           <strong>Todo el banco</strong>
           <span className="muted small">
@@ -102,44 +82,6 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
             {bancoNombre}
           </span>
         </button>
-        {hydrated && falloPreguntas.length > 0 && (
-          <button
-            type="button"
-            className="test-mode-btn"
-            onClick={() =>
-              startTest(falloPreguntas, {
-                tipo: "fallos",
-                titulo: `Fallos — ${bancoNombre}`,
-                bancoId,
-              })
-            }
-          >
-            <strong>Repaso de fallos</strong>
-            <span className="muted small">
-              {falloPreguntas.length} pregunta
-              {falloPreguntas.length !== 1 ? "s" : ""} que has fallado antes
-            </span>
-          </button>
-        )}
-        {hydrated && favPreguntas.length > 0 && (
-          <button
-            type="button"
-            className="test-mode-btn"
-            onClick={() =>
-              startTest(favPreguntas, {
-                tipo: "favoritos",
-                titulo: `Favoritas — ${bancoNombre}`,
-                bancoId,
-              })
-            }
-          >
-            <strong>Test de favoritas</strong>
-            <span className="muted small">
-              {favPreguntas.length} pregunta{favPreguntas.length !== 1 ? "s" : ""}{" "}
-              guardada{favPreguntas.length !== 1 ? "s" : ""}
-            </span>
-          </button>
-        )}
       </div>
 
       <label className="sim-toggle">

@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS, SCHEMA_CACHE_SECONDS } from "@/lib/content-cache";
 import { getSupabase } from "@/lib/supabase/server";
 
 function isTableMissingMessage(message: string): boolean {
@@ -14,7 +16,14 @@ export function isPreguntasTableMissing(message: string): boolean {
   return isTableMissingMessage(message);
 }
 
-export async function preguntasTableExists(): Promise<boolean> {
+function withSchemaCache<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  return unstable_cache(fn, [`schema-${key}`], {
+    revalidate: SCHEMA_CACHE_SECONDS,
+    tags: [CACHE_TAGS.schema],
+  })();
+}
+
+async function uncachedPreguntasTableExists(): Promise<boolean> {
   const supabase = getSupabase();
   const { error } = await supabase
     .from("preguntas")
@@ -23,6 +32,10 @@ export async function preguntasTableExists(): Promise<boolean> {
 
   if (!error) return true;
   return !isTableMissingMessage(error.message);
+}
+
+export function preguntasTableExists(): Promise<boolean> {
+  return withSchemaCache("preguntas", uncachedPreguntasTableExists);
 }
 
 export async function getPreguntasCount(): Promise<number | null> {
@@ -38,51 +51,7 @@ export async function getPreguntasCount(): Promise<number | null> {
   return count ?? 0;
 }
 
-export async function intentosTableExists(): Promise<boolean> {
-  const supabase = getSupabase();
-  const { error } = await supabase
-    .from("intentos")
-    .select("id, pregunta_id, banco_id, correcta")
-    .limit(0);
-
-  if (!error) return true;
-  const msg = error.message.toLowerCase();
-  if (
-    msg.includes("could not find the table") ||
-    msg.includes('relation "intentos" does not exist') ||
-    (msg.includes("intentos") && msg.includes("does not exist"))
-  ) {
-    return false;
-  }
-  if (msg.includes("pregunta_id") || msg.includes("column")) return false;
-  return false;
-}
-
-export async function resultadosTableExists(): Promise<boolean> {
-  const supabase = getSupabase();
-  const { error } = await supabase.from("resultados").select("id").limit(0);
-  if (!error) return true;
-  const msg = error.message.toLowerCase();
-  return !(
-    msg.includes("could not find the table") ||
-    msg.includes('relation "resultados" does not exist') ||
-    (msg.includes("resultados") && msg.includes("does not exist"))
-  );
-}
-
-export async function favoritosTableExists(): Promise<boolean> {
-  const supabase = getSupabase();
-  const { error } = await supabase.from("favoritos").select("banco_id").limit(0);
-  if (!error) return true;
-  const msg = error.message.toLowerCase();
-  return !(
-    msg.includes("could not find the table") ||
-    msg.includes('relation "favoritos" does not exist') ||
-    (msg.includes("favoritos") && msg.includes("does not exist"))
-  );
-}
-
-export async function supuestosTableExists(): Promise<boolean> {
+async function uncachedSupuestosTableExists(): Promise<boolean> {
   const supabase = getSupabase();
   const { error } = await supabase.from("supuestos").select("id").limit(0);
   if (!error) return true;
@@ -94,11 +63,29 @@ export async function supuestosTableExists(): Promise<boolean> {
   );
 }
 
-export async function supuestosSchemaReady(): Promise<boolean> {
-  if (!(await supuestosTableExists())) return false;
+export function supuestosTableExists(): Promise<boolean> {
+  return withSchemaCache("supuestos", uncachedSupuestosTableExists);
+}
+
+async function uncachedSupuestosSchemaReady(): Promise<boolean> {
+  if (!(await uncachedSupuestosTableExists())) return false;
   const supabase = getSupabase();
   const { error } = await supabase.from("preguntas").select("supuesto_id").limit(0);
   if (!error) return true;
   const msg = error.message.toLowerCase();
   return !(msg.includes("supuesto_id") && msg.includes("does not exist"));
+}
+
+export function supuestosSchemaReady(): Promise<boolean> {
+  return withSchemaCache("supuestos-ready", uncachedSupuestosSchemaReady);
+}
+
+async function uncachedPreguntasRpcReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc("preguntas_counts_by_banco");
+  return !error && Array.isArray(data);
+}
+
+export function preguntasRpcReady(): Promise<boolean> {
+  return withSchemaCache("preguntas-rpc", uncachedPreguntasRpcReady);
 }

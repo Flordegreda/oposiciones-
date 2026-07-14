@@ -7,12 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrintLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="print-route">
-      <p className="print-route-hint no-print">
-        Pulsa <strong>Ctrl+P</strong> (o el menú Imprimir del navegador) cuando veas el test completo.
-      </p>
-      {children}
-    </div>
-  );
+  return <div className="print-route">{children}</div>;
 }
