@@ -51,12 +51,26 @@ type LoadedBanco = {
   supuestos: SupuestoRow[];
 };
 
+type BancoMeta = {
+  id: string;
+  nombre: string;
+  tipo: string;
+  materia_id: string;
+  linea_id: string | null;
+  active: boolean;
+  count: number;
+  hasSupuesto: boolean;
+  blockSizes: number[] | null;
+};
+
 type PlannedBanco = BackupBanco & {
   linea_id: string | null;
   active: boolean;
   materia_id: string;
   sourceIds: string[];
 };
+
+const META_PAGE = 1000;
 
 function bounds(targetSize: number) {
   return {
@@ -75,6 +89,305 @@ function toBackupPregunta(p: PreguntaRow): BackupPregunta {
     orden: p.orden,
     supuesto_id: p.supuesto_id,
   };
+}
+
+async function fetchPreguntasMetaForBanco(
+  bancoId: string,
+): Promise<{ orden: number; supuesto_id: string | null }[]> {
+  const supabase = getSupabase();
+  const rows: { orden: number; supuesto_id: string | null }[] = [];
+
+  for (let from = 0; ; from += META_PAGE) {
+    const { data, error } = await supabase
+      .from("preguntas")
+      .select("orden, supuesto_id")
+      .eq("banco_id", bancoId)
+      .order("orden")
+      .range(from, from + META_PAGE - 1);
+
+    if (error) throw error;
+    if (!data?.length) break;
+    rows.push(
+      ...data.map((p) => ({
+        orden: p.orden,
+        supuesto_id: p.supuesto_id ?? null,
+      })),
+    );
+    if (data.length < META_PAGE) break;
+  }
+
+  return rows;
+}
+
+function blockSizesFromMeta(
+  meta: { orden: number; supuesto_id: string | null }[],
+  supuestoIds: Set<string>,
+): number[] {
+  const sizes: number[] = [];
+  let currentSupuesto: string | null = null;
+  let currentSize = 0;
+
+  const flushSupuesto = () => {
+    if (currentSupuesto && currentSize > 0) sizes.push(currentSize);
+    currentSupuesto = null;
+    currentSize = 0;
+  };
+
+  for (const row of meta) {
+    if (row.supuesto_id && supuestoIds.has(row.supuesto_id)) {
+      if (currentSupuesto && currentSupuesto !== row.supuesto_id) flushSupuesto();
+      if (!currentSupuesto) currentSupuesto = row.supuesto_id;
+      currentSize += 1;
+      continue;
+    }
+    flushSupuesto();
+    sizes.push(1);
+  }
+  flushSupuesto();
+  return sizes;
+}
+
+function packBlockSizesIntoNames(
+  nombre: string,
+  blockSizes: number[],
+  maxSize: number,
+): string[] {
+  const bins: number[][] = [];
+  let current: number[] = [];
+  let currentSize = 0;
+
+  const flush = () => {
+    if (!current.length) return;
+    bins.push(current);
+    current = [];
+    currentSize = 0;
+  };
+
+  for (const size of blockSizes) {
+    if (size > maxSize) {
+      flush();
+      bins.push([size]);
+      continue;
+    }
+    if (currentSize > 0 && currentSize + size > maxSize) flush();
+    current.push(size);
+    currentSize += size;
+  }
+  flush();
+
+  const total = bins.length;
+  return bins.map((bin, idx) => {
+    const sum = bin.reduce((a, b) => a + b, 0);
+    void sum;
+    return total > 1 ? `${nombre} (${idx + 1}/${total})` : nombre;
+  });
+}
+
+function splitNamesForCount(nombre: string, count: number, targetSize: number): string[] {
+  const totalParts = Math.ceil(count / targetSize);
+  return Array.from({ length: totalParts }, (_, idx) =>
+    totalParts > 1 ? `${nombre} (${idx + 1}/${totalParts})` : nombre,
+  );
+}
+
+function mergeName(group: BancoMeta[]): string {
+  if (group.length === 1) return group[0].nombre;
+  return `${group[0].nombre} (+${group.length - 1} temas)`.slice(0, 180);
+}
+
+function greedyMergeSmallMeta(
+  small: BancoMeta[],
+  targetSize: number,
+  maxSize: number,
+): { group: BancoMeta[]; nombre: string; count: number }[] {
+  const sorted = [...small].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base", numeric: true }),
+  );
+  const out: { group: BancoMeta[]; nombre: string; count: number }[] = [];
+  let group: BancoMeta[] = [];
+  let count = 0;
+
+  const flushGroup = () => {
+    if (!group.length) return;
+    out.push({
+      group: [...group],
+      nombre: mergeName(group),
+      count,
+    });
+    group = [];
+    count = 0;
+  };
+
+  for (const banco of sorted) {
+    const n = banco.count;
+    if (count > 0 && count + n > maxSize) flushGroup();
+    group.push(banco);
+    count += n;
+    if (count >= targetSize) flushGroup();
+  }
+  flushGroup();
+
+  return out;
+}
+
+function rebalanceMetaSubset(
+  bancos: BancoMeta[],
+  targetSize: number,
+  maxSize: number,
+  minSize: number,
+): { bancosDespues: number; cambios: RebalanceChange[]; candidateIds: Set<string> } {
+  const cambios: RebalanceChange[] = [];
+  const toMerge: BancoMeta[] = [];
+  let bancosDespues = 0;
+  const candidateIds = new Set<string>();
+
+  for (const banco of bancos) {
+    const n = banco.count;
+    if (n === 0) continue;
+
+    if (n > maxSize) {
+      candidateIds.add(banco.id);
+      const destino =
+        banco.hasSupuesto && banco.blockSizes
+          ? packBlockSizesIntoNames(banco.nombre, banco.blockSizes, maxSize)
+          : splitNamesForCount(banco.nombre, n, targetSize);
+      bancosDespues += destino.length;
+      cambios.push({
+        accion: "partir",
+        origen: [banco.nombre],
+        destino,
+        preguntas: n,
+      });
+      continue;
+    }
+
+    if (n < minSize) {
+      toMerge.push(banco);
+      candidateIds.add(banco.id);
+      continue;
+    }
+
+    bancosDespues += 1;
+    cambios.push({
+      accion: "igual",
+      origen: [banco.nombre],
+      destino: [banco.nombre],
+      preguntas: n,
+    });
+  }
+
+  if (toMerge.length) {
+    const merged = greedyMergeSmallMeta(toMerge, targetSize, maxSize);
+    bancosDespues += merged.length;
+    for (const plan of merged) {
+      cambios.push({
+        accion: "fusionar",
+        origen: plan.group.map((b) => b.nombre),
+        destino: [plan.nombre],
+        preguntas: plan.count,
+      });
+    }
+  }
+
+  return { bancosDespues, cambios, candidateIds };
+}
+
+function rebalanceMeta(
+  bancos: BancoMeta[],
+  targetSize: number,
+  maxSize: number,
+  minSize: number,
+): { bancosDespues: number; cambios: RebalanceChange[]; candidateIds: Set<string> } {
+  const tipos = [...new Set(bancos.map((b) => b.tipo))];
+  let bancosDespues = 0;
+  const cambios: RebalanceChange[] = [];
+  const candidateIds = new Set<string>();
+
+  for (const tipo of tipos) {
+    const subset = bancos.filter((b) => b.tipo === tipo);
+    const result = rebalanceMetaSubset(subset, targetSize, maxSize, minSize);
+    bancosDespues += result.bancosDespues;
+    cambios.push(...result.cambios);
+    for (const id of result.candidateIds) candidateIds.add(id);
+  }
+
+  return { bancosDespues, cambios, candidateIds };
+}
+
+async function loadMateriaBancosMeta(materiaId: string, maxSize: number): Promise<BancoMeta[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("bancos")
+    .select("id, nombre, tipo, materia_id, active, linea_id")
+    .eq("materia_id", materiaId)
+    .order("nombre");
+
+  if (error) throw error;
+  const rows = data ?? [];
+  if (!rows.length) return [];
+
+  const counts = await fetchPreguntaCountsByBanco(rows.map((b) => b.id));
+  const withQuestions = rows.filter((b) => (counts.get(b.id) ?? 0) > 0);
+  if (!withQuestions.length) return [];
+
+  const supuestosReady = await supuestosSchemaReady();
+  const supuestoTableIds = new Set<string>();
+  const supuestoPreguntaIds = new Set<string>();
+
+  if (supuestosReady) {
+    const ids = withQuestions.map((b) => b.id);
+    const CHUNK = 80;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const slice = ids.slice(i, i + CHUNK);
+      const { data: supRows } = await supabase
+        .from("supuestos")
+        .select("banco_id")
+        .in("banco_id", slice);
+      for (const s of supRows ?? []) supuestoTableIds.add(s.banco_id);
+
+      const { data: pregRows } = await supabase
+        .from("preguntas")
+        .select("banco_id")
+        .in("banco_id", slice)
+        .not("supuesto_id", "is", null);
+      for (const p of pregRows ?? []) supuestoPreguntaIds.add(p.banco_id);
+    }
+  }
+
+  const meta: BancoMeta[] = [];
+
+  for (const banco of withQuestions) {
+    const count = counts.get(banco.id) ?? 0;
+    const hasSupuesto =
+      supuestosReady &&
+      (supuestoTableIds.has(banco.id) || supuestoPreguntaIds.has(banco.id));
+    const needsBlocks = hasSupuesto && count > maxSize;
+    let blockSizes: number[] | null = null;
+
+    if (needsBlocks) {
+      const { data: supRows } = await supabase
+        .from("supuestos")
+        .select("id")
+        .eq("banco_id", banco.id);
+      const supuestoIds = new Set((supRows ?? []).map((s) => s.id));
+      const pregMeta = await fetchPreguntasMetaForBanco(banco.id);
+      blockSizes = blockSizesFromMeta(pregMeta, supuestoIds);
+    }
+
+    meta.push({
+      id: banco.id,
+      nombre: banco.nombre,
+      tipo: banco.tipo,
+      materia_id: banco.materia_id,
+      linea_id: banco.linea_id,
+      active: banco.active ?? true,
+      count,
+      hasSupuesto,
+      blockSizes,
+    });
+  }
+
+  return meta;
 }
 
 async function loadBancoFull(id: string): Promise<LoadedBanco | null> {
@@ -112,6 +425,18 @@ async function loadBancoFull(id: string): Promise<LoadedBanco | null> {
     preguntas: data.preguntas,
     supuestos,
   };
+}
+
+async function loadBancosFull(ids: string[]): Promise<LoadedBanco[]> {
+  const loaded: LoadedBanco[] = [];
+  const BATCH = 4;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = await Promise.all(ids.slice(i, i + BATCH).map((id) => loadBancoFull(id)));
+    for (const b of batch) {
+      if (b?.preguntas.length) loaded.push(b);
+    }
+  }
+  return loaded;
 }
 
 function hasSupuestoStructure(banco: LoadedBanco): boolean {
@@ -215,8 +540,7 @@ function packBlocksIntoPlans(
   const total = bins.length;
   return bins.map((bin, idx) => {
     const content = blocksToBackup(bin);
-    const nombre =
-      total > 1 ? `${banco.nombre} (${idx + 1}/${total})` : banco.nombre;
+    const nombre = total > 1 ? `${banco.nombre} (${idx + 1}/${total})` : banco.nombre;
     return {
       nombre,
       tipo: banco.tipo,
@@ -262,9 +586,7 @@ function mergeBancos(group: LoadedBanco[]): PlannedBanco {
   }
   const content = blocksToBackup(blocks);
   const nombre =
-    group.length === 1
-      ? group[0].nombre
-      : `${group[0].nombre} (+${group.length - 1} temas)`;
+    group.length === 1 ? group[0].nombre : `${group[0].nombre} (+${group.length - 1} temas)`;
 
   return {
     nombre: nombre.slice(0, 180),
@@ -384,31 +706,6 @@ function rebalanceLoaded(
   return { planned, cambios };
 }
 
-async function loadMateriaBancos(materiaId: string): Promise<LoadedBanco[]> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("bancos")
-    .select("id")
-    .eq("materia_id", materiaId)
-    .order("nombre");
-
-  if (error) throw error;
-
-  const counts = await fetchPreguntaCountsByBanco((data ?? []).map((b) => b.id));
-  const ids = (data ?? []).filter((b) => (counts.get(b.id) ?? 0) > 0).map((b) => b.id);
-
-  const loaded: LoadedBanco[] = [];
-  const BATCH = 8;
-  for (let i = 0; i < ids.length; i += BATCH) {
-    const batch = await Promise.all(ids.slice(i, i + BATCH).map((id) => loadBancoFull(id)));
-    for (const b of batch) {
-      if (b?.preguntas.length) loaded.push(b);
-    }
-  }
-
-  return loaded;
-}
-
 export async function previewRebalance(opts: RebalanceOptions = {}): Promise<RebalancePreview> {
   const targetSize = opts.targetSize ?? 50;
   const { maxSize, minSize } = bounds(targetSize);
@@ -425,17 +722,16 @@ export async function previewRebalance(opts: RebalanceOptions = {}): Promise<Reb
   let sinCambios = 0;
 
   for (const materia of materias) {
-    const loaded = await loadMateriaBancos(materia.id);
-    const antes = loaded.length;
-    const { planned, cambios } = rebalanceLoaded(loaded, targetSize, maxSize, minSize);
+    const meta = await loadMateriaBancosMeta(materia.id, maxSize);
+    const antes = meta.length;
+    const { bancosDespues: despues, cambios } = rebalanceMeta(meta, targetSize, maxSize, minSize);
     const unchanged = cambios.filter((c) => c.accion === "igual").length;
-    const despues = unchanged + planned.length;
 
     bancosAntes += antes;
     bancosDespues += despues;
     partir += cambios.filter((c) => c.accion === "partir").length;
     fusionar += cambios.filter((c) => c.accion === "fusionar").length;
-    sinCambios += cambios.filter((c) => c.accion === "igual").length;
+    sinCambios += unchanged;
 
     if (cambios.some((c) => c.accion !== "igual")) {
       previews.push({
@@ -462,13 +758,12 @@ export async function previewRebalance(opts: RebalanceOptions = {}): Promise<Reb
 }
 
 export async function executeRebalance(opts: RebalanceOptions = {}): Promise<RebalancePreview> {
+  const targetSize = opts.targetSize ?? 50;
+  const { maxSize, minSize } = bounds(targetSize);
   const preview = await previewRebalance(opts);
   if (!preview.partir && !preview.fusionar) return preview;
 
-  const targetSize = opts.targetSize ?? 50;
-  const { maxSize, minSize } = bounds(targetSize);
   const supabase = getSupabase();
-
   const materiaIds = opts.materiaId
     ? [opts.materiaId]
     : (await getMateriasWithCounts()).map((m) => m.id);
@@ -476,7 +771,11 @@ export async function executeRebalance(opts: RebalanceOptions = {}): Promise<Reb
   const deleteIds = new Set<string>();
 
   for (const materiaId of materiaIds) {
-    const loaded = await loadMateriaBancos(materiaId);
+    const meta = await loadMateriaBancosMeta(materiaId, maxSize);
+    const { candidateIds } = rebalanceMeta(meta, targetSize, maxSize, minSize);
+    if (!candidateIds.size) continue;
+
+    const loaded = await loadBancosFull([...candidateIds]);
     const { planned } = rebalanceLoaded(loaded, targetSize, maxSize, minSize);
     if (!planned.length) continue;
 

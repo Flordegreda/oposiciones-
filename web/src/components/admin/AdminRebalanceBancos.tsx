@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { RebalancePreview } from "@/lib/rebalance-bancos";
+import { fetchErrorMessage, readFetchJson } from "@/lib/fetch-json";
 
 type Materia = { id: string; nombre: string };
 
@@ -28,8 +29,11 @@ export function AdminRebalanceBancos({ materias }: Props) {
       const qs = new URLSearchParams({ targetSize: String(targetSize) });
       if (materiaId) qs.set("materiaId", materiaId);
       const res = await fetch(`/api/admin/bancos/rebalance?${qs}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al previsualizar");
+      const { data, text } = await readFetchJson<{ error?: string }>(res);
+      if (!res.ok) {
+        throw new Error(fetchErrorMessage(res, data, text, "Error al previsualizar"));
+      }
+      if (!data) throw new Error("Respuesta vacía del servidor");
       setPreview(data as RebalancePreview);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Error");
@@ -65,9 +69,11 @@ export function AdminRebalanceBancos({ materias }: Props) {
           materiaId: materiaId || null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al aplicar");
-      setMsg(data.message || "Listo");
+      const { data, text } = await readFetchJson<{ error?: string; message?: string }>(res);
+      if (!res.ok) {
+        throw new Error(fetchErrorMessage(res, data, text, "Error al aplicar"));
+      }
+      setMsg(data?.message || "Listo");
       setPreview(null);
       router.refresh();
     } catch (e) {
@@ -84,7 +90,8 @@ export function AdminRebalanceBancos({ materias }: Props) {
       </h2>
       <p className="muted small">
         Parte bancos muy grandes y fusiona los muy pequeños dentro de cada materia. Los de
-        tamaño medio se dejan igual. <strong>Haz copia de seguridad antes.</strong>
+        tamaño medio se dejan igual. <strong>Haz copia de seguridad antes.</strong> Si falla o
+        tarda mucho, elige <strong>una materia</strong> en lugar de todas.
       </p>
 
       <div className="admin-rebalance-fields">
