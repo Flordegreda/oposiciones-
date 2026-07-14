@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jex
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/00-roles.generated.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./postgres/01-base-schema.sql:/docker-entrypoint-initdb.d/01-base-schema.sql:ro
+      - ../web/supabase/APLICAR-AHORA.sql:/docker-entrypoint-initdb.d/02-preguntas.sql:ro
+      - ../web/supabase/SUPUESTOS.sql:/docker-entrypoint-initdb.d/03-supuestos.sql:ro
+      - ../web/supabase/INTENTOS-DETALLE.sql:/docker-entrypoint-initdb.d/04-intentos.sql:ro
+      - ../web/supabase/RESULTADOS-FAVORITOS.sql:/docker-entrypoint-initdb.d/05-resultados.sql:ro
+      - ../web/supabase/PREGUNTAS-COUNTS-RPC.sql:/docker-entrypoint-initdb.d/06-rpc-counts.sql:ro
+      - ../web/supabase/PENDING-FALLOS-RPC.sql:/docker-entrypoint-initdb.d/07-rpc-fallos.sql:ro
+      - ./postgres/99-grants.sql:/docker-entrypoint-initdb.d/99-grants.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jex"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD}@db:5432/jex
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_EXTRA_SEARCH_PATH: public
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${PUBLIC_APP_URL}
+        SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    restart: unless-stopped
+    depends_on:
+      - postgrest
+      - caddy
+    environment:
+      SUPABASE_URL: http://caddy
+      NEXT_PUBLIC_SUPABASE_URL: ${PUBLIC_APP_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      APP_URL: ${PUBLIC_APP_URL}
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - postgrest
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

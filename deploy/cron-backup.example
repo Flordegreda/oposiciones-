@@ -1,0 +1,1 @@
+0 3 * * * root docker exec $(docker ps -qf name=jex-db-1) pg_dump -U postgres jex | gzip > /var/backups/jex-$(date +\%F).sql.gz

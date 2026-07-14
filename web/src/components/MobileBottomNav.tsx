@@ -13,9 +13,7 @@ const items = [
   { href: "/practicar", label: "Tests", match: (p: string) => p === "/practicar" || p.startsWith("/test/") },
 
   { href: "/simulacro", label: "Simulacro", match: (p: string) => p.startsWith("/simulacro") },
-
   { href: "/admin", label: "Material", match: (p: string) => p.startsWith("/admin") },
-
 ];
 
 
