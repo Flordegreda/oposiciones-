@@ -58,40 +58,69 @@ export function AdminBancos({ bancos: initial }: Props) {
     return { bancos: filtered.length, preguntas, teorico, practico };
   }, [filtered]);
 
-  const emptyBancos = useMemo(
-    () => bancos.filter((b) => (b.numPreguntas ?? 0) === 0),
-    [bancos],
-  );
-  const stubBancos = useMemo(
-    () => bancos.filter((b) => {
-      const n = b.numPreguntas ?? 0;
-      return n > 0 && n <= 1;
-    }),
+  const brokenBancos = useMemo(
+    () =>
+      bancos.filter((b) => {
+        const n = b.numPreguntas ?? 0;
+        const sinMateria = materiaNombre(b.materias) === "Sin materia";
+        return n === 0 || sinMateria;
+      }),
     [bancos],
   );
   const [cleaning, setCleaning] = useState(false);
   const [cleaningJunk, setCleaningJunk] = useState(false);
 
-  async function limpiarVacios() {
-    if (
-      !confirm(
-        `¿Eliminar ${emptyBancos.length} banco(s) vacío(s)?\n\n${emptyBancos.map((b) => b.nombre).join("\n")}`,
-      )
-    ) {
-      return;
-    }
+  async function limpiarRotos() {
     setCleaning(true);
-    const res = await fetch("/api/admin/bancos/cleanup-empty", { method: "POST" });
-    const data = await res.json();
-    setCleaning(false);
-    if (!res.ok) {
-      alert(data.error || "No se pudo limpiar");
-      return;
+    try {
+      const previewRes = await fetch("/api/admin/bancos/cleanup-broken");
+      const preview = await previewRes.json();
+      if (!previewRes.ok) throw new Error(preview.error || "No se pudo analizar");
+
+      if (!preview.count) {
+        alert("No hay bancos con enlace roto.");
+        return;
+      }
+
+      const lines = (preview.items as { nombre: string; reason: string }[])
+        .slice(0, 40)
+        .map(
+          (b) =>
+            `· ${b.nombre} — ${b.reason === "empty" ? "sin preguntas" : "materia perdida"}`,
+        );
+      const more = preview.count > 40 ? `\n… y ${preview.count - 40} más` : "";
+      const ok = confirm(
+        `¿Eliminar ${preview.count} banco(s) con enlace roto?\n` +
+          `${preview.empty} vacíos · ${preview.orphan} sin materia\n\n` +
+          `${lines.join("\n")}${more}`,
+      );
+      if (!ok) return;
+
+      const res = await fetch("/api/admin/bancos/cleanup-broken", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo limpiar");
+
+      const removed = new Set(
+        (data.items as { id: string }[] | undefined)?.map((b) => b.id) ?? [],
+      );
+      setBancos((list) => list.filter((b) => !removed.has(b.id)));
+      router.refresh();
+      alert(`Eliminados ${data.deleted} banco(s) con enlace roto.`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error al limpiar");
+    } finally {
+      setCleaning(false);
     }
-    setBancos((list) => list.filter((b) => (b.numPreguntas ?? 0) > 0));
-    router.refresh();
-    alert(`Eliminados ${data.deleted} banco(s) vacío(s).`);
   }
+
+  const stubBancos = useMemo(
+    () =>
+      bancos.filter((b) => {
+        const n = b.numPreguntas ?? 0;
+        return n > 0 && n <= 1;
+      }),
+    [bancos],
+  );
 
   async function limpiarPruebaYDuplicados() {
     setCleaningJunk(true);
@@ -179,20 +208,26 @@ export function AdminBancos({ bancos: initial }: Props) {
         </div>
       )}
 
-      {emptyBancos.length > 0 && (
+      {(brokenBancos.length > 0 || bancos.length > 0) && (
         <div className="info-box sim-info" style={{ marginBottom: "1rem" }}>
           <p style={{ margin: 0 }}>
-            <strong>{emptyBancos.length} banco(s) sin preguntas</strong> (0 en la base de
-            datos). Solo se eliminan bancos realmente vacíos.
+            <strong>Enlaces rotos:</strong> bancos sin preguntas o sin materia válida (quedan
+            tras partir/fusionar). No aparecen en Tests pero ensucian Material.
+            {brokenBancos.length > 0 && (
+              <>
+                {" "}
+                Ahora hay <strong>{brokenBancos.length}</strong>.
+              </>
+            )}
           </p>
           <button
             type="button"
             className="btn-danger btn-sm"
             style={{ marginTop: "0.65rem" }}
             disabled={cleaning}
-            onClick={() => void limpiarVacios()}
+            onClick={() => void limpiarRotos()}
           >
-            {cleaning ? "Eliminando…" : "Eliminar solo bancos vacíos"}
+            {cleaning ? "Eliminando…" : "Eliminar bancos con enlace roto"}
           </button>
         </div>
       )}

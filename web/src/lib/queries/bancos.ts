@@ -607,6 +607,44 @@ export async function findEmptyBancoIds(): Promise<{ id: string; nombre: string 
   return (bancos ?? []).filter((b) => (counts.get(b.id) ?? 0) === 0);
 }
 
+export type BrokenBancoRow = {
+  id: string;
+  nombre: string;
+  reason: "empty" | "orphan";
+};
+
+/** Bancos sin preguntas o con materia inexistente (enlace roto en Tests). */
+export async function findBrokenBancoIds(): Promise<BrokenBancoRow[]> {
+  const supabase = getSupabase();
+  const { data: bancos, error: bErr } = await supabase
+    .from("bancos")
+    .select("id, nombre, materia_id")
+    .order("nombre");
+
+  if (bErr) throw bErr;
+
+  const { data: materias, error: mErr } = await supabase.from("materias").select("id");
+  if (mErr) throw mErr;
+
+  const materiaIds = new Set((materias ?? []).map((m) => m.id));
+  const counts = await fetchPreguntaCountsByBanco();
+  const broken = new Map<string, BrokenBancoRow>();
+
+  for (const b of bancos ?? []) {
+    if (!materiaIds.has(b.materia_id)) {
+      broken.set(b.id, { id: b.id, nombre: b.nombre, reason: "orphan" });
+      continue;
+    }
+    if ((counts.get(b.id) ?? 0) === 0) {
+      broken.set(b.id, { id: b.id, nombre: b.nombre, reason: "empty" });
+    }
+  }
+
+  return [...broken.values()].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base", numeric: true }),
+  );
+}
+
 export type JunkBancoRow = {
   id: string;
   nombre: string;
