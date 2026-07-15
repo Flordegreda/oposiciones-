@@ -16,14 +16,32 @@ export type ParsedImportDocument = {
   supuestos: ParsedSupuesto[];
 };
 
+export type ImportContext = {
+  tipo?: "teorico" | "practico";
+  nombre?: string;
+  encadenado?: boolean;
+};
+
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
 const ANSWER_RE =
   /^(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:?\s*([A-Da-d])\s*$/i;
 const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
-const SUPUESTO_START_RE = /^===\s*SUPUESTO(?:\s*:\s*(.*))?\s*$/i;
-const SUPUESTO_END_RE = /^===\s*$/;
+const SUPUESTO_START_RE = /^={3}\s*SUPUESTO(?:\s*:\s*(.*))?\s*$/i;
+const SUPUESTO_END_RE = /^={3}\s*$/;
+
+function lineTrim(line: string): string {
+  return line.trim();
+}
+
+function isSupuestoStart(line: string): boolean {
+  return SUPUESTO_START_RE.test(lineTrim(line));
+}
+
+function isSupuestoEnd(line: string): boolean {
+  return SUPUESTO_END_RE.test(lineTrim(line));
+}
 
 function normalizeText(texto: string): string {
   return texto
@@ -201,27 +219,38 @@ export function parseImportDocumentWithPreamble(
   if (!preguntas.length) return doc;
 
   return {
-    sueltas: doc.sueltas,
+    sueltas: [],
     supuestos: [{ titulo: opts?.titulo, texto: preamble, preguntas }],
   };
+}
+
+/** Parser de importación según si el banco es supuesto encadenado. */
+export function parseImportForContext(
+  texto: string,
+  ctx?: ImportContext,
+): ParsedImportDocument {
+  const doc = parseImportDocument(texto);
+  if (doc.supuestos.length || !ctx?.encadenado) return doc;
+  return doc;
 }
 
 export function parseImportDocument(texto: string): ParsedImportDocument {
   const normalized = normalizeText(texto);
   if (!normalized) return { sueltas: [], supuestos: [] };
 
-  if (!SUPUESTO_START_RE.test(normalized)) {
+  const lines = normalized.split("\n");
+  if (!lines.some((l) => isSupuestoStart(l))) {
     return { sueltas: parseQuestionsFromText(normalized), supuestos: [] };
   }
 
-  const lines = normalized.split("\n");
   const sueltas: ParsedQuestion[] = [];
   const supuestos: ParsedSupuesto[] = [];
   const preamble: string[] = [];
   let i = 0;
 
   while (i < lines.length) {
-    const startMatch = lines[i].match(SUPUESTO_START_RE);
+    const line = lineTrim(lines[i]);
+    const startMatch = line.match(SUPUESTO_START_RE);
     if (!startMatch) {
       preamble.push(lines[i]);
       i++;
@@ -238,14 +267,14 @@ export function parseImportDocument(texto: string): ParsedImportDocument {
     i++;
 
     const textoLines: string[] = [];
-    while (i < lines.length && !SUPUESTO_END_RE.test(lines[i])) {
+    while (i < lines.length && !isSupuestoEnd(lines[i])) {
       textoLines.push(lines[i]);
       i++;
     }
     if (i < lines.length) i++;
 
     const questionLines: string[] = [];
-    while (i < lines.length && !SUPUESTO_START_RE.test(lines[i])) {
+    while (i < lines.length && !isSupuestoStart(lines[i])) {
       questionLines.push(lines[i]);
       i++;
     }
@@ -258,6 +287,11 @@ export function parseImportDocument(texto: string): ParsedImportDocument {
     } else if (preguntas.length > 0) {
       sueltas.push(...preguntas);
     }
+  }
+
+  if (preamble.length) {
+    const text = preamble.join("\n").trim();
+    if (text) sueltas.push(...parseQuestionsFromText(text));
   }
 
   return { sueltas, supuestos };

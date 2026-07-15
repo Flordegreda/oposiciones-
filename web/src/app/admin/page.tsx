@@ -134,7 +134,7 @@ export default async function AdminPage() {
 
 
 
-        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} />
+        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} />
 
 
 

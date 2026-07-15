@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
-import { countParsedQuestions, parseImportDocument } from "@/lib/parse-import-text";
+import { countParsedQuestions, parseImportForContext } from "@/lib/parse-import-text";
 import { getJexLineaId } from "@/lib/queries/bancos";
 import { supuestosSchemaReady } from "@/lib/queries/schema";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { materiaId, tipo, nombre, texto } = body;
+    const { materiaId, tipo, nombre, texto, encadenado } = body;
 
     if (!materiaId || !texto?.trim()) {
       return NextResponse.json({ error: "Faltan materia o texto" }, { status: 400 });
     }
 
-    const doc = parseImportDocument(texto);
+    const doc = parseImportForContext(texto, { encadenado: !!encadenado });
     const total = countParsedQuestions(doc);
     if (!total) {
       return NextResponse.json(
         { error: "No se encontraron preguntas válidas. Revisa el formato." },
+        { status: 400 },
+      );
+    }
+
+    if (encadenado && doc.supuestos.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Supuesto encadenado marcado pero no se detectó el bloque === SUPUESTO ===. Revisa el formato.",
+        },
         { status: 400 },
       );
     }
@@ -64,6 +74,7 @@ export async function POST(req: NextRequest) {
       enunciado: string;
       opciones: string[];
       respuesta: number;
+      explicacion?: string | null;
       orden: number;
       supuesto_id?: string;
     }[] = [];
@@ -74,6 +85,7 @@ export async function POST(req: NextRequest) {
         enunciado: p.enunciado,
         opciones: p.opciones,
         respuesta: p.respuesta,
+        explicacion: p.explicacion ?? null,
         orden: orden++,
       });
     }
@@ -102,6 +114,7 @@ export async function POST(req: NextRequest) {
           enunciado: p.enunciado,
           opciones: p.opciones,
           respuesta: p.respuesta,
+          explicacion: p.explicacion ?? null,
           orden: orden++,
           supuesto_id: supuesto.id,
         });

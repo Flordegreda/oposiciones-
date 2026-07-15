@@ -16,6 +16,7 @@ type Props = {
   materias: Materia[];
   stats: MaterialStats;
   schemaOk: boolean;
+  supuestosOk?: boolean;
 };
 
 const tabs = ["temario", "importar", "copia"] as const;
@@ -26,7 +27,7 @@ const legacyTabMap: Record<string, (typeof tabs)[number]> = {
   bancos: "temario",
 };
 
-export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
+export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = true }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const tabParam = params.get("tab");
@@ -84,7 +85,9 @@ export function AdminPanel({ bancos, materias, stats, schemaOk }: Props) {
           <AdminBancos bancos={bancos} />
         </div>
       )}
-      {tab === "importar" && <AdminCocinar materias={materias} schemaOk={schemaOk} />}
+      {tab === "importar" && (
+        <AdminCocinar materias={materias} schemaOk={schemaOk} supuestosOk={supuestosOk} />
+      )}
       {tab === "copia" && <AdminBackup schemaOk={schemaOk} />}
     </>
   );

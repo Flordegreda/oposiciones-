@@ -56,6 +56,7 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
   const savedRef = useRef<Map<string, string>>(new Map());
   const tieneSupuesto = preguntas.some((p) => p.supuesto_id || p.supuesto_texto);
   const muestraSupuesto =
+    banco.tipo === "practico" ||
     isEncadenadoBankName(banco.nombre) ||
     tieneSupuesto;
 
