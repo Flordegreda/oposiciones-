@@ -59,6 +59,9 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
     <div className="card">
       <div className="test-start-head">
         <h2 className="test-start-title">¿Cómo quieres practicar?</h2>
+        <p className="muted small test-start-lead">
+          Elige test con opciones o tarjetas para repaso rápido.
+        </p>
         <div className="test-start-actions">
           <Link href={`/admin/bancos/${bancoId}`} className="btn-secondary btn-sm">
             Editar
