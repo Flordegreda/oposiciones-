@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SiteHeader } from "@/components/SiteHeader";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
 import { getBancoForTest } from "@/lib/queries/bancos-cached";
 
@@ -45,23 +47,27 @@ export default async function TarjetasPage({ params }: Props) {
   }));
 
   return (
-    <>
-      {error && (
-        <div className="card card-warning">
-          <p className="error">{error}</p>
-          <p className="muted small">
-            Si falta la tabla, ve a <Link href="/admin">Material</Link>.
-          </p>
-        </div>
-      )}
+    <div className="site site--mobile-nav site--flashcards">
+      <SiteHeader
+        backHref="/practicar"
+        backLabel="Tests"
+        pageTitle={data?.banco?.nombre ? `Tarjetas · ${data.banco.nombre}` : "Tarjetas"}
+      />
+      <main className="site-main site-main--flashcards">
+        {error && (
+          <div className="card card-warning">
+            <p className="error">{error}</p>
+            <p className="muted small">
+              Si falta la tabla, ve a <Link href="/admin">Material</Link>.
+            </p>
+          </div>
+        )}
 
-      {data?.banco && !error && (
-        <FlashcardDeck
-          bancoNombre={data.banco.nombre}
-          preguntas={preguntas}
-          backHref={`/test/${id}`}
-        />
-      )}
-    </>
+        {data?.banco && !error && (
+          <FlashcardDeck preguntas={preguntas} />
+        )}
+      </main>
+      <MobileBottomNav />
+    </div>
   );
 }

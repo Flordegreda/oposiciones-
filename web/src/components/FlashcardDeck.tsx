@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { SetPageHeader } from "@/components/page-header-context";
 import { shuffle } from "@/lib/exam-utils";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
+const EXIT_HREF = "/practicar";
 
 export type FlashcardPregunta = {
   id: string;
@@ -18,20 +18,10 @@ export type FlashcardPregunta = {
 };
 
 type Props = {
-  bancoNombre: string;
   preguntas: FlashcardPregunta[];
-  /** Pantalla intermedia (p. ej. elegir modo test). */
-  backHref: string;
-  /** Salida al temario. */
-  exitHref?: string;
 };
 
-export function FlashcardDeck({
-  bancoNombre,
-  preguntas,
-  backHref,
-  exitHref = "/practicar",
-}: Props) {
+export function FlashcardDeck({ preguntas }: Props) {
   const [order, setOrder] = useState(() => preguntas.map((_, i) => i));
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -85,30 +75,22 @@ export function FlashcardDeck({
     return (
       <div className="card">
         <p className="muted">Este banco no tiene preguntas.</p>
+        <Link href={EXIT_HREF} className="btn-primary">
+          Volver a Tests
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="flashcard-deck">
-      <SetPageHeader
-        title={`Tarjetas · ${bancoNombre}`}
-        backHref={exitHref}
-        backLabel="Temario"
-      />
-
       <div className="flashcard-toolbar">
         <span className="flashcard-count">
           {index + 1} / {total}
         </span>
-        <div className="flashcard-toolbar-actions">
-          <Link href={backHref} className="btn-secondary btn-sm">
-            Modos
-          </Link>
-          <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
-            Mezclar
-          </button>
-        </div>
+        <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
+          Mezclar
+        </button>
       </div>
 
       <div className="flashcard-progress" aria-hidden>
@@ -161,24 +143,23 @@ export function FlashcardDeck({
         >
           ← Anterior
         </button>
-        {index >= total - 1 ? (
-          <Link href={exitHref} className="btn-primary btn-sm flashcard-finish-link">
-            Finalizar
-          </Link>
-        ) : (
-          <button type="button" className="btn-secondary btn-sm" onClick={() => goTo(index + 1)}>
-            Siguiente →
-          </button>
-        )}
+        <button
+          type="button"
+          className="btn-secondary btn-sm"
+          disabled={index >= total - 1}
+          onClick={() => goTo(index + 1)}
+        >
+          Siguiente →
+        </button>
       </div>
 
-      <div className="flashcard-exit">
-        <Link href={exitHref} className="btn-primary flashcard-finish-btn">
-          Finalizar y volver al temario
+      <p className="muted small flashcard-swipe-hint">Desliza para cambiar · Toca la tarjeta para voltear</p>
+
+      <div className="flashcard-exit-bar">
+        <Link href={EXIT_HREF} className="btn-primary flashcard-finish-btn">
+          Finalizar
         </Link>
       </div>
-
-      <p className="muted small flashcard-swipe-hint">Desliza izquierda o derecha para cambiar</p>
     </div>
   );
 }
