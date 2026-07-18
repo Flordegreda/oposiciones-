@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { SetPageHeader } from "@/components/page-header-context";
 import { shuffle } from "@/lib/exam-utils";
@@ -19,10 +20,18 @@ export type FlashcardPregunta = {
 type Props = {
   bancoNombre: string;
   preguntas: FlashcardPregunta[];
+  /** Pantalla intermedia (p. ej. elegir modo test). */
   backHref: string;
+  /** Salida al temario. */
+  exitHref?: string;
 };
 
-export function FlashcardDeck({ bancoNombre, preguntas, backHref }: Props) {
+export function FlashcardDeck({
+  bancoNombre,
+  preguntas,
+  backHref,
+  exitHref = "/practicar",
+}: Props) {
   const [order, setOrder] = useState(() => preguntas.map((_, i) => i));
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -84,17 +93,22 @@ export function FlashcardDeck({ bancoNombre, preguntas, backHref }: Props) {
     <div className="flashcard-deck">
       <SetPageHeader
         title={`Tarjetas · ${bancoNombre}`}
-        backHref={backHref}
-        backLabel="Test"
+        backHref={exitHref}
+        backLabel="Temario"
       />
 
       <div className="flashcard-toolbar">
         <span className="flashcard-count">
           {index + 1} / {total}
         </span>
-        <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
-          Mezclar
-        </button>
+        <div className="flashcard-toolbar-actions">
+          <Link href={backHref} className="btn-secondary btn-sm">
+            Modos
+          </Link>
+          <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
+            Mezclar
+          </button>
+        </div>
       </div>
 
       <div className="flashcard-progress" aria-hidden>
@@ -147,14 +161,21 @@ export function FlashcardDeck({ bancoNombre, preguntas, backHref }: Props) {
         >
           ← Anterior
         </button>
-        <button
-          type="button"
-          className="btn-secondary btn-sm"
-          disabled={index >= total - 1}
-          onClick={() => goTo(index + 1)}
-        >
-          Siguiente →
-        </button>
+        {index >= total - 1 ? (
+          <Link href={exitHref} className="btn-primary btn-sm flashcard-finish-link">
+            Finalizar
+          </Link>
+        ) : (
+          <button type="button" className="btn-secondary btn-sm" onClick={() => goTo(index + 1)}>
+            Siguiente →
+          </button>
+        )}
+      </div>
+
+      <div className="flashcard-exit">
+        <Link href={exitHref} className="btn-primary flashcard-finish-btn">
+          Finalizar y volver al temario
+        </Link>
       </div>
 
       <p className="muted small flashcard-swipe-hint">Desliza izquierda o derecha para cambiar</p>
