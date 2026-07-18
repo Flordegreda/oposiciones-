@@ -52,14 +52,14 @@ export type SimulacroPreset = {
   minutes: number;
 };
 
-/** Reparto fijo 80 % teórico · 20 % práctico (como el examen). */
+/** Reparto fijo 80 % teórico · 20 % práctico (110 preguntas, como el examen JEX). */
 export const SIMULACRO_PRESETS: SimulacroPreset[] = [
   {
     id: "oficial",
     label: "Simulacro oficial",
-    description: "80 teóricas + 20 prácticas · 120 minutos",
-    teorico: 80,
-    practico: 20,
+    description: "88 teóricas + 22 prácticas · 110 preguntas · 120 minutos",
+    teorico: 88,
+    practico: 22,
     minutes: 120,
   },
   {

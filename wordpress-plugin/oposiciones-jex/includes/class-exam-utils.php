@@ -12,8 +12,8 @@ class OJEX_Exam_Utils {
 	public const PRESETS = array(
 		'oficial' => array(
 			'label'    => 'Simulacro oficial',
-			'teorico'  => 80,
-			'practico' => 20,
+			'teorico'  => 88,
+			'practico' => 22,
 			'minutes'  => 120,
 		),
 		'mini'    => array(
