@@ -82,6 +82,12 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
             {bancoNombre}
           </span>
         </button>
+        <Link href={`/tarjetas/${bancoId}`} className="test-mode-btn test-mode-btn--link">
+          <strong>Tarjetas rápidas</strong>
+          <span className="muted small">
+            Enunciado → tap → respuesta y explicación · ideal en móvil
+          </span>
+        </Link>
       </div>
 
       <label className="sim-toggle">

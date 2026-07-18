@@ -1036,6 +1036,17 @@ h1 {
   cursor: pointer;
 }
 
+.test-mode-btn--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.test-mode-btn--link:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
+}
+
 .test-mode-btn.active {
   border-color: var(--accent);
   background: var(--accent-soft);
@@ -1325,6 +1336,154 @@ h1 {
   line-height: 1.55;
   white-space: pre-wrap;
   color: var(--foreground);
+}
+
+.flashcard-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: min(72vh, 640px);
+}
+
+.flashcard-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.flashcard-count {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.flashcard-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.flashcard-progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.2s ease;
+}
+
+.flashcard-scene {
+  flex: 1;
+  display: block;
+  width: 100%;
+  min-height: min(52vh, 420px);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  perspective: 1200px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  min-height: min(52vh, 420px);
+  transition: transform 0.4s ease;
+  transform-style: preserve-3d;
+}
+
+.flashcard-inner--flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.06));
+  backface-visibility: hidden;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.flashcard-face--back {
+  transform: rotateY(180deg);
+  border-left: 4px solid var(--primary);
+}
+
+.flashcard-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.flashcard-enunciado,
+.flashcard-answer,
+.flashcard-explain {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--foreground);
+}
+
+.flashcard-answer {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.flashcard-explain {
+  font-size: 0.98rem;
+}
+
+.flashcard-supuesto {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--accent, #2563eb);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card) 90%, var(--accent, #2563eb) 10%);
+}
+
+.flashcard-supuesto-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.flashcard-supuesto-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.flashcard-tap-hint {
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.flashcard-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.flashcard-nav .btn-secondary {
+  flex: 1;
+}
+
+.flashcard-swipe-hint {
+  margin: 0;
+  text-align: center;
 }
 
 .options {
