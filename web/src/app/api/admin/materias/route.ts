@@ -32,35 +32,21 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  if (id) {
-    const { data, error } = await supabase
-      .from("materias")
-      .select("id, nombre, resumen_md")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!data) return NextResponse.json({ error: "Materia no encontrada" }, { status: 404 });
-    return NextResponse.json(data);
-  }
-
-  const { data, error } = await supabase.from("materias").select("id, nombre, resumen_md").order("nombre");
+  const { data, error } = await supabase.from("materias").select("id, nombre").order("nombre");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { nombre, resumen_md } = body;
+  const { nombre } = await req.json();
   if (!nombre?.trim()) {
     return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
   }
   const supabase = getSupabase();
-  const insert: { nombre: string; resumen_md?: string | null } = { nombre: nombre.trim() };
-  if (typeof resumen_md === "string") insert.resumen_md = resumen_md;
   const { data, error } = await supabase
     .from("materias")
-    .insert(insert)
-    .select("id, nombre, resumen_md")
+    .insert({ nombre: nombre.trim() })
+    .select("id, nombre")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   revalidateContentCache();
@@ -70,20 +56,13 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Falta id" }, { status: 400 });
-  const body = await req.json();
-  const { nombre, resumen_md } = body;
-  const patch: { nombre?: string; resumen_md?: string | null } = {};
-  if (typeof nombre === "string") patch.nombre = nombre.trim();
-  if (resumen_md === null || typeof resumen_md === "string") patch.resumen_md = resumen_md;
-  if (!Object.keys(patch).length) {
-    return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
-  }
+  const { nombre } = await req.json();
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("materias")
-    .update(patch)
+    .update({ nombre: nombre.trim() })
     .eq("id", id)
-    .select("id, nombre, resumen_md")
+    .select("id, nombre")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

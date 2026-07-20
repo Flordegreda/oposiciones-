@@ -34,7 +34,6 @@ export type BackupBanco = {
 export type BackupMateria = {
   id?: string;
   nombre: string;
-  resumen_md?: string | null;
   bancos?: BackupBanco[];
 };
 
@@ -68,15 +67,7 @@ async function resolveMateriaId(
 ): Promise<{ id: string; created: boolean }> {
   if (materia.id) {
     const { data } = await supabase.from("materias").select("id").eq("id", materia.id).maybeSingle();
-    if (data) {
-      if (typeof materia.resumen_md === "string" || materia.resumen_md === null) {
-        await supabase
-          .from("materias")
-          .update({ resumen_md: materia.resumen_md })
-          .eq("id", data.id);
-      }
-      return { id: data.id, created: false };
-    }
+    if (data) return { id: data.id, created: false };
   }
 
   const { data: byName } = await supabase
@@ -84,23 +75,11 @@ async function resolveMateriaId(
     .select("id")
     .eq("nombre", materia.nombre.trim())
     .maybeSingle();
-  if (byName) {
-    if (typeof materia.resumen_md === "string" || materia.resumen_md === null) {
-      await supabase
-        .from("materias")
-        .update({ resumen_md: materia.resumen_md })
-        .eq("id", byName.id);
-    }
-    return { id: byName.id, created: false };
-  }
+  if (byName) return { id: byName.id, created: false };
 
-  const insert: { nombre: string; resumen_md?: string | null } = { nombre: materia.nombre.trim() };
-  if (typeof materia.resumen_md === "string" || materia.resumen_md === null) {
-    insert.resumen_md = materia.resumen_md;
-  }
   const { data: created, error } = await supabase
     .from("materias")
-    .insert(insert)
+    .insert({ nombre: materia.nombre.trim() })
     .select("id")
     .single();
   if (error || !created) throw new Error(error?.message ?? "Error al crear materia");

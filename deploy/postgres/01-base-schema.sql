@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS public.lineas (
 CREATE TABLE IF NOT EXISTS public.materias (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nombre TEXT NOT NULL,
-  resumen_md TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

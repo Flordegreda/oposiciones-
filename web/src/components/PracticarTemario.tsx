@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BancoTile } from "@/components/BancoTile";
 import { MateriaFilter, materiasFromSections } from "@/components/MateriaFilter";
@@ -49,11 +48,6 @@ export function PracticarTemario({ sections }: Props) {
                 label="PDF todos"
                 className="materia-print-btn"
               />
-              {section.hasResumen && (
-                <Link href={`/materia/${section.id}`} className="btn-link btn-sm materia-ficha-link">
-                  Ficha
-                </Link>
-              )}
             </div>
             <div className="banco-grid banco-grid--wide">
               {section.bancos.map((b) => (
