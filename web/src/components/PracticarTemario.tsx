@@ -25,7 +25,6 @@ export function PracticarTemario({ sections }: Props) {
   return (
     <div className="linea-block">
       <div className="linea-block-head">
-        <h2 className="linea-block-title">Temario</h2>
         <MateriaFilter materias={materias} value={materiaId} onChange={setMateriaId} />
       </div>
 

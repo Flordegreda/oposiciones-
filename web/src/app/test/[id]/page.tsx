@@ -49,11 +49,7 @@ export default async function TestPage({ params }: Props) {
 
   return (
     <div className="site site--mobile-nav site--mobile-exam">
-      <SiteHeader
-        backHref="/practicar"
-        backLabel="Temario"
-        pageTitle={data?.banco?.nombre}
-      />
+      <SiteHeader pageTitle={data?.banco?.nombre} />
       <main className="site-main">
         {error && (
           <div className="card card-warning">
