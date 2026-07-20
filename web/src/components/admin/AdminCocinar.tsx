@@ -286,7 +286,7 @@ E: Art. 29 LEF: …`}</pre>
       </div>
 
       <p className="muted small">
-        ¿Nueva materia? Ve a la pestaña <strong>Temario</strong> para crearla.
+        ¿Nueva materia? Ve a la pestaña <strong>Contenido</strong> para crearla.
       </p>
     </>
   );

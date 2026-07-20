@@ -23,7 +23,7 @@ function downloadJson(data: unknown, filename: string) {
 
 export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
   return (
-    <section className="admin-overview card card-elevated" aria-label="Resumen del temario">
+    <section className="admin-overview card card-elevated" aria-label="Resumen del material">
       <div className="admin-overview-main">
         <p className="admin-overview-label">Total de preguntas</p>
         <p className="admin-overview-total">{stats.preguntas.toLocaleString("es-ES")}</p>

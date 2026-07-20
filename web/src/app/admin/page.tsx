@@ -80,7 +80,7 @@ export default async function AdminPage() {
 
           <p className="hero-eyebrow">Administración</p>
 
-          <h1 className="page-title">Temario</h1>
+          <h1 className="page-title">Material</h1>
 
           <p className="lead lead--compact">{JEX_SUBTITLE}</p>
 

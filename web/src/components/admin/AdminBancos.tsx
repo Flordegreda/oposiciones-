@@ -235,7 +235,7 @@ export function AdminBancos({ bancos: initial }: Props) {
       {(stubBancos.length > 0 || bancos.length > 1) && (
         <div className="info-box sim-info" style={{ marginBottom: "1rem" }}>
           <p style={{ margin: 0 }}>
-            <strong>Limpieza de temario:</strong> elimina bancos de prueba con ≤1 pregunta y
+            <strong>Limpieza de bancos:</strong> elimina bancos de prueba con ≤1 pregunta y
             duplicados por nombre (se conserva el que tiene más preguntas).
             {stubBancos.length > 0 && (
               <>

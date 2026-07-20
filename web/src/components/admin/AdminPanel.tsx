@@ -19,12 +19,13 @@ type Props = {
   supuestosOk?: boolean;
 };
 
-const tabs = ["temario", "importar", "copia"] as const;
+const tabs = ["contenido", "importar", "copia"] as const;
 
 const legacyTabMap: Record<string, (typeof tabs)[number]> = {
   cocinar: "importar",
-  materias: "temario",
-  bancos: "temario",
+  materias: "contenido",
+  bancos: "contenido",
+  temario: "contenido",
 };
 
 export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = true }: Props) {
@@ -36,7 +37,7 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
       ? (tabParam as (typeof tabs)[number])
       : tabParam && legacyTabMap[tabParam]
         ? legacyTabMap[tabParam]
-        : "temario";
+        : "contenido";
 
   function setTab(t: (typeof tabs)[number]) {
     router.replace(`/admin?tab=${t}`, { scroll: false });
@@ -51,11 +52,11 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "temario"}
-          className={tab === "temario" ? "active" : ""}
-          onClick={() => setTab("temario")}
+          aria-selected={tab === "contenido"}
+          className={tab === "contenido" ? "active" : ""}
+          onClick={() => setTab("contenido")}
         >
-          Temario
+          Contenido
         </button>
         <button
           type="button"
@@ -77,8 +78,8 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
         </button>
       </div>
 
-      {tab === "temario" && (
-        <div className="admin-temario">
+      {tab === "contenido" && (
+        <div className="admin-contenido">
           {schemaOk && <AdminRebalanceBancos materias={materias} />}
           <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
           <hr className="admin-section-divider" />
