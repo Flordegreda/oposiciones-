@@ -23,26 +23,14 @@ const tabs = ["importar", "copia"] as const;
 
 type AdminTab = (typeof tabs)[number] | null;
 
-const legacyTabMap: Record<string, AdminTab | "main"> = {
-  cocinar: "importar",
-  materias: "main",
-  bancos: "main",
-  temario: "main",
-  contenido: "main",
-};
-
 export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = true }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const tabParam = params.get("tab");
   const tab: AdminTab =
-    tabParam && tabs.includes(tabParam as AdminTab)
-      ? (tabParam as AdminTab)
-      : tabParam && legacyTabMap[tabParam] === "main"
-        ? null
-        : tabParam && legacyTabMap[tabParam]
-          ? legacyTabMap[tabParam]
-          : null;
+    tabParam && tabs.includes(tabParam as (typeof tabs)[number])
+      ? (tabParam as (typeof tabs)[number])
+      : null;
 
   function setTab(t: AdminTab) {
     if (t) router.replace(`/admin?tab=${t}`, { scroll: false });
