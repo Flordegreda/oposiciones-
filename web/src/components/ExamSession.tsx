@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
@@ -20,8 +19,6 @@ type Props = {
   timerSeconds: number | null;
   backHref: string;
   onFinish?: () => void;
-  fichaHref?: string | null;
-  fichaLabel?: string | null;
 };
 
 type Phase = "test" | "result";
@@ -43,8 +40,6 @@ export function ExamSession({
   timerSeconds,
   backHref,
   onFinish,
-  fichaHref,
-  fichaLabel,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -334,11 +329,6 @@ export function ExamSession({
         <div className="test-actions test-actions--result">
           {canPrintWithKey && (
             <TestPrintButton title={title} preguntas={printable} />
-          )}
-          {fichaHref && (
-            <Link href={fichaHref} className="btn-secondary">
-              {fichaLabel ?? "Repasar ficha"}
-            </Link>
           )}
           <button type="button" className="btn-primary" onClick={() => onFinish?.()}>
             {onFinish ? "Volver" : "Repetir"}

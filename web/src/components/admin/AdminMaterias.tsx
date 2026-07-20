@@ -10,7 +10,6 @@ type Props = {
   stats: MaterialStats;
   schemaOk: boolean;
   resumenOk?: boolean;
-  fichasOk?: boolean;
   hideStats?: boolean;
 };
 
@@ -54,7 +53,7 @@ export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
   );
 }
 
-export function AdminMaterias({ stats: initial, schemaOk, resumenOk = true, fichasOk = true, hideStats }: Props) {
+export function AdminMaterias({ stats: initial, schemaOk, resumenOk = true, hideStats }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState<MateriaStatsRow[]>(initial.porMateria);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -193,8 +192,8 @@ export function AdminMaterias({ stats: initial, schemaOk, resumenOk = true, fich
                         <>
                           {row.nombre}
                           {row.hasResumen && (
-                            <span className="admin-resumen-badge" title="Tiene ficha(s)">
-                              {row.fichaCount > 0 ? `${row.fichaCount} tema(s)` : "ficha"}
+                            <span className="admin-resumen-badge" title="Tiene ficha">
+                              ficha
                             </span>
                           )}
                         </>
@@ -244,8 +243,8 @@ export function AdminMaterias({ stats: initial, schemaOk, resumenOk = true, fich
                           <button
                             type="button"
                             className={`btn-link btn-sm${row.hasResumen ? " admin-resumen-has" : ""}`}
-                            disabled={busy !== null || (!resumenOk && !fichasOk)}
-                            title={resumenOk || fichasOk ? undefined : "Activa fichas en Material"}
+                            disabled={busy !== null || !resumenOk}
+                            title={resumenOk ? undefined : "Activa fichas arriba en Material"}
                             onClick={() =>
                               setResumenId((id) => (id === row.id ? null : row.id))
                             }
@@ -285,7 +284,6 @@ export function AdminMaterias({ stats: initial, schemaOk, resumenOk = true, fich
                       open={resumenId === row.id}
                       onClose={() => setResumenId(null)}
                       resumenOk={resumenOk}
-                      fichasOk={fichasOk}
                       onMessage={setMsg}
                       onError={setErr}
                     />

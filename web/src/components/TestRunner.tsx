@@ -10,8 +10,6 @@ type Props = {
   bancoId: string;
   bancoNombre: string;
   preguntas: Omit<PublicExamPregunta, "bancoId">[];
-  fichaHref?: string | null;
-  fichaLabel?: string | null;
 };
 
 type Session = {
@@ -19,7 +17,7 @@ type Session = {
   examMode: boolean;
 };
 
-export function TestRunner({ bancoId, bancoNombre, preguntas: raw, fichaHref, fichaLabel }: Props) {
+export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
   const allPreguntas = useMemo(
     () => raw.map((p) => ({ ...p, bancoId })),
     [raw, bancoId],
@@ -45,8 +43,6 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw, fichaHref, fi
         timerSeconds={null}
         backHref="/practicar"
         onFinish={() => setSession(null)}
-        fichaHref={fichaHref}
-        fichaLabel={fichaLabel}
       />
     );
   }
@@ -67,11 +63,6 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw, fichaHref, fi
           Elige test con opciones o tarjetas para repaso rápido.
         </p>
         <div className="test-start-actions">
-          {fichaHref && (
-            <Link href={fichaHref} className="btn-secondary btn-sm">
-              {fichaLabel ?? "Repasar ficha"}
-            </Link>
-          )}
           <Link href={`/admin/bancos/${bancoId}`} className="btn-secondary btn-sm">
             Editar
           </Link>

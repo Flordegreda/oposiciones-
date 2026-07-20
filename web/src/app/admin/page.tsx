@@ -9,7 +9,6 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 import { AdminPreguntasRpcSetup } from "@/components/admin/AdminPreguntasRpcSetup";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 
-import { AdminMateriasFichasSetup } from "@/components/admin/AdminMateriasFichasSetup";
 import { AdminMateriasResumenSetup } from "@/components/admin/AdminMateriasResumenSetup";
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 
@@ -68,7 +67,6 @@ export default async function AdminPage() {
   const supuestosOk = data?.supuestosOk ?? true;
   const preguntasRpcOk = data?.preguntasRpcOk ?? true;
   const resumenOk = data?.resumenOk ?? true;
-  const fichasOk = data?.fichasOk ?? true;
 
 
 
@@ -118,8 +116,6 @@ export default async function AdminPage() {
 
         {schemaOk && !resumenOk && <AdminMateriasResumenSetup />}
 
-        {schemaOk && resumenOk && !fichasOk && <AdminMateriasFichasSetup />}
-
         {schemaOk && !supuestosOk && <AdminSupuestosSetup />}
 
 
@@ -142,7 +138,7 @@ export default async function AdminPage() {
 
 
 
-        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} resumenOk={resumenOk} fichasOk={fichasOk} />
+        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} resumenOk={resumenOk} />
 
 
 

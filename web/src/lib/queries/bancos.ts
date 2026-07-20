@@ -1,8 +1,7 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
-import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady, materiasResumenReady, materiaFichasReady } from "@/lib/queries/schema";
-import { fetchFichaCountsByMateria } from "@/lib/queries/fichas";
+import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady, materiasResumenReady } from "@/lib/queries/schema";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -37,7 +36,6 @@ export type MateriaSection = {
   nombre: string;
   bancos: BancoRow[];
   hasResumen?: boolean;
-  fichaCount?: number;
 };
 
 export type TipoStats = {
@@ -54,7 +52,6 @@ export type MateriaStatsRow = {
   practico: TipoStats;
   hasResumen: boolean;
   resumenLength: number;
-  fichaCount: number;
 };
 
 export type MaterialStats = {
@@ -255,7 +252,6 @@ async function fetchPreguntasForBanco(bancoId: string): Promise<PreguntaRow[]> {
 function groupByMateria(
   rows: BancoRow[],
   resumenByMateria?: Map<string, string | null>,
-  fichaCountByMateria?: Map<string, number>,
 ): MateriaSection[] {
   const map = new Map<string, MateriaSection>();
   for (const b of rows) {
@@ -263,13 +259,11 @@ function groupByMateria(
     const nombre = materiaNombre(b.materias);
     if (!map.has(key)) {
       const resumen = resumenByMateria?.get(key);
-      const fichaCount = fichaCountByMateria?.get(key) ?? 0;
       map.set(key, {
         id: key,
         nombre,
         bancos: [],
-        hasResumen: !!resumen?.trim() || fichaCount > 0,
-        fichaCount,
+        hasResumen: !!resumen?.trim(),
       });
     }
     map.get(key)!.bancos.push(b);
@@ -313,10 +307,9 @@ async function queryAllBancos() {
 /** Temario único jurídicas JEX: bancos con preguntas (legacy común + JEX). */
 export async function getPracticarDataUncached() {
   const supabase = getSupabase();
-  const [rows, materiasRes, fichaCounts] = await Promise.all([
+  const [rows, materiasRes] = await Promise.all([
     queryBancosForPracticar(),
     supabase.from("materias").select("id, resumen_md"),
-    fetchFichaCountsByMateria(),
   ]);
 
   const resumenByMateria = new Map<string, string | null>();
@@ -337,23 +330,8 @@ export async function getPracticarDataUncached() {
     : withCounts;
 
   return {
-    sections: groupByMateria(practicables, resumenByMateria, fichaCounts),
+    sections: groupByMateria(practicables, resumenByMateria),
   };
-}
-
-export async function getMateriaFichaIndex(id: string) {
-  const supabase = getSupabase();
-  const { data: materia, error } = await supabase
-    .from("materias")
-    .select("id, nombre, resumen_md")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  if (!materia) return null;
-
-  const { getFichasByMateria } = await import("@/lib/queries/fichas");
-  const fichas = await getFichasByMateria(id);
-  return { materia, fichas };
 }
 
 export async function getMateriaResumen(id: string) {
@@ -432,12 +410,10 @@ function buildMaterialStats(
   materias: { id: string; nombre: string; resumen_md?: string | null }[],
   bancos: { id: string; materia_id: string; tipo: string }[],
   counts: Map<string, number>,
-  fichaCounts: Map<string, number>,
 ): MaterialStats {
   const materiaMap = new Map<string, MateriaStatsRow>();
   for (const m of materias) {
     const resumen = m.resumen_md?.trim() ?? "";
-    const fichaCount = fichaCounts.get(m.id) ?? 0;
     materiaMap.set(m.id, {
       id: m.id,
       nombre: m.nombre,
@@ -445,9 +421,8 @@ function buildMaterialStats(
       preguntas: 0,
       teorico: emptyTipoStats(),
       practico: emptyTipoStats(),
-      hasResumen: resumen.length > 0 || fichaCount > 0,
+      hasResumen: resumen.length > 0,
       resumenLength: resumen.length,
-      fichaCount,
     });
   }
 
@@ -478,7 +453,6 @@ function buildMaterialStats(
         practico: emptyTipoStats(),
         hasResumen: false,
         resumenLength: 0,
-        fichaCount: fichaCounts.get(b.materia_id) ?? 0,
       };
       materiaMap.set(b.materia_id, row);
     }
@@ -504,20 +478,17 @@ export type AdminPageData = {
   supuestosOk: boolean;
   preguntasRpcOk: boolean;
   resumenOk: boolean;
-  fichasOk: boolean;
 };
 
 /** Una sola pasada: bancos + materias + stats (evita consultas duplicadas en /admin). */
 export async function getAdminPageDataUncached(): Promise<AdminPageData> {
   const supabase = getSupabase();
 
-  const [schemaOk, supuestosOk, preguntasRpcOk, resumenOk, fichasOk, materiasRes, bancosRes] =
-    await Promise.all([
+  const [schemaOk, supuestosOk, preguntasRpcOk, resumenOk, materiasRes, bancosRes] = await Promise.all([
     preguntasTableExists(),
     supuestosSchemaReady(),
     preguntasRpcReady(),
     materiasResumenReady(),
-    materiaFichasReady(),
     supabase.from("materias").select("id, nombre, resumen_md").order("nombre"),
     supabase
       .from("bancos")
@@ -533,17 +504,15 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
   const counts = schemaOk
     ? await fetchPreguntaCountsByBanco(bancos.map((b) => b.id))
     : new Map<string, number>();
-  const fichaCounts = await fetchFichaCountsByMateria();
 
   return {
     bancos: sortBancosByNombre(attachPreguntaCounts(bancos, counts)),
     materias: buildMateriasWithCounts(materias, bancos),
-    stats: buildMaterialStats(materias, bancos, counts, fichaCounts),
+    stats: buildMaterialStats(materias, bancos, counts),
     schemaOk,
     supuestosOk,
     preguntasRpcOk,
     resumenOk,
-    fichasOk,
   };
 }
 
@@ -561,9 +530,8 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const counts = hasPreguntas
     ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
     : new Map<string, number>();
-  const fichaCounts = await fetchFichaCountsByMateria();
 
-  return buildMaterialStats(materias ?? [], bancos ?? [], counts, fichaCounts);
+  return buildMaterialStats(materias ?? [], bancos ?? [], counts);
 }
 
 function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {
