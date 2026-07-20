@@ -17,7 +17,7 @@ export async function POST() {
 
     const totalPreguntas = await getPreguntasCount();
     if (totalPreguntas === null) {
-      return NextResponse.json({ error: "No se pudo verificar el temario" }, { status: 500 });
+      return NextResponse.json({ error: "No se pudo verificar los bancos" }, { status: 500 });
     }
 
     const supabase = getSupabase();

@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     const materiaLabel = session.materiaLabel;
 
     return NextResponse.json({
-      title: presetLabel + (materiaLabel ? ` · ${materiaLabel}` : " · Todo el Temario"),
+      title: presetLabel + (materiaLabel ? ` · ${materiaLabel}` : " · Todas las materias"),
       subtitle: session.subtitle,
       sections,
       totalPreguntas: session.list.length,

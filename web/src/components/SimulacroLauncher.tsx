@@ -125,7 +125,7 @@ export function SimulacroLauncher({ meta }: Props) {
     return (
       <div className="card">
         <p className="muted">
-          No hay preguntas en el temario. Importa material en{" "}
+          No hay preguntas cargadas. Importa material en{" "}
           <Link href="/admin">Material</Link>.
         </p>
       </div>
@@ -136,7 +136,7 @@ export function SimulacroLauncher({ meta }: Props) {
 
   // Build print URL for current config
   const printUrl = `/imprimir/simulacro?presetId=${presetId}${materiaId ? `&materiaId=${encodeURIComponent(materiaId)}` : ""}`;
-  const printTitle = `${selected.label}${materiaLabel ? ` · ${materiaLabel}` : " · Todo el Temario"}`;
+  const printTitle = `${selected.label}${materiaLabel ? ` · ${materiaLabel}` : " · Todas las materias"}`;
 
   return (
     <div className="card card-elevated">
@@ -144,7 +144,7 @@ export function SimulacroLauncher({ meta }: Props) {
 
       <div className="form-grid-fields carga-campos">
         <label>
-          Temario del simulacro
+          Materia del simulacro
           <select
             value={materiaId ?? ""}
             onChange={(e) => setMateriaId(e.target.value || null)}
@@ -174,7 +174,7 @@ export function SimulacroLauncher({ meta }: Props) {
         ) : (
           <>
             {" "}
-            En el temario hay {pool.teorico} teóricas y {pool.practico} prácticas.
+            Hay {pool.teorico} teóricas y {pool.practico} prácticas en total.
           </>
         )}{" "}
         Las incorrectas penalizan 0,25 puntos.

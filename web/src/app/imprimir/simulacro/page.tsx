@@ -53,7 +53,7 @@ export default async function PrintSimulacroPage({ searchParams }: Props) {
 
   return (
     <PrintDocumentView
-      title={presetLabel + (materiaLabel ? ` · ${materiaLabel}` : " · Todo el Temario")}
+      title={presetLabel + (materiaLabel ? ` · ${materiaLabel}` : " · Todas las materias")}
       subtitle={session.subtitle}
       sections={sections.map((s) => ({
         title: s.bancoNombre,
