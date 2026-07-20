@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
 import { AdminRebalanceBancos } from "@/components/admin/AdminRebalanceBancos";
 import { AdminClearCache } from "@/components/admin/AdminClearCache";
 import { AdminCocinar } from "@/components/admin/AdminCocinar";
@@ -49,12 +48,6 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
     if (t) router.replace(`/admin?tab=${t}`, { scroll: false });
     else router.replace("/admin", { scroll: false });
   }
-
-  useEffect(() => {
-    if (tabParam && legacyTabMap[tabParam] === "main") {
-      router.replace("/admin", { scroll: false });
-    }
-  }, [tabParam, router]);
 
   return (
     <>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { SiteHeader } from "@/components/SiteHeader";
 
@@ -19,9 +20,16 @@ import { JEX_SUBTITLE } from "@/lib/constants";
 
 export const revalidate = 300;
 
+const LEGACY_MAIN_TABS = new Set(["temario", "contenido", "materias", "bancos"]);
 
+type PageProps = {
+  searchParams: Promise<{ tab?: string }>;
+};
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps) {
+  const { tab } = await searchParams;
+  if (tab === "cocinar") redirect("/admin?tab=importar");
+  if (tab && LEGACY_MAIN_TABS.has(tab)) redirect("/admin");
 
   let error: string | null = null;
 
