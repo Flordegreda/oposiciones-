@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TestPrintButton } from "@/components/TestPrintButton";
+import { AdminMateriaResumenPanel } from "@/components/admin/AdminMateriaResumenPanel";
 import type { MaterialStats, MateriaStatsRow } from "@/lib/queries/bancos";
 
 type Props = {
   stats: MaterialStats;
   schemaOk: boolean;
+  resumenOk?: boolean;
   hideStats?: boolean;
 };
 
@@ -51,10 +53,11 @@ export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
   );
 }
 
-export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
+export function AdminMaterias({ stats: initial, schemaOk, resumenOk = true, hideStats }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState<MateriaStatsRow[]>(initial.porMateria);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [resumenId, setResumenId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [nuevaMateria, setNuevaMateria] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -176,7 +179,8 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
               {rows.map((row) => {
                 const editing = editingId === row.id;
                 return (
-                  <div key={row.id} className="admin-materias-row" role="row">
+                  <div key={row.id} className="admin-materias-row-group">
+                    <div className="admin-materias-row" role="row">
                     <span className="admin-materias-nombre" role="cell">
                       {editing ? (
                         <input
@@ -185,7 +189,14 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                           autoFocus
                         />
                       ) : (
-                        row.nombre
+                        <>
+                          {row.nombre}
+                          {row.hasResumen && (
+                            <span className="admin-resumen-badge" title="Tiene ficha">
+                              ficha
+                            </span>
+                          )}
+                        </>
                       )}
                     </span>
                     <span role="cell">{row.bancos}</span>
@@ -224,10 +235,21 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                           <button
                             type="button"
                             className="btn-link btn-sm"
-                            disabled={busy !== null || row.preguntas === 0}
+                            disabled={busy !== null}
                             onClick={() => startEdit(row)}
                           >
                             Editar
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn-link btn-sm${row.hasResumen ? " admin-resumen-has" : ""}`}
+                            disabled={busy !== null || !resumenOk}
+                            title={resumenOk ? undefined : "Activa fichas arriba en Material"}
+                            onClick={() =>
+                              setResumenId((id) => (id === row.id ? null : row.id))
+                            }
+                          >
+                            {resumenId === row.id ? "Cerrar ficha" : row.hasResumen ? "Ficha ✓" : "Ficha"}
                           </button>
                           {row.preguntas > 0 && (
                             <TestPrintButton
@@ -256,6 +278,15 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                         </>
                       )}
                     </span>
+                    </div>
+                    <AdminMateriaResumenPanel
+                      row={row}
+                      open={resumenId === row.id}
+                      onClose={() => setResumenId(null)}
+                      resumenOk={resumenOk}
+                      onMessage={setMsg}
+                      onError={setErr}
+                    />
                   </div>
                 );
               })}

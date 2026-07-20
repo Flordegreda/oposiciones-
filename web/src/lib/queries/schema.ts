@@ -89,3 +89,15 @@ async function uncachedPreguntasRpcReady(): Promise<boolean> {
 export function preguntasRpcReady(): Promise<boolean> {
   return withSchemaCache("preguntas-rpc", uncachedPreguntasRpcReady);
 }
+
+async function uncachedMateriasResumenReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("materias").select("resumen_md").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(msg.includes("resumen_md") && msg.includes("does not exist"));
+}
+
+export function materiasResumenReady(): Promise<boolean> {
+  return withSchemaCache("materias-resumen", uncachedMateriasResumenReady);
+}

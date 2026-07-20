@@ -1,7 +1,7 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
-import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady } from "@/lib/queries/schema";
+import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady, materiasResumenReady } from "@/lib/queries/schema";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -35,6 +35,7 @@ export type MateriaSection = {
   id: string;
   nombre: string;
   bancos: BancoRow[];
+  hasResumen?: boolean;
 };
 
 export type TipoStats = {
@@ -49,6 +50,8 @@ export type MateriaStatsRow = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
+  hasResumen: boolean;
+  resumenLength: number;
 };
 
 export type MaterialStats = {
@@ -246,12 +249,23 @@ async function fetchPreguntasForBanco(bancoId: string): Promise<PreguntaRow[]> {
   });
 }
 
-function groupByMateria(rows: BancoRow[]): MateriaSection[] {
+function groupByMateria(
+  rows: BancoRow[],
+  resumenByMateria?: Map<string, string | null>,
+): MateriaSection[] {
   const map = new Map<string, MateriaSection>();
   for (const b of rows) {
     const key = b.materia_id;
     const nombre = materiaNombre(b.materias);
-    if (!map.has(key)) map.set(key, { id: key, nombre, bancos: [] });
+    if (!map.has(key)) {
+      const resumen = resumenByMateria?.get(key);
+      map.set(key, {
+        id: key,
+        nombre,
+        bancos: [],
+        hasResumen: !!resumen?.trim(),
+      });
+    }
     map.get(key)!.bancos.push(b);
   }
   return [...map.values()]
@@ -292,7 +306,19 @@ async function queryAllBancos() {
 
 /** Temario único jurídicas JEX: bancos con preguntas (legacy común + JEX). */
 export async function getPracticarDataUncached() {
-  const rows = await queryBancosForPracticar();
+  const supabase = getSupabase();
+  const [rows, materiasRes] = await Promise.all([
+    queryBancosForPracticar(),
+    supabase.from("materias").select("id, resumen_md"),
+  ]);
+
+  const resumenByMateria = new Map<string, string | null>();
+  if (!materiasRes.error) {
+    for (const m of materiasRes.data ?? []) {
+      resumenByMateria.set(m.id, m.resumen_md ?? null);
+    }
+  }
+
   const hasPreguntas = await preguntasTableExists();
   const counts = hasPreguntas
     ? await fetchPreguntaCountsByBanco(rows.map((b) => b.id))
@@ -304,8 +330,20 @@ export async function getPracticarDataUncached() {
     : withCounts;
 
   return {
-    sections: groupByMateria(practicables),
+    sections: groupByMateria(practicables, resumenByMateria),
   };
+}
+
+export async function getMateriaResumen(id: string) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("materias")
+    .select("id, nombre, resumen_md")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
 }
 
 export async function getAdminBancos(): Promise<BancoRow[]> {
@@ -369,12 +407,13 @@ function buildMateriasWithCounts(
 }
 
 function buildMaterialStats(
-  materias: { id: string; nombre: string }[],
+  materias: { id: string; nombre: string; resumen_md?: string | null }[],
   bancos: { id: string; materia_id: string; tipo: string }[],
   counts: Map<string, number>,
 ): MaterialStats {
   const materiaMap = new Map<string, MateriaStatsRow>();
   for (const m of materias) {
+    const resumen = m.resumen_md?.trim() ?? "";
     materiaMap.set(m.id, {
       id: m.id,
       nombre: m.nombre,
@@ -382,6 +421,8 @@ function buildMaterialStats(
       preguntas: 0,
       teorico: emptyTipoStats(),
       practico: emptyTipoStats(),
+      hasResumen: resumen.length > 0,
+      resumenLength: resumen.length,
     });
   }
 
@@ -410,6 +451,8 @@ function buildMaterialStats(
         preguntas: 0,
         teorico: emptyTipoStats(),
         practico: emptyTipoStats(),
+        hasResumen: false,
+        resumenLength: 0,
       };
       materiaMap.set(b.materia_id, row);
     }
@@ -434,17 +477,19 @@ export type AdminPageData = {
   schemaOk: boolean;
   supuestosOk: boolean;
   preguntasRpcOk: boolean;
+  resumenOk: boolean;
 };
 
 /** Una sola pasada: bancos + materias + stats (evita consultas duplicadas en /admin). */
 export async function getAdminPageDataUncached(): Promise<AdminPageData> {
   const supabase = getSupabase();
 
-  const [schemaOk, supuestosOk, preguntasRpcOk, materiasRes, bancosRes] = await Promise.all([
+  const [schemaOk, supuestosOk, preguntasRpcOk, resumenOk, materiasRes, bancosRes] = await Promise.all([
     preguntasTableExists(),
     supuestosSchemaReady(),
     preguntasRpcReady(),
-    supabase.from("materias").select("id, nombre").order("nombre"),
+    materiasResumenReady(),
+    supabase.from("materias").select("id, nombre, resumen_md").order("nombre"),
     supabase
       .from("bancos")
       .select("id, nombre, tipo, materia_id, active, linea_id, materias(nombre)")
@@ -467,13 +512,14 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     schemaOk,
     supuestosOk,
     preguntasRpcOk,
+    resumenOk,
   };
 }
 
 export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const supabase = getSupabase();
   const [{ data: materias, error: mErr }, { data: bancos, error: bErr }] = await Promise.all([
-    supabase.from("materias").select("id, nombre").order("nombre"),
+    supabase.from("materias").select("id, nombre, resumen_md").order("nombre"),
     supabase.from("bancos").select("id, materia_id, tipo"),
   ]);
 

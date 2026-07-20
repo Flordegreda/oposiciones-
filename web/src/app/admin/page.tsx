@@ -9,6 +9,7 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 import { AdminPreguntasRpcSetup } from "@/components/admin/AdminPreguntasRpcSetup";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 
+import { AdminMateriasResumenSetup } from "@/components/admin/AdminMateriasResumenSetup";
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
@@ -65,6 +66,7 @@ export default async function AdminPage() {
 
   const supuestosOk = data?.supuestosOk ?? true;
   const preguntasRpcOk = data?.preguntasRpcOk ?? true;
+  const resumenOk = data?.resumenOk ?? true;
 
 
 
@@ -112,6 +114,8 @@ export default async function AdminPage() {
 
 
 
+        {schemaOk && !resumenOk && <AdminMateriasResumenSetup />}
+
         {schemaOk && !supuestosOk && <AdminSupuestosSetup />}
 
 
@@ -134,7 +138,7 @@ export default async function AdminPage() {
 
 
 
-        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} />
+        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} resumenOk={resumenOk} />
 
 
 
