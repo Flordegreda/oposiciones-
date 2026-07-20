@@ -19,28 +19,34 @@ type Props = {
   supuestosOk?: boolean;
 };
 
-const tabs = ["contenido", "importar", "copia"] as const;
+const tabs = ["importar", "copia"] as const;
 
-const legacyTabMap: Record<string, (typeof tabs)[number]> = {
+type AdminTab = (typeof tabs)[number] | null;
+
+const legacyTabMap: Record<string, AdminTab | "main"> = {
   cocinar: "importar",
-  materias: "contenido",
-  bancos: "contenido",
-  temario: "contenido",
+  materias: "main",
+  bancos: "main",
+  temario: "main",
+  contenido: "main",
 };
 
 export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = true }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const tabParam = params.get("tab");
-  const tab =
-    tabParam && tabs.includes(tabParam as (typeof tabs)[number])
-      ? (tabParam as (typeof tabs)[number])
-      : tabParam && legacyTabMap[tabParam]
-        ? legacyTabMap[tabParam]
-        : "contenido";
+  const tab: AdminTab =
+    tabParam && tabs.includes(tabParam as AdminTab)
+      ? (tabParam as AdminTab)
+      : tabParam && legacyTabMap[tabParam] === "main"
+        ? null
+        : tabParam && legacyTabMap[tabParam]
+          ? legacyTabMap[tabParam]
+          : null;
 
-  function setTab(t: (typeof tabs)[number]) {
-    router.replace(`/admin?tab=${t}`, { scroll: false });
+  function setTab(t: AdminTab) {
+    if (t) router.replace(`/admin?tab=${t}`, { scroll: false });
+    else router.replace("/admin", { scroll: false });
   }
 
   return (
@@ -49,15 +55,6 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
       {schemaOk && <AdminClearCache />}
 
       <div className="admin-tabs" role="tablist" aria-label="Administración">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "contenido"}
-          className={tab === "contenido" ? "active" : ""}
-          onClick={() => setTab("contenido")}
-        >
-          Contenido
-        </button>
         <button
           type="button"
           role="tab"
@@ -78,7 +75,7 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
         </button>
       </div>
 
-      {tab === "contenido" && (
+      {tab === null && (
         <div className="admin-contenido">
           {schemaOk && <AdminRebalanceBancos materias={materias} />}
           <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
