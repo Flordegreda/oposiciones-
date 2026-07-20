@@ -2533,7 +2533,8 @@ code {
  margin: 1.5rem 0;
 }
 
-.admin-temario {
+.admin-temario,
+.admin-contenido {
  display: flex;
  flex-direction: column;
  gap: 0;
