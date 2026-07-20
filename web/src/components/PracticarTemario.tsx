@@ -51,7 +51,9 @@ export function PracticarTemario({ sections }: Props) {
               />
               {section.hasResumen && (
                 <Link href={`/materia/${section.id}`} className="btn-link btn-sm materia-ficha-link">
-                  Ficha
+                  {section.fichaCount && section.fichaCount > 0
+                    ? `Fichas (${section.fichaCount})`
+                    : "Ficha"}
                 </Link>
               )}
             </div>

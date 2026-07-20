@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { MateriaStatsRow } from "@/lib/queries/bancos";
+import type { MateriaFichaRow } from "@/lib/queries/fichas";
 
 type Props = {
   row: MateriaStatsRow;
   open: boolean;
   onClose: () => void;
   resumenOk: boolean;
+  fichasOk: boolean;
   onMessage: (msg: string | null) => void;
   onError: (err: string | null) => void;
 };
@@ -19,6 +21,7 @@ export function AdminMateriaResumenPanel({
   open,
   onClose,
   resumenOk,
+  fichasOk,
   onMessage,
   onError,
 }: Props) {
@@ -26,7 +29,7 @@ export function AdminMateriaResumenPanel({
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const [text, setText] = useState("");
+  const [fichas, setFichas] = useState<MateriaFichaRow[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -35,12 +38,14 @@ export function AdminMateriaResumenPanel({
       setLoading(true);
       onError(null);
       try {
-        const res = await fetch(`/api/admin/materias?id=${row.id}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error al cargar");
-        if (!cancelled) setText(data.resumen_md ?? "");
+        if (fichasOk) {
+          const res = await fetch(`/api/admin/materias/fichas?materiaId=${row.id}`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Error al cargar");
+          if (!cancelled) setFichas(data.fichas ?? []);
+        }
       } catch (e) {
-        if (!cancelled) onError(e instanceof Error ? e.message : "Error al cargar ficha");
+        if (!cancelled) onError(e instanceof Error ? e.message : "Error al cargar fichas");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -48,61 +53,45 @@ export function AdminMateriaResumenPanel({
     return () => {
       cancelled = true;
     };
-  }, [open, row.id, onError]);
+  }, [open, row.id, fichasOk, onError]);
 
   if (!open) return null;
 
-  async function saveResumen() {
-    setBusy("save");
-    onError(null);
-    onMessage(null);
-    const res = await fetch(`/api/admin/materias?id=${row.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resumen_md: text }),
-    });
-    const data = await res.json();
-    setBusy(null);
-    if (!res.ok) return onError(data.error || "Error al guardar");
-    onMessage(`Ficha de «${row.nombre}» guardada`);
-    router.refresh();
-  }
-
-  async function clearResumen() {
-    if (!confirm(`¿Borrar la ficha de «${row.nombre}»?`)) return;
-    setBusy("clear");
-    onError(null);
-    const res = await fetch(`/api/admin/materias?id=${row.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resumen_md: null }),
-    });
-    const data = await res.json();
-    setBusy(null);
-    if (!res.ok) return onError(data.error || "Error al borrar");
-    setText("");
-    onMessage("Ficha eliminada");
-    router.refresh();
-  }
-
-  async function importDocx(file: File, mode: "replace" | "append") {
+  async function importDocx(file: File) {
     setBusy("import");
     onError(null);
     onMessage(null);
     const form = new FormData();
     form.set("materiaId", row.id);
     form.set("file", file);
-    form.set("mode", mode);
+    form.set("mode", "replace");
     const res = await fetch("/api/admin/materias/import-docx", { method: "POST", body: form });
     const data = await res.json();
     setBusy(null);
     if (!res.ok) return onError(data.error || "Error al importar Word");
-    setText(data.resumen_md ?? "");
-    onMessage(
-      data.appended
-        ? `Word añadido a «${row.nombre}» (${data.chars?.toLocaleString("es-ES")} caracteres)`
-        : `Word importado en «${row.nombre}» (${data.chars?.toLocaleString("es-ES")} caracteres)`,
-    );
+    if (data.perTema && data.tema_numero) {
+      onMessage(
+        `Tema ${data.tema_numero} importado en «${row.nombre}» (${data.chars?.toLocaleString("es-ES")} caracteres)`,
+      );
+      setFichas((prev) => {
+        const next = prev.filter((f) => f.tema_numero !== data.tema_numero);
+        return [...next, data].sort((a, b) => a.tema_numero - b.tema_numero);
+      });
+    } else {
+      onMessage(`Word importado en «${row.nombre}» (modo legacy)`);
+    }
+    router.refresh();
+  }
+
+  async function deleteFicha(id: string, tema: number) {
+    if (!confirm(`¿Borrar la ficha del tema ${tema}?`)) return;
+    setBusy(id);
+    const res = await fetch(`/api/admin/materias/fichas?id=${id}`, { method: "DELETE" });
+    const data = await res.json();
+    setBusy(null);
+    if (!res.ok) return onError(data.error || "Error al borrar");
+    setFichas((prev) => prev.filter((f) => f.id !== id));
+    onMessage(`Ficha tema ${tema} eliminada`);
     router.refresh();
   }
 
@@ -110,61 +99,67 @@ export function AdminMateriaResumenPanel({
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const hasExisting = row.hasResumen || text.trim().length > 0;
-    const mode =
-      hasExisting &&
-      confirm(
-        "¿Añadir al final del resumen existente?\n\nAceptar = añadir\nCancelar = reemplazar todo",
-      )
-        ? "append"
-        : "replace";
-    void importDocx(file, mode);
+    void importDocx(file);
   }
+
+  const canImport = fichasOk || resumenOk;
 
   return (
     <div className="admin-resumen-panel card">
       <div className="admin-resumen-panel-head">
-        <h3>Ficha — {row.nombre}</h3>
+        <h3>Fichas — {row.nombre}</h3>
         <button type="button" className="btn-link btn-sm" onClick={onClose}>
           Cerrar
         </button>
       </div>
       <p className="muted small">
-        Pega Markdown o importa un <strong>.docx</strong> (se convierte a Markdown con tablas).
-        {row.hasResumen && resumenOk && (
+        Importa <strong>.docx</strong> con nombre tipo <code>Tema_37_LEF_ficha.docx</code>. Cada
+        tema queda aparte; en Tests se repasa con secciones y trampas.
+        {row.hasResumen && (
           <>
             {" "}
             <Link href={`/materia/${row.id}`} target="_blank" rel="noopener noreferrer">
-              Ver en Tests →
+              Ver índice →
             </Link>
           </>
         )}
       </p>
+
       {loading ? (
         <p className="muted">Cargando…</p>
+      ) : fichas.length > 0 ? (
+        <ul className="admin-ficha-list">
+          {fichas.map((f) => (
+            <li key={f.id} className="admin-ficha-list-item">
+              <Link
+                href={`/materia/${row.id}/tema/${f.tema_numero}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="admin-ficha-list-link"
+              >
+                <strong>Tema {f.tema_numero}</strong>
+                <span>{f.titulo || "Sin título"}</span>
+              </Link>
+              <button
+                type="button"
+                className="btn-danger btn-sm"
+                disabled={busy !== null}
+                onClick={() => void deleteFicha(f.id, f.tema_numero)}
+              >
+                {busy === f.id ? "…" : "Borrar"}
+              </button>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <textarea
-          className="admin-resumen-textarea"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={14}
-          placeholder="Contenido de la ficha…"
-          disabled={busy !== null}
-        />
+        <p className="muted small">Aún no hay fichas por tema en esta materia.</p>
       )}
+
       <div className="form-actions admin-resumen-actions">
         <button
           type="button"
           className="btn-primary btn-sm"
-          disabled={busy !== null || loading || !resumenOk}
-          onClick={() => void saveResumen()}
-        >
-          {busy === "save" ? "Guardando…" : "Guardar"}
-        </button>
-        <button
-          type="button"
-          className="btn-secondary btn-sm"
-          disabled={busy !== null || !resumenOk}
+          disabled={busy !== null || !canImport}
           onClick={() => fileRef.current?.click()}
         >
           {busy === "import" ? "Importando…" : "Importar Word"}
@@ -176,16 +171,6 @@ export function AdminMateriaResumenPanel({
           hidden
           onChange={onFileChange}
         />
-        {row.hasResumen && (
-          <button
-            type="button"
-            className="btn-danger btn-sm"
-            disabled={busy !== null}
-            onClick={() => void clearResumen()}
-          >
-            {busy === "clear" ? "…" : "Borrar ficha"}
-          </button>
-        )}
       </div>
     </div>
   );

@@ -101,3 +101,19 @@ async function uncachedMateriasResumenReady(): Promise<boolean> {
 export function materiasResumenReady(): Promise<boolean> {
   return withSchemaCache("materias-resumen", uncachedMateriasResumenReady);
 }
+
+async function uncachedMateriaFichasReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("materia_fichas").select("id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "materia_fichas" does not exist') ||
+    (msg.includes("materia_fichas") && msg.includes("does not exist"))
+  );
+}
+
+export function materiaFichasReady(): Promise<boolean> {
+  return withSchemaCache("materia-fichas", uncachedMateriaFichasReady);
+}

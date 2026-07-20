@@ -2439,6 +2439,203 @@ code {
   border-radius: 4px;
 }
 
+.ficha-index-hint {
+  margin: 0 0 1rem;
+}
+
+.ficha-index-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ficha-index-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.65rem 0.85rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface, #fff);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ficha-index-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(30, 77, 123, 0.08);
+}
+
+.ficha-index-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.ficha-index-title {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ficha-index-arrow {
+  color: var(--muted);
+}
+
+.ficha-viewer-card {
+  padding: 0.85rem 0.75rem 1.5rem;
+}
+
+.ficha-viewer-head {
+  margin-bottom: 1rem;
+}
+
+.ficha-viewer-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+}
+
+.ficha-viewer-title {
+  margin: 0 0 0.85rem;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: var(--text, inherit);
+}
+
+.ficha-viewer-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ficha-tab {
+  border: 1px solid var(--border);
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.ficha-tab--active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.ficha-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ficha-section {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface, #fff);
+}
+
+.ficha-section-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.ficha-section-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ficha-section-body {
+  padding: 0 0.85rem 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.ficha-section-body .resumen-md {
+  font-size: 0.9rem;
+}
+
+.ficha-trampas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ficha-trampa-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid #e6c200;
+  background: #fff9e6;
+  border-radius: 0 10px 10px 0;
+}
+
+.ficha-trampa-card p {
+  margin: 0;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.ficha-trampa-num {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.admin-ficha-list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.admin-ficha-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  justify-content: space-between;
+}
+
+.admin-ficha-list-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-ficha-list-link span {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 768px) {
   .admin-materias-head {
     display: none;

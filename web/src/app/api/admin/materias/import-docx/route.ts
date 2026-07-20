@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { docxBufferToMarkdown } from "@/lib/docx-to-markdown";
-import { materiasResumenReady } from "@/lib/queries/schema";
+import {
+  parseTemaFromFilename,
+  parseTemaFromMarkdown,
+  parseTituloFromMarkdown,
+} from "@/lib/ficha-utils";
+import { upsertMateriaFicha } from "@/lib/queries/fichas";
+import { materiaFichasReady, materiasResumenReady } from "@/lib/queries/schema";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 
@@ -9,11 +15,13 @@ export const runtime = "nodejs";
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
-  if (!(await materiasResumenReady())) {
+  const fichasOk = await materiaFichasReady();
+  const resumenOk = await materiasResumenReady();
+  if (!fichasOk && !resumenOk) {
     return NextResponse.json(
       {
         error:
-          "Falta la columna resumen_md. Aplica supabase/MATERIAS-RESUMEN.sql en Supabase o usa el botón «Activar fichas» en Material.",
+          "Faltan tablas de fichas. Activa «Fichas por tema» en Material o aplica MATERIA-FICHAS.sql.",
       },
       { status: 400 },
     );
@@ -28,6 +36,7 @@ export async function POST(req: NextRequest) {
 
   const materiaId = String(form.get("materiaId") ?? "").trim();
   const mode = String(form.get("mode") ?? "replace").trim();
+  const temaOverride = String(form.get("temaNumero") ?? "").trim();
   const file = form.get("file");
 
   if (!materiaId) {
@@ -68,11 +77,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "El Word no tiene texto legible" }, { status: 400 });
   }
 
+  const temaNumero =
+    (temaOverride ? parseInt(temaOverride, 10) : null) ||
+    parseTemaFromFilename(file.name) ||
+    parseTemaFromMarkdown(markdown);
+
+  if (fichasOk && temaNumero) {
+    const titulo = parseTituloFromMarkdown(markdown, temaNumero);
+    const ficha = await upsertMateriaFicha({
+      materiaId,
+      temaNumero,
+      titulo,
+      resumenMd: markdown,
+    });
+    revalidateContentCache();
+    return NextResponse.json({
+      ...ficha,
+      materia_nombre: materia.nombre,
+      chars: markdown.length,
+      perTema: true,
+      replaced: mode !== "append",
+    });
+  }
+
+  if (!resumenOk) {
+    return NextResponse.json(
+      {
+        error:
+          "No se detectó número de tema (usa Tema_37_….docx) y fichas por tema no están activas.",
+      },
+      { status: 400 },
+    );
+  }
+
   const existing = materia.resumen_md?.trim() ?? "";
   const resumen_md =
-    mode === "append" && existing
-      ? `${existing}\n\n---\n\n${markdown}`
-      : markdown;
+    mode === "append" && existing ? `${existing}\n\n---\n\n${markdown}` : markdown;
 
   const { data, error } = await supabase
     .from("materias")
@@ -88,5 +128,6 @@ export async function POST(req: NextRequest) {
     ...data,
     chars: resumen_md.length,
     appended: mode === "append" && !!existing,
+    perTema: false,
   });
 }

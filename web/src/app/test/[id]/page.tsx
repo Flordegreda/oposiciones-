@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { getBancoForTest } from "@/lib/queries/bancos-cached";
+import { getMateriaResumen } from "@/lib/queries/bancos";
+import { getFichasByMateria } from "@/lib/queries/fichas";
+import { guessTemaFromBancoNombre } from "@/lib/ficha-utils";
 import { TestRunner } from "@/components/TestRunner";
 
 export const revalidate = 300;
@@ -47,6 +50,32 @@ export default async function TestPage({ params }: Props) {
     supuestoTexto: p.supuesto_texto ?? undefined,
   }));
 
+  let fichaHref: string | null = null;
+  let fichaLabel: string | null = null;
+  if (data?.banco.materia_id) {
+    try {
+      const fichas = await getFichasByMateria(data.banco.materia_id);
+      if (fichas.length > 0) {
+        const tema = guessTemaFromBancoNombre(data.banco.nombre, fichas);
+        if (tema) {
+          fichaHref = `/materia/${data.banco.materia_id}/tema/${tema}`;
+          fichaLabel = `Repasar tema ${tema}`;
+        } else {
+          fichaHref = `/materia/${data.banco.materia_id}`;
+          fichaLabel = "Ver fichas";
+        }
+      } else {
+        const materia = await getMateriaResumen(data.banco.materia_id);
+        if (materia?.resumen_md?.trim()) {
+          fichaHref = `/materia/${data.banco.materia_id}`;
+          fichaLabel = "Repasar ficha";
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
   return (
     <div className="site site--mobile-nav site--mobile-exam">
       <SiteHeader
@@ -70,6 +99,8 @@ export default async function TestPage({ params }: Props) {
             bancoId={data.banco.id}
             bancoNombre={data.banco.nombre}
             preguntas={preguntas}
+            fichaHref={fichaHref}
+            fichaLabel={fichaLabel}
           />
         )}
       </main>
