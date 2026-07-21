@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { buildFullBackup, buildMateriaBackup } from "@/lib/queries/export";
-import { deleteResumenFile } from "@/lib/resumenes-storage";
+import { deleteResumenFiles } from "@/lib/resumenes-storage";
+import { fetchStoragePathsForMateria } from "@/lib/queries/resumenes";
 import { resumenesSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
 
@@ -86,14 +87,10 @@ export async function DELETE(req: NextRequest) {
     .select("*", { count: "exact", head: true })
     .eq("materia_id", id);
   if (await resumenesSchemaReady()) {
-    const { data: resumen } = await supabase
-      .from("materia_resumenes")
-      .select("storage_path")
-      .eq("materia_id", id)
-      .maybeSingle();
-    if (resumen?.storage_path) {
+    const paths = await fetchStoragePathsForMateria(id);
+    if (paths.length) {
       try {
-        await deleteResumenFile(resumen.storage_path);
+        await deleteResumenFiles(paths);
       } catch {
         /* ignore storage cleanup errors */
       }

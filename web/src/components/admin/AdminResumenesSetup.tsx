@@ -30,8 +30,8 @@ export function AdminResumenesSetup() {
     <div className="card card-warning">
       <h2>Resúmenes PDF</h2>
       <p className="muted small">
-        Activa la tabla <code>materia_resumenes</code> y el bucket de almacenamiento para
-        subir un PDF de resumen por materia (visualización en tablet y PC).
+        Activa la tabla <code>materia_resumenes</code> (varios PDF por materia) y el bucket de
+        almacenamiento. Gestiona los archivos en la pestaña <strong>Resúmenes</strong>.
       </p>
       <label>
         Contraseña BD (opcional si está en <code>SUPABASE_DB_PASSWORD</code>)

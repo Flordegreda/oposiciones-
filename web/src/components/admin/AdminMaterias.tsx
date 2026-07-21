@@ -3,13 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TestPrintButton } from "@/components/TestPrintButton";
-import { AdminMateriaResumen } from "@/components/admin/AdminMateriaResumen";
 import type { MaterialStats, MateriaStatsRow } from "@/lib/queries/bancos";
 
 type Props = {
   stats: MaterialStats;
   schemaOk: boolean;
-  resumenesOk?: boolean;
   hideStats?: boolean;
 };
 
@@ -53,7 +51,7 @@ export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
   );
 }
 
-export function AdminMaterias({ stats: initial, schemaOk, resumenesOk = false, hideStats }: Props) {
+export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState<MateriaStatsRow[]>(initial.porMateria);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -159,8 +157,8 @@ export function AdminMaterias({ stats: initial, schemaOk, resumenesOk = false, h
       <div className="card card-elevated">
         <h2>Materias</h2>
         <p className="muted small">
-          Edita nombres, sube un PDF de resumen por materia, revisa totales y exporta o elimina
-          categorías.
+          Edita nombres, revisa totales por tipo y exporta o elimina categorías. Los resúmenes
+          PDF se gestionan en la pestaña <strong>Resúmenes</strong>.
         </p>
 
         {rows.length === 0 ? (
@@ -240,12 +238,6 @@ export function AdminMaterias({ stats: initial, schemaOk, resumenesOk = false, h
                               disabled={busy !== null}
                             />
                           )}
-                          <AdminMateriaResumen
-                            materiaId={row.id}
-                            resumen={row.resumenPdf}
-                            resumenesOk={resumenesOk}
-                            disabled={busy !== null}
-                          />
                           <button
                             type="button"
                             className="btn-link btn-sm"

@@ -35,10 +35,6 @@ export type MateriaSection = {
   id: string;
   nombre: string;
   bancos: BancoRow[];
-  resumenPdf?: {
-    filename: string;
-    sizeBytes: number;
-  } | null;
 };
 
 export type TipoStats = {
@@ -53,10 +49,6 @@ export type MateriaStatsRow = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
-  resumenPdf?: {
-    filename: string;
-    sizeBytes: number;
-  } | null;
 };
 
 export type MaterialStats = {
@@ -254,25 +246,12 @@ async function fetchPreguntasForBanco(bancoId: string): Promise<PreguntaRow[]> {
   });
 }
 
-function groupByMateria(
-  rows: BancoRow[],
-  resumenes?: Map<string, { filename: string; sizeBytes: number }>,
-): MateriaSection[] {
+function groupByMateria(rows: BancoRow[]): MateriaSection[] {
   const map = new Map<string, MateriaSection>();
   for (const b of rows) {
     const key = b.materia_id;
     const nombre = materiaNombre(b.materias);
-    if (!map.has(key)) {
-      const meta = resumenes?.get(key);
-      map.set(key, {
-        id: key,
-        nombre,
-        bancos: [],
-        resumenPdf: meta
-          ? { filename: meta.filename, sizeBytes: meta.sizeBytes }
-          : null,
-      });
-    }
+    if (!map.has(key)) map.set(key, { id: key, nombre, bancos: [] });
     map.get(key)!.bancos.push(b);
   }
   return [...map.values()]
@@ -311,25 +290,6 @@ async function queryAllBancos() {
   return (data ?? []) as unknown as BancoRow[];
 }
 
-async function loadResumenesLiteMap(): Promise<
-  Map<string, { filename: string; sizeBytes: number }>
-> {
-  const map = new Map<string, { filename: string; sizeBytes: number }>();
-  if (!(await resumenesSchemaReady())) return map;
-
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("materia_resumenes")
-    .select("materia_id, filename, size_bytes");
-
-  if (error) return map;
-
-  for (const row of data ?? []) {
-    map.set(row.materia_id, { filename: row.filename, sizeBytes: row.size_bytes });
-  }
-  return map;
-}
-
 /** Temario único jurídicas JEX: bancos con preguntas (legacy común + JEX). */
 export async function getPracticarDataUncached() {
   const rows = await queryBancosForPracticar();
@@ -338,15 +298,13 @@ export async function getPracticarDataUncached() {
     ? await fetchPreguntaCountsByBanco(rows.map((b) => b.id))
     : new Map<string, number>();
 
-  const resumenes = await loadResumenesLiteMap();
-
   const withCounts = attachPreguntaCounts(rows, counts);
   const practicables = hasPreguntas
     ? withCounts.filter((b) => (b.numPreguntas ?? 0) > 0)
     : withCounts;
 
   return {
-    sections: groupByMateria(practicables, resumenes),
+    sections: groupByMateria(practicables),
   };
 }
 
@@ -414,11 +372,9 @@ function buildMaterialStats(
   materias: { id: string; nombre: string }[],
   bancos: { id: string; materia_id: string; tipo: string }[],
   counts: Map<string, number>,
-  resumenes?: Map<string, { filename: string; sizeBytes: number }>,
 ): MaterialStats {
   const materiaMap = new Map<string, MateriaStatsRow>();
   for (const m of materias) {
-    const meta = resumenes?.get(m.id);
     materiaMap.set(m.id, {
       id: m.id,
       nombre: m.nombre,
@@ -426,9 +382,6 @@ function buildMaterialStats(
       preguntas: 0,
       teorico: emptyTipoStats(),
       practico: emptyTipoStats(),
-      resumenPdf: meta
-        ? { filename: meta.filename, sizeBytes: meta.sizeBytes }
-        : null,
     });
   }
 
@@ -510,12 +463,10 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     ? await fetchPreguntaCountsByBanco(bancos.map((b) => b.id))
     : new Map<string, number>();
 
-  const resumenes = resumenesOk ? await loadResumenesLiteMap() : new Map();
-
   return {
     bancos: sortBancosByNombre(attachPreguntaCounts(bancos, counts)),
     materias: buildMateriasWithCounts(materias, bancos),
-    stats: buildMaterialStats(materias, bancos, counts, resumenes),
+    stats: buildMaterialStats(materias, bancos, counts),
     schemaOk,
     supuestosOk,
     preguntasRpcOk,
@@ -538,9 +489,7 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
     : new Map<string, number>();
 
-  const resumenes = await loadResumenesLiteMap();
-
-  return buildMaterialStats(materias ?? [], bancos ?? [], counts, resumenes);
+  return buildMaterialStats(materias ?? [], bancos ?? [], counts);
 }
 
 function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {

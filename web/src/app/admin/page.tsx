@@ -14,6 +14,7 @@ import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
+import { fetchResumenesGrouped } from "@/lib/queries/resumenes";
 
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -75,6 +76,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
   const supuestosOk = data?.supuestosOk ?? true;
   const preguntasRpcOk = data?.preguntasRpcOk ?? true;
   const resumenesOk = data?.resumenesOk ?? false;
+  const resumenesSections = resumenesOk ? await fetchResumenesGrouped() : [];
 
 
 
@@ -146,7 +148,15 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
 
 
-        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} resumenesOk={resumenesOk} />
+        <AdminPanel
+          bancos={bancos}
+          materias={materias}
+          stats={stats}
+          schemaOk={schemaOk}
+          supuestosOk={supuestosOk}
+          resumenesOk={resumenesOk}
+          resumenesSections={resumenesSections}
+        />
 
 
 

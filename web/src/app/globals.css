@@ -2563,8 +2563,18 @@ code {
 }
 
 /* Resúmenes PDF (tablet/PC) */
+.nav-link--desktop-tablet {
+  display: none;
+}
+
+.mobile-bottom-nav__item--desktop-only {
+  display: none;
+}
+
 .resumen-link--desktop,
-.resumen-viewer {
+.resumen-viewer,
+.resumenes-biblioteca--desktop,
+.resumenes-empty--desktop {
   display: none;
 }
 
@@ -2573,6 +2583,14 @@ code {
 }
 
 @media (min-width: 768px) {
+  .nav-link--desktop-tablet {
+    display: inline;
+  }
+
+  .mobile-bottom-nav__item--desktop-only {
+    display: flex;
+  }
+
   .resumen-link--desktop {
     display: inline-flex;
     align-items: center;
@@ -2580,6 +2598,11 @@ code {
 
   .resumen-mobile-card {
     display: none;
+  }
+
+  .resumenes-biblioteca--desktop,
+  .resumenes-empty--desktop {
+    display: block;
   }
 
   .resumen-viewer {
@@ -2611,9 +2634,85 @@ code {
     font-size: 1.35rem;
   }
 
-  .resumen-file-meta {
+  .resumen-file-meta,
+  .resumen-materia-tag {
     margin: 0.25rem 0 0;
   }
+}
+
+.resumenes-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resumen-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--option-bg);
+  border: 1px solid var(--border);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.resumen-list-item:hover {
+  background: var(--surface-elevated);
+  border-color: rgba(30, 77, 123, 0.25);
+}
+
+.resumen-list-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-resumenes-section + .admin-resumenes-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-resumenes-materia {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.admin-resumenes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-resumenes-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--option-bg);
+  border: 1px solid var(--border);
+}
+
+.admin-resumenes-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.admin-resumenes-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex-shrink: 0;
 }
 
 .admin-resumen-actions {

@@ -47,6 +47,14 @@ export function materiasFromSections(
   return sections.map((s) => ({ id: s.id, nombre: s.nombre }));
 }
 
+export function materiasFromResumenes(
+  sections: { materiaId: string; materiaNombre: string }[],
+): MateriaOption[] {
+  return sections
+    .map((s) => ({ id: s.materiaId, nombre: s.materiaNombre }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
+}
+
 export function materiasFromPreguntas(
   preguntas: { materiaId?: string; materiaNombre?: string }[],
 ): MateriaOption[] {

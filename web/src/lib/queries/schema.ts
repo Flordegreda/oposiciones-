@@ -92,13 +92,14 @@ export function preguntasRpcReady(): Promise<boolean> {
 
 async function uncachedResumenesSchemaReady(): Promise<boolean> {
   const supabase = getSupabase();
-  const { error } = await supabase.from("materia_resumenes").select("materia_id").limit(0);
+  const { error } = await supabase.from("materia_resumenes").select("id, titulo").limit(0);
   if (!error) return true;
   const msg = error.message.toLowerCase();
   return !(
     msg.includes("could not find the table") ||
     msg.includes('relation "materia_resumenes" does not exist') ||
-    (msg.includes("materia_resumenes") && msg.includes("does not exist"))
+    (msg.includes("materia_resumenes") && msg.includes("does not exist")) ||
+    (msg.includes("titulo") && msg.includes("does not exist"))
   );
 }
 

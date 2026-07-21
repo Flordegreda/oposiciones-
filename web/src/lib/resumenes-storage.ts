@@ -4,8 +4,8 @@ import { getSupabase } from "@/lib/supabase/server";
 
 export const RESUMENES_BUCKET = "materia-resumenes";
 
-export function resumenStoragePath(materiaId: string): string {
-  return `${materiaId}/resumen.pdf`;
+export function resumenStoragePath(materiaId: string, resumenId: string): string {
+  return `${materiaId}/${resumenId}.pdf`;
 }
 
 export function resumenPublicUrl(storagePath: string): string {
@@ -17,5 +17,12 @@ export function resumenPublicUrl(storagePath: string): string {
 export async function deleteResumenFile(storagePath: string): Promise<void> {
   const supabase = getSupabase();
   const { error } = await supabase.storage.from(RESUMENES_BUCKET).remove([storagePath]);
+  if (error) throw error;
+}
+
+export async function deleteResumenFiles(storagePaths: string[]): Promise<void> {
+  if (!storagePaths.length) return;
+  const supabase = getSupabase();
+  const { error } = await supabase.storage.from(RESUMENES_BUCKET).remove(storagePaths);
   if (error) throw error;
 }

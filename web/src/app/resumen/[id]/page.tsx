@@ -4,17 +4,17 @@ import { notFound } from "next/navigation";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { formatPdfSize } from "@/lib/format-pdf-size";
-import { getResumenForMateria } from "@/lib/queries/resumenes";
+import { getResumenById } from "@/lib/queries/resumenes";
 
 export const revalidate = 300;
 
 type PageProps = {
-  params: Promise<{ materiaId: string }>;
+  params: Promise<{ id: string }>;
 };
 
-export default async function ResumenPage({ params }: PageProps) {
-  const { materiaId } = await params;
-  const resumen = await getResumenForMateria(materiaId);
+export default async function ResumenViewerPage({ params }: PageProps) {
+  const { id } = await params;
+  const resumen = await getResumenById(id);
   if (!resumen) notFound();
 
   return (
@@ -22,11 +22,12 @@ export default async function ResumenPage({ params }: PageProps) {
       <SiteHeader />
       <main className="site-main resumen-main">
         <div className="resumen-toolbar">
-          <Link href="/practicar" className="btn-link">
-            ← Tests
+          <Link href="/resumenes" className="btn-link">
+            ← Resúmenes
           </Link>
           <div className="resumen-toolbar-meta">
-            <h1 className="page-title resumen-title">{resumen.materiaNombre}</h1>
+            <p className="muted small resumen-materia-tag">{resumen.materiaNombre}</p>
+            <h1 className="page-title resumen-title">{resumen.titulo}</h1>
             <p className="muted small resumen-file-meta">
               {resumen.filename} · {formatPdfSize(resumen.sizeBytes)}
             </p>
@@ -38,21 +39,23 @@ export default async function ResumenPage({ params }: PageProps) {
             El resumen PDF está pensado para <strong>tablet o PC</strong>. Ábrelo desde un
             dispositivo con pantalla más grande.
           </p>
-          <Link href="/practicar" className="btn-primary">
-            Volver a tests
+          <Link href="/resumenes" className="btn-primary">
+            Volver a resúmenes
           </Link>
         </div>
 
         <div className="resumen-viewer card card-elevated">
           <iframe
             src={resumen.url}
-            title={`Resumen: ${resumen.materiaNombre}`}
+            title={resumen.titulo}
             className="resumen-frame"
           />
         </div>
       </main>
       <footer className="site-footer">
-        <p>Resumen PDF · {resumen.materiaNombre}</p>
+        <p>
+          {resumen.materiaNombre} · {resumen.titulo}
+        </p>
       </footer>
       <MobileBottomNav />
     </div>

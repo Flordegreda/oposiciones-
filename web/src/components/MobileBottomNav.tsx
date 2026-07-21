@@ -9,14 +9,18 @@ import { usePathname } from "next/navigation";
 
 
 const items = [
-
   {
     href: "/practicar",
     label: "Tests",
     match: (p: string) =>
       p === "/practicar" || p.startsWith("/test/") || p.startsWith("/tarjetas/"),
   },
-
+  {
+    href: "/resumenes",
+    label: "Resúmenes",
+    match: (p: string) => p.startsWith("/resumenes") || p.startsWith("/resumen/"),
+    desktopOnly: true,
+  },
   { href: "/simulacro", label: "Simulacro", match: (p: string) => p.startsWith("/simulacro") },
   { href: "/admin", label: "Material", match: (p: string) => p.startsWith("/admin") },
 ];
@@ -45,7 +49,7 @@ export function MobileBottomNav() {
 
             href={item.href}
 
-            className={`mobile-bottom-nav__item${active ? " mobile-bottom-nav__item--active" : ""}`}
+            className={`mobile-bottom-nav__item${active ? " mobile-bottom-nav__item--active" : ""}${"desktopOnly" in item && item.desktopOnly ? " mobile-bottom-nav__item--desktop-only" : ""}`}
 
             aria-current={active ? "page" : undefined}
 

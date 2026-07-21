@@ -7,6 +7,8 @@ import { AdminCocinar } from "@/components/admin/AdminCocinar";
 import { AdminBancos } from "@/components/admin/AdminBancos";
 import { AdminBackup } from "@/components/admin/AdminBackup";
 import { AdminMaterias, AdminMaterialStats } from "@/components/admin/AdminMaterias";
+import { AdminResumenes } from "@/components/admin/AdminResumenes";
+import type { ResumenPdfSection } from "@/lib/resumenes-types";
 import type { BancoRow, MaterialStats } from "@/lib/queries/bancos";
 
 type Materia = { id: string; nombre: string; bancos: number };
@@ -18,13 +20,22 @@ type Props = {
   schemaOk: boolean;
   supuestosOk?: boolean;
   resumenesOk?: boolean;
+  resumenesSections?: ResumenPdfSection[];
 };
 
-const tabs = ["importar", "copia"] as const;
+const tabs = ["importar", "resumenes", "copia"] as const;
 
 type AdminTab = (typeof tabs)[number] | null;
 
-export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = true, resumenesOk = false }: Props) {
+export function AdminPanel({
+  bancos,
+  materias,
+  stats,
+  schemaOk,
+  supuestosOk = true,
+  resumenesOk = false,
+  resumenesSections = [],
+}: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const tabParam = params.get("tab");
@@ -56,6 +67,15 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
         <button
           type="button"
           role="tab"
+          aria-selected={tab === "resumenes"}
+          className={tab === "resumenes" ? "active" : ""}
+          onClick={() => setTab("resumenes")}
+        >
+          Resúmenes
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === "copia"}
           className={tab === "copia" ? "active" : ""}
           onClick={() => setTab("copia")}
@@ -67,13 +87,21 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
       {tab === null && (
         <div className="admin-contenido">
           {schemaOk && <AdminRebalanceBancos materias={materias} />}
-          <AdminMaterias stats={stats} schemaOk={schemaOk} resumenesOk={resumenesOk} hideStats />
+          <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
           <hr className="admin-section-divider" />
           <AdminBancos bancos={bancos} />
         </div>
       )}
       {tab === "importar" && (
         <AdminCocinar materias={materias} schemaOk={schemaOk} supuestosOk={supuestosOk} />
+      )}
+      {tab === "resumenes" && (
+        <AdminResumenes
+          materias={materias}
+          sections={resumenesSections}
+          resumenesOk={resumenesOk}
+          schemaOk={schemaOk}
+        />
       )}
       {tab === "copia" && <AdminBackup schemaOk={schemaOk} />}
     </>
