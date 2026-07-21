@@ -2561,3 +2561,72 @@ code {
     display: none !important;
   }
 }
+
+/* Resúmenes PDF (tablet/PC) */
+.resumen-link--desktop,
+.resumen-viewer {
+  display: none;
+}
+
+.resumen-mobile-card {
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .resumen-link--desktop {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .resumen-mobile-card {
+    display: none;
+  }
+
+  .resumen-viewer {
+    display: block;
+    margin-top: 1rem;
+    padding: 0;
+    overflow: hidden;
+    min-height: calc(100vh - 12rem);
+  }
+
+  .resumen-frame {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 12rem);
+    min-height: 480px;
+    border: 0;
+    background: #fff;
+  }
+
+  .resumen-toolbar {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .resumen-title {
+    margin: 0;
+    font-size: 1.35rem;
+  }
+
+  .resumen-file-meta {
+    margin: 0.25rem 0 0;
+  }
+}
+
+.admin-resumen-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-resumen-pending {
+  opacity: 0.65;
+}
+
+.admin-resumen-error {
+  cursor: help;
+}

@@ -1,7 +1,7 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
-import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady } from "@/lib/queries/schema";
+import { preguntasTableExists, preguntasRpcReady, resumenesSchemaReady, supuestosSchemaReady } from "@/lib/queries/schema";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -35,6 +35,10 @@ export type MateriaSection = {
   id: string;
   nombre: string;
   bancos: BancoRow[];
+  resumenPdf?: {
+    filename: string;
+    sizeBytes: number;
+  } | null;
 };
 
 export type TipoStats = {
@@ -49,6 +53,10 @@ export type MateriaStatsRow = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
+  resumenPdf?: {
+    filename: string;
+    sizeBytes: number;
+  } | null;
 };
 
 export type MaterialStats = {
@@ -246,12 +254,25 @@ async function fetchPreguntasForBanco(bancoId: string): Promise<PreguntaRow[]> {
   });
 }
 
-function groupByMateria(rows: BancoRow[]): MateriaSection[] {
+function groupByMateria(
+  rows: BancoRow[],
+  resumenes?: Map<string, { filename: string; sizeBytes: number }>,
+): MateriaSection[] {
   const map = new Map<string, MateriaSection>();
   for (const b of rows) {
     const key = b.materia_id;
     const nombre = materiaNombre(b.materias);
-    if (!map.has(key)) map.set(key, { id: key, nombre, bancos: [] });
+    if (!map.has(key)) {
+      const meta = resumenes?.get(key);
+      map.set(key, {
+        id: key,
+        nombre,
+        bancos: [],
+        resumenPdf: meta
+          ? { filename: meta.filename, sizeBytes: meta.sizeBytes }
+          : null,
+      });
+    }
     map.get(key)!.bancos.push(b);
   }
   return [...map.values()]
@@ -290,6 +311,25 @@ async function queryAllBancos() {
   return (data ?? []) as unknown as BancoRow[];
 }
 
+async function loadResumenesLiteMap(): Promise<
+  Map<string, { filename: string; sizeBytes: number }>
+> {
+  const map = new Map<string, { filename: string; sizeBytes: number }>();
+  if (!(await resumenesSchemaReady())) return map;
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("materia_resumenes")
+    .select("materia_id, filename, size_bytes");
+
+  if (error) return map;
+
+  for (const row of data ?? []) {
+    map.set(row.materia_id, { filename: row.filename, sizeBytes: row.size_bytes });
+  }
+  return map;
+}
+
 /** Temario único jurídicas JEX: bancos con preguntas (legacy común + JEX). */
 export async function getPracticarDataUncached() {
   const rows = await queryBancosForPracticar();
@@ -298,13 +338,15 @@ export async function getPracticarDataUncached() {
     ? await fetchPreguntaCountsByBanco(rows.map((b) => b.id))
     : new Map<string, number>();
 
+  const resumenes = await loadResumenesLiteMap();
+
   const withCounts = attachPreguntaCounts(rows, counts);
   const practicables = hasPreguntas
     ? withCounts.filter((b) => (b.numPreguntas ?? 0) > 0)
     : withCounts;
 
   return {
-    sections: groupByMateria(practicables),
+    sections: groupByMateria(practicables, resumenes),
   };
 }
 
@@ -372,9 +414,11 @@ function buildMaterialStats(
   materias: { id: string; nombre: string }[],
   bancos: { id: string; materia_id: string; tipo: string }[],
   counts: Map<string, number>,
+  resumenes?: Map<string, { filename: string; sizeBytes: number }>,
 ): MaterialStats {
   const materiaMap = new Map<string, MateriaStatsRow>();
   for (const m of materias) {
+    const meta = resumenes?.get(m.id);
     materiaMap.set(m.id, {
       id: m.id,
       nombre: m.nombre,
@@ -382,6 +426,9 @@ function buildMaterialStats(
       preguntas: 0,
       teorico: emptyTipoStats(),
       practico: emptyTipoStats(),
+      resumenPdf: meta
+        ? { filename: meta.filename, sizeBytes: meta.sizeBytes }
+        : null,
     });
   }
 
@@ -434,22 +481,25 @@ export type AdminPageData = {
   schemaOk: boolean;
   supuestosOk: boolean;
   preguntasRpcOk: boolean;
+  resumenesOk: boolean;
 };
 
 /** Una sola pasada: bancos + materias + stats (evita consultas duplicadas en /admin). */
 export async function getAdminPageDataUncached(): Promise<AdminPageData> {
   const supabase = getSupabase();
 
-  const [schemaOk, supuestosOk, preguntasRpcOk, materiasRes, bancosRes] = await Promise.all([
-    preguntasTableExists(),
-    supuestosSchemaReady(),
-    preguntasRpcReady(),
-    supabase.from("materias").select("id, nombre").order("nombre"),
-    supabase
-      .from("bancos")
-      .select("id, nombre, tipo, materia_id, active, linea_id, materias(nombre)")
-      .order("nombre"),
-  ]);
+  const [schemaOk, supuestosOk, preguntasRpcOk, resumenesOk, materiasRes, bancosRes] =
+    await Promise.all([
+      preguntasTableExists(),
+      supuestosSchemaReady(),
+      preguntasRpcReady(),
+      resumenesSchemaReady(),
+      supabase.from("materias").select("id, nombre").order("nombre"),
+      supabase
+        .from("bancos")
+        .select("id, nombre, tipo, materia_id, active, linea_id, materias(nombre)")
+        .order("nombre"),
+    ]);
 
   if (materiasRes.error) throw materiasRes.error;
   if (bancosRes.error) throw bancosRes.error;
@@ -460,13 +510,16 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     ? await fetchPreguntaCountsByBanco(bancos.map((b) => b.id))
     : new Map<string, number>();
 
+  const resumenes = resumenesOk ? await loadResumenesLiteMap() : new Map();
+
   return {
     bancos: sortBancosByNombre(attachPreguntaCounts(bancos, counts)),
     materias: buildMateriasWithCounts(materias, bancos),
-    stats: buildMaterialStats(materias, bancos, counts),
+    stats: buildMaterialStats(materias, bancos, counts, resumenes),
     schemaOk,
     supuestosOk,
     preguntasRpcOk,
+    resumenesOk,
   };
 }
 
@@ -485,7 +538,9 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
     : new Map<string, number>();
 
-  return buildMaterialStats(materias ?? [], bancos ?? [], counts);
+  const resumenes = await loadResumenesLiteMap();
+
+  return buildMaterialStats(materias ?? [], bancos ?? [], counts, resumenes);
 }
 
 function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {

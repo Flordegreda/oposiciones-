@@ -8,6 +8,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 
 import { AdminPreguntasRpcSetup } from "@/components/admin/AdminPreguntasRpcSetup";
+import { AdminResumenesSetup } from "@/components/admin/AdminResumenesSetup";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
@@ -73,6 +74,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
   const supuestosOk = data?.supuestosOk ?? true;
   const preguntasRpcOk = data?.preguntasRpcOk ?? true;
+  const resumenesOk = data?.resumenesOk ?? false;
 
 
 
@@ -122,6 +124,8 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
         {schemaOk && !supuestosOk && <AdminSupuestosSetup />}
 
+        {schemaOk && !resumenesOk && <AdminResumenesSetup />}
+
 
 
         {schemaOk && stats.preguntas === 0 && bancos.length > 0 && (
@@ -142,7 +146,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
 
 
-        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} />
+        <AdminPanel bancos={bancos} materias={materias} stats={stats} schemaOk={schemaOk} supuestosOk={supuestosOk} resumenesOk={resumenesOk} />
 
 
 

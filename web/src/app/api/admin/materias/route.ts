@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateContentCache } from "@/lib/revalidate-content";
-import { getSupabase } from "@/lib/supabase/server";
 import { buildFullBackup, buildMateriaBackup } from "@/lib/queries/export";
+import { deleteResumenFile } from "@/lib/resumenes-storage";
+import { resumenesSchemaReady } from "@/lib/queries/schema";
+import { getSupabase } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
   const exportAll = req.nextUrl.searchParams.get("export") === "all";
@@ -83,6 +85,20 @@ export async function DELETE(req: NextRequest) {
     .from("bancos")
     .select("*", { count: "exact", head: true })
     .eq("materia_id", id);
+  if (await resumenesSchemaReady()) {
+    const { data: resumen } = await supabase
+      .from("materia_resumenes")
+      .select("storage_path")
+      .eq("materia_id", id)
+      .maybeSingle();
+    if (resumen?.storage_path) {
+      try {
+        await deleteResumenFile(resumen.storage_path);
+      } catch {
+        /* ignore storage cleanup errors */
+      }
+    }
+  }
   await supabase.from("bancos").delete().eq("materia_id", id);
   const { error } = await supabase.from("materias").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -25,7 +25,10 @@ export type ImportContext = {
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
 const ANSWER_RE =
   /^(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:?\s*([A-Da-d])\s*$/i;
+const INLINE_ANSWER_RE =
+  /(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:\s*([A-Da-d])(?:\s+(?:Explicaci[oó]n|E)\s*:\s*(.+))?$/i;
 const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i;
+const INLINE_OPTION_SPLIT_RE = /\s+(?=[A-D]\)\s)/;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
 const SUPUESTO_START_RE = /^={3}\s*SUPUESTO(?:\s*:\s*(.*))?\s*$/i;
@@ -49,6 +52,7 @@ function normalizeText(texto: string): string {
     .replace(/\r/g, "\n")
     .replace(/\u00a0/g, " ")
     .replace(/\t/g, " ")
+    .replace(/[ \t]+(?=\d+[\.\)]\s+)/g, "\n")
     .trim();
 }
 
@@ -106,6 +110,53 @@ function parseNumberedBlocks(texto: string): ParsedQuestion[] {
 
     if (opciones.length >= 2 && respuesta >= 0 && respuesta < opciones.length) {
       preguntas.push({ enunciado: head, opciones, respuesta, explicacion });
+    }
+  }
+
+  return preguntas;
+}
+
+/** Formato inline: `1. enunciado A) … B) … C) … D) … Respuesta: A` (una línea o varias pegadas). */
+function parseInlineNumberedBlocks(texto: string): ParsedQuestion[] {
+  const blocks = texto
+    .split(/\n(?=\d+[\.\)]\s+)/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  const preguntas: ParsedQuestion[] = [];
+
+  for (const block of blocks) {
+    const line = block.replace(/\s*\n\s*/g, " ").trim();
+    const numMatch = line.match(/^\d+[\.\)]\s+([\s\S]+)$/);
+    if (!numMatch) continue;
+
+    let content = numMatch[1];
+    if (isIntroLine(content)) continue;
+
+    const ansMatch = content.match(INLINE_ANSWER_RE);
+    if (!ansMatch) continue;
+
+    const respuesta = ansMatch[1].toUpperCase().charCodeAt(0) - 65;
+    const explicacion = ansMatch[2]?.trim();
+    content = content.slice(0, ansMatch.index).trim();
+
+    const parts = content.split(INLINE_OPTION_SPLIT_RE);
+    if (parts.length < 2) continue;
+
+    const enunciado = parts[0].trim();
+    const opciones: string[] = [];
+    for (let i = 1; i < parts.length; i++) {
+      const optMatch = parts[i].match(/^([A-D])\)\s*(.+)$/i);
+      if (optMatch) opciones.push(optMatch[2].trim());
+    }
+
+    if (
+      enunciado &&
+      opciones.length >= 2 &&
+      respuesta >= 0 &&
+      respuesta < opciones.length
+    ) {
+      preguntas.push({ enunciado, opciones, respuesta, explicacion });
     }
   }
 
@@ -170,11 +221,13 @@ function parseQuestionsFromText(texto: string): ParsedQuestion[] {
   const normalized = normalizeText(texto);
   if (!normalized) return [];
 
-  const numbered = parseNumberedBlocks(normalized);
-  const optionStyle = parseOptionBlocks(normalized);
+  const candidates = [
+    parseNumberedBlocks(normalized),
+    parseOptionBlocks(normalized),
+    parseInlineNumberedBlocks(normalized),
+  ];
 
-  if (numbered.length >= optionStyle.length) return numbered;
-  return optionStyle;
+  return candidates.reduce((best, cur) => (cur.length > best.length ? cur : best));
 }
 
 export function countParsedQuestions(doc: ParsedImportDocument): number {

@@ -17,13 +17,14 @@ type Props = {
   stats: MaterialStats;
   schemaOk: boolean;
   supuestosOk?: boolean;
+  resumenesOk?: boolean;
 };
 
 const tabs = ["importar", "copia"] as const;
 
 type AdminTab = (typeof tabs)[number] | null;
 
-export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = true }: Props) {
+export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = true, resumenesOk = false }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const tabParam = params.get("tab");
@@ -66,7 +67,7 @@ export function AdminPanel({ bancos, materias, stats, schemaOk, supuestosOk = tr
       {tab === null && (
         <div className="admin-contenido">
           {schemaOk && <AdminRebalanceBancos materias={materias} />}
-          <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
+          <AdminMaterias stats={stats} schemaOk={schemaOk} resumenesOk={resumenesOk} hideStats />
           <hr className="admin-section-divider" />
           <AdminBancos bancos={bancos} />
         </div>
