@@ -2729,18 +2729,3 @@ code {
 .admin-resumen-error {
   cursor: help;
 }
-
-.admin-answer-stats {
-  margin: 0.5rem 0 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.admin-answer-bias-warn {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--accent);
-  padding: 0.15rem 0.45rem;
-  border-radius: 6px;
-  background: var(--accent-soft);
-}

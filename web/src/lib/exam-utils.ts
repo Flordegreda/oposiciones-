@@ -139,37 +139,6 @@ export function originalOptionToDisplay(map: number[], originalIndex: number): n
   return idx >= 0 ? idx : originalIndex;
 }
 
-const LETTERS = ["A", "B", "C", "D", "E", "F"];
-
-/** Cuántas respuestas correctas hay en cada posición A/B/C/D… */
-export function answerDistribution(
-  preguntas: { respuesta: number }[],
-  maxSlots = 4,
-): number[] {
-  const counts = Array.from({ length: maxSlots }, () => 0);
-  for (const p of preguntas) {
-    if (p.respuesta >= 0 && p.respuesta < maxSlots) counts[p.respuesta]++;
-  }
-  return counts;
-}
-
-export function formatAnswerDistribution(counts: number[], total: number): string {
-  if (!total) return "—";
-  return counts
-    .map((n, i) => `${LETTERS[i] ?? "?"}: ${n} (${Math.round((n / total) * 100)}%)`)
-    .join(" · ");
-}
-
-export function isAnswerDistributionSkewed(
-  counts: number[],
-  total: number,
-  threshold = 0.4,
-): boolean {
-  if (total < 4) return false;
-  const max = Math.max(...counts);
-  return max / total >= threshold;
-}
-
 export function countByTipo(all: ExamPregunta[]) {
   let teorico = 0;
   let practico = 0;
