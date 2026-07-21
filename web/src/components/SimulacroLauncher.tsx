@@ -6,6 +6,7 @@ import type { PublicExamPregunta, SimulacroPresetId } from "@/lib/exam-utils";
 import {
   SIMULACRO_PRESETS,
   estimateSimulacroPick,
+  prepareExamSessionQuestions,
   presetSummary,
   simulacroTimerSeconds,
 } from "@/lib/exam-utils";
@@ -24,6 +25,8 @@ type Running = {
   timerSeconds: number;
   title: string;
   subtitle: string;
+  optionMaps: number[][];
+  originalOpciones: string[][];
 };
 
 export function SimulacroLauncher({ meta }: Props) {
@@ -84,12 +87,15 @@ export function SimulacroLauncher({ meta }: Props) {
 
       const selected = presets.find((p) => p.id === presetId)!;
       const materiaSuffix = materiaLabel ? ` · ${materiaLabel}` : "";
+      const prepared = prepareExamSessionQuestions(data.list as PublicExamPregunta[]);
       setRunning({
-        list: data.list as PublicExamPregunta[],
+        list: prepared.questions,
         examMode,
         timerSeconds: data.timerSeconds as number,
         title: `${selected.label}${materiaSuffix}`,
         subtitle: data.subtitle as string,
+        optionMaps: prepared.optionMaps,
+        originalOpciones: prepared.originalOpciones,
       });
     } catch (e) {
       setStartErr(e instanceof Error ? e.message : "Error al iniciar");
@@ -114,6 +120,8 @@ export function SimulacroLauncher({ meta }: Props) {
           timerSeconds={running.timerSeconds}
           backHref="/simulacro"
           onFinish={exitSimulacro}
+          optionMaps={running.optionMaps}
+          originalOpciones={running.originalOpciones}
         />
       </>
     );

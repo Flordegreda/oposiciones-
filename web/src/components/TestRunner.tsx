@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
+import { prepareExamSessionQuestions } from "@/lib/exam-utils";
 import { ExamSession } from "@/components/ExamSession";
 import { TestPrintButton } from "@/components/TestPrintButton";
 
@@ -15,6 +16,8 @@ type Props = {
 type Session = {
   list: PublicExamPregunta[];
   examMode: boolean;
+  optionMaps: number[][];
+  originalOpciones: string[][];
 };
 
 export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
@@ -28,7 +31,13 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
 
   const startTest = useCallback(
     (list: PublicExamPregunta[]) => {
-      setSession({ list, examMode });
+      const prepared = prepareExamSessionQuestions(list);
+      setSession({
+        list: prepared.questions,
+        examMode,
+        optionMaps: prepared.optionMaps,
+        originalOpciones: prepared.originalOpciones,
+      });
     },
     [examMode],
   );
@@ -43,6 +52,8 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
         timerSeconds={null}
         backHref="/practicar"
         onFinish={() => setSession(null)}
+        optionMaps={session.optionMaps}
+        originalOpciones={session.originalOpciones}
       />
     );
   }
@@ -60,7 +71,8 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
       <div className="test-start-head">
         <h2 className="test-start-title">¿Cómo quieres practicar?</h2>
         <p className="muted small test-start-lead">
-          Elige test con opciones o tarjetas para repaso rápido.
+          Elige test con opciones o tarjetas para repaso rápido. Las opciones A/B/C/D se
+          barajan en cada intento.
         </p>
         <div className="test-start-actions">
           <Link href={`/admin/bancos/${bancoId}`} className="btn-secondary btn-sm">

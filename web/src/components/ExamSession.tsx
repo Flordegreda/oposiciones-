@@ -3,7 +3,12 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
-import { examScore, formatExamTime } from "@/lib/exam-utils";
+import {
+  displayOptionToOriginal,
+  examScore,
+  formatExamTime,
+  originalOptionToDisplay,
+} from "@/lib/exam-utils";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
 
 type AnswerMeta = {
@@ -19,6 +24,10 @@ type Props = {
   timerSeconds: number | null;
   backHref: string;
   onFinish?: () => void;
+  /** Índice en pantalla → índice original (barajar opciones). */
+  optionMaps?: number[][];
+  /** Opciones originales antes de barajar (resultado e impresión). */
+  originalOpciones?: string[][];
 };
 
 type Phase = "test" | "result";
@@ -40,6 +49,8 @@ export function ExamSession({
   timerSeconds,
   backHref,
   onFinish,
+  optionMaps: optionMapsProp,
+  originalOpciones: originalOpcionesProp,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -55,6 +66,18 @@ export function ExamSession({
   const [timerEnded, setTimerEnded] = useState(false);
   const [grading, setGrading] = useState(false);
 
+  const optionMaps = useMemo(
+    () =>
+      optionMapsProp ??
+      active.map((q) => q.opciones.map((_, i) => i)),
+    [optionMapsProp, active],
+  );
+
+  const originalOpciones = useMemo(
+    () => originalOpcionesProp ?? active.map((q) => [...q.opciones]),
+    [originalOpcionesProp, active],
+  );
+
   useEffect(() => {
     setRemaining(timerSeconds);
   }, [timerSeconds]);
@@ -66,7 +89,10 @@ export function ExamSession({
   const okCount = answers.filter((a, i) => {
     if (a === null) return false;
     const meta = answerMeta.get(active[i]?.id ?? "");
-    return meta !== undefined && a === meta.respuesta;
+    return (
+      meta !== undefined &&
+      displayOptionToOriginal(optionMaps[i] ?? [], a) === meta.respuesta
+    );
   }).length;
   const progress = total ? Math.round(((index + 1) / total) * 100) : 0;
   const showCorrection = !examMode || phase === "result";
@@ -74,19 +100,21 @@ export function ExamSession({
 
   const printable = useMemo<PrintablePregunta[]>(
     () =>
-      active.map((q) => {
+      active.map((q, qi) => {
         const meta = answerMeta.get(q.id);
+        const orig = originalOpciones[qi] ?? q.opciones;
+        const resp = meta?.respuesta ?? 0;
         return {
           enunciado: q.enunciado,
-          opciones: q.opciones,
-          respuesta: meta?.respuesta ?? 0,
+          opciones: orig,
+          respuesta: resp,
           explicacion: meta?.explicacion,
           supuestoId: q.supuestoId,
           supuestoTitulo: q.supuestoTitulo,
           supuestoTexto: q.supuestoTexto,
         };
       }),
-    [active, answerMeta],
+    [active, answerMeta, originalOpciones],
   );
   const canPrintWithKey = phase === "result" && answerMeta.size > 0;
 
@@ -98,7 +126,13 @@ export function ExamSession({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            answers: active.map((q, i) => ({ id: q.id, selected: answers[i] })),
+            answers: active.map((q, i) => ({
+              id: q.id,
+              selected:
+                answers[i] === null
+                  ? null
+                  : displayOptionToOriginal(optionMaps[i] ?? [], answers[i]!),
+            })),
           }),
         });
         const data = (await res.json()) as {
@@ -120,7 +154,7 @@ export function ExamSession({
       }
     }
     setPhase("result");
-  }, [examMode, active, answers]);
+  }, [examMode, active, answers, optionMaps]);
 
   const stopTimer = useCallback(() => {
     if (timerIdRef.current !== null) {
@@ -203,7 +237,10 @@ export function ExamSession({
       void fetch("/api/exam/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: current.id, selected: optionIndex }),
+        body: JSON.stringify({
+          id: current.id,
+          selected: displayOptionToOriginal(optionMaps[index] ?? [], optionIndex),
+        }),
       })
         .then(async (res) => {
           const data = (await res.json()) as {
@@ -222,7 +259,7 @@ export function ExamSession({
         })
         .catch(() => {});
     },
-    [current, index, picked, examMode],
+    [current, index, picked, examMode, optionMaps],
   );
 
   const toggleFlag = useCallback(() => {
@@ -289,8 +326,10 @@ export function ExamSession({
             {active.map((q, i) => {
               const ans = answers[i];
               const meta = answerMeta.get(q.id);
+              const map = optionMaps[i] ?? [];
+              const orig = originalOpciones[i] ?? q.opciones;
               const isOk =
-                ans !== null && meta !== undefined && ans === meta.respuesta;
+                ans !== null && meta !== undefined && displayOptionToOriginal(map, ans) === meta.respuesta;
               let icon = "—";
               if (ans !== null) icon = isOk ? "✓" : "✗";
               return (
@@ -313,7 +352,7 @@ export function ExamSession({
                     </span>
                     {ans !== null && !isOk && meta !== undefined && (
                       <span className="result-breakdown-fix">
-                        ✓ {q.opciones[meta.respuesta]}
+                        ✓ {orig[meta.respuesta]}
                       </span>
                     )}
                     {examMode && meta?.explicacion && (
@@ -389,7 +428,12 @@ export function ExamSession({
           if (i === index) cls += " current";
           else if (answers[i] !== null) {
             if (examMode || meta === undefined) cls += " answered-any";
-            else cls += answers[i] === meta.respuesta ? " answered-ok" : " answered-fail";
+            else {
+              cls +=
+                displayOptionToOriginal(optionMaps[i] ?? [], answers[i]!) === meta.respuesta
+                  ? " answered-ok"
+                  : " answered-fail";
+            }
           }
           if (flags[i]) cls += " flagged";
           return (
@@ -420,11 +464,16 @@ export function ExamSession({
       <ul className="options">
         {current.opciones.map((opt, i) => {
           let cls = "option-btn";
+          const map = optionMaps[index] ?? [];
+          const correctDisplay =
+            currentMeta !== undefined
+              ? originalOptionToDisplay(map, currentMeta.respuesta)
+              : -1;
           if (picked !== null) {
             if (examMode) {
               if (i === picked) cls += " selected-exam";
             } else if (currentMeta !== undefined) {
-              if (i === currentMeta.respuesta) cls += " correct";
+              if (i === correctDisplay) cls += " correct";
               else if (i === picked) cls += " wrong";
             }
           }

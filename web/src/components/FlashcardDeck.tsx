@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { shuffle } from "@/lib/exam-utils";
+import { shuffle, shuffleQuestionOptions } from "@/lib/exam-utils";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
 const EXIT_HREF = "/practicar";
@@ -22,13 +22,22 @@ type Props = {
 };
 
 export function FlashcardDeck({ preguntas }: Props) {
-  const [order, setOrder] = useState(() => preguntas.map((_, i) => i));
+  const cards = useMemo(
+    () =>
+      preguntas.map((p) => {
+        const shuffled = shuffleQuestionOptions(p.opciones, p.respuesta);
+        return { ...p, opciones: shuffled.opciones, respuesta: shuffled.respuesta };
+      }),
+    [preguntas],
+  );
+
+  const [order, setOrder] = useState(() => cards.map((_, i) => i));
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
 
   const total = order.length;
-  const current = order[index] !== undefined ? preguntas[order[index]] : null;
+  const current = order[index] !== undefined ? cards[order[index]] : null;
 
   const goTo = useCallback(
     (next: number) => {
@@ -40,10 +49,10 @@ export function FlashcardDeck({ preguntas }: Props) {
   );
 
   const reshuffle = useCallback(() => {
-    setOrder(shuffle(preguntas.map((_, i) => i)));
+    setOrder(shuffle(cards.map((_, i) => i)));
     setIndex(0);
     setFlipped(false);
-  }, [preguntas]);
+  }, [cards]);
 
   const progress = total ? Math.round(((index + 1) / total) * 100) : 0;
 

@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BancoRow, PreguntaRow } from "@/lib/queries/bancos";
 import { isEncadenadoBankName } from "@/lib/encadenado-utils";
+import {
+  answerDistribution,
+  formatAnswerDistribution,
+  isAnswerDistributionSkewed,
+} from "@/lib/exam-utils";
 import { TestPrintButton } from "@/components/TestPrintButton";
 
 type Materia = { id: string; nombre: string };
@@ -53,8 +58,46 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
     () => preguntas.find((p) => p.supuesto_texto)?.supuesto_texto ?? "",
   );
   const [supuestoBusy, setSupuestoBusy] = useState(false);
+  const [shuffleBusy, setShuffleBusy] = useState(false);
   const savedRef = useRef<Map<string, string>>(new Map());
   const tieneSupuesto = preguntas.some((p) => p.supuesto_id || p.supuesto_texto);
+
+  const answerStats = useMemo(() => {
+    const counts = answerDistribution(preguntas);
+    const total = preguntas.length;
+    return {
+      counts,
+      total,
+      label: formatAnswerDistribution(counts, total),
+      skewed: isAnswerDistributionSkewed(counts, total),
+    };
+  }, [preguntas]);
+
+  async function barajarOpcionesBanco() {
+    if (
+      !confirm(
+        "¿Barajar las opciones de TODAS las preguntas?\n\nSe reordenan A/B/C/D al azar y se actualiza la respuesta correcta. Útil si casi siempre cae en la misma letra.",
+      )
+    ) {
+      return;
+    }
+    setShuffleBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/bancos/${banco.id}/shuffle-options`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al barajar");
+      setMsg(`Opciones barajadas en ${data.updated ?? preguntas.length} preguntas`);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error al barajar");
+    } finally {
+      setShuffleBusy(false);
+    }
+  }
   const muestraSupuesto =
     banco.tipo === "practico" ||
     isEncadenadoBankName(banco.nombre) ||
@@ -363,6 +406,22 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
             </h3>
             {preguntas.length > 0 && (
               <div className="admin-preguntas-toolbar">
+                {answerStats.skewed && (
+                  <span className="admin-answer-bias-warn" title={answerStats.label}>
+                    Respuestas sesgadas
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="btn-link btn-sm"
+                  disabled={shuffleBusy || busy}
+                  onClick={() => void barajarOpcionesBanco()}
+                >
+                  {shuffleBusy ? "Barajando…" : "Barajar opciones"}
+                </button>
+                <span className="admin-toolbar-sep" aria-hidden>
+                  ·
+                </span>
                 {autosave !== "idle" && (
                   <span className={`autosave-badge autosave-${autosave}`} aria-live="polite">
                     {autosave === "pending" && "Cambios sin guardar…"}
@@ -384,6 +443,14 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
             )}
           </div>
         </div>
+
+        {preguntas.length > 0 && (
+          <p className="muted small admin-answer-stats">
+            Distribución de respuestas correctas: {answerStats.label}. Al practicar, las
+            opciones se barajan en cada intento; usa <strong>Barajar opciones</strong> para
+            corregir el banco guardado (PDF e impresión).
+          </p>
+        )}
 
         {preguntas.length === 0 ? (
           <p className="muted">Este banco no tiene preguntas.</p>

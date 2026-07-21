@@ -89,6 +89,87 @@ export function shuffle<T>(items: T[]): T[] {
   return arr;
 }
 
+/** Baraja opciones y devuelve el nuevo índice de la respuesta correcta. */
+export function shuffleQuestionOptions(
+  opciones: string[],
+  respuesta: number,
+): { opciones: string[]; respuesta: number } {
+  const n = opciones.length;
+  if (n <= 1) return { opciones: [...opciones], respuesta };
+
+  const order = shuffle([...Array(n).keys()]);
+  const shuffled = order.map((i) => opciones[i]);
+  const newRespuesta = order.indexOf(respuesta);
+  return { opciones: shuffled, respuesta: newRespuesta >= 0 ? newRespuesta : respuesta };
+}
+
+export type PreparedExamSession = {
+  questions: PublicExamPregunta[];
+  /** Por pregunta: índice en pantalla → índice original (para corregir). */
+  optionMaps: number[][];
+  /** Textos originales A/B/C/D antes de barajar (resultados e impresión). */
+  originalOpciones: string[][];
+};
+
+/** Baraja las opciones de cada pregunta al iniciar test/simulacro. */
+export function prepareExamSessionQuestions(list: PublicExamPregunta[]): PreparedExamSession {
+  const optionMaps: number[][] = [];
+  const originalOpciones: string[][] = [];
+
+  const questions = list.map((q) => {
+    const n = q.opciones.length;
+    const order = shuffle([...Array(n).keys()]);
+    optionMaps.push(order);
+    originalOpciones.push([...q.opciones]);
+    return {
+      ...q,
+      opciones: order.map((i) => q.opciones[i]),
+    };
+  });
+
+  return { questions, optionMaps, originalOpciones };
+}
+
+export function displayOptionToOriginal(map: number[], displayIndex: number): number {
+  return map[displayIndex] ?? displayIndex;
+}
+
+export function originalOptionToDisplay(map: number[], originalIndex: number): number {
+  const idx = map.indexOf(originalIndex);
+  return idx >= 0 ? idx : originalIndex;
+}
+
+const LETTERS = ["A", "B", "C", "D", "E", "F"];
+
+/** Cuántas respuestas correctas hay en cada posición A/B/C/D… */
+export function answerDistribution(
+  preguntas: { respuesta: number }[],
+  maxSlots = 4,
+): number[] {
+  const counts = Array.from({ length: maxSlots }, () => 0);
+  for (const p of preguntas) {
+    if (p.respuesta >= 0 && p.respuesta < maxSlots) counts[p.respuesta]++;
+  }
+  return counts;
+}
+
+export function formatAnswerDistribution(counts: number[], total: number): string {
+  if (!total) return "—";
+  return counts
+    .map((n, i) => `${LETTERS[i] ?? "?"}: ${n} (${Math.round((n / total) * 100)}%)`)
+    .join(" · ");
+}
+
+export function isAnswerDistributionSkewed(
+  counts: number[],
+  total: number,
+  threshold = 0.4,
+): boolean {
+  if (total < 4) return false;
+  const max = Math.max(...counts);
+  return max / total >= threshold;
+}
+
 export function countByTipo(all: ExamPregunta[]) {
   let teorico = 0;
   let practico = 0;
