@@ -2,8 +2,6 @@ import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
 import { preguntasTableExists, preguntasRpcReady, resumenesSchemaReady, supuestosSchemaReady, fichasSchemaReady } from "@/lib/queries/schema";
-import { countFichasTotals } from "@/lib/queries/fichas";
-import { countResumenesTotals } from "@/lib/queries/resumenes";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -487,17 +485,25 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
   const extras: Promise<void>[] = [];
   if (fichasOk) {
     extras.push(
-      countFichasTotals().then((t) => {
-        stats.mazosFichas = t.mazos;
-        stats.fichas = t.fichas;
-      }),
+      (async () => {
+        const supabaseCounts = getSupabase();
+        const [mazosRes, fichasRes] = await Promise.all([
+          supabaseCounts.from("mazos_fichas").select("*", { count: "exact", head: true }),
+          supabaseCounts.from("fichas").select("*", { count: "exact", head: true }),
+        ]);
+        stats.mazosFichas = mazosRes.count ?? 0;
+        stats.fichas = fichasRes.count ?? 0;
+      })(),
     );
   }
   if (resumenesOk) {
     extras.push(
-      countResumenesTotals().then((n) => {
-        stats.resumenes = n;
-      }),
+      (async () => {
+        const { count } = await getSupabase()
+          .from("materia_resumenes")
+          .select("*", { count: "exact", head: true });
+        stats.resumenes = count ?? 0;
+      })(),
     );
   }
   if (extras.length) await Promise.all(extras);
@@ -536,17 +542,24 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const extras: Promise<void>[] = [];
   if (fichasOk) {
     extras.push(
-      countFichasTotals().then((t) => {
-        stats.mazosFichas = t.mazos;
-        stats.fichas = t.fichas;
-      }),
+      (async () => {
+        const [mazosRes, fichasRes] = await Promise.all([
+          supabase.from("mazos_fichas").select("*", { count: "exact", head: true }),
+          supabase.from("fichas").select("*", { count: "exact", head: true }),
+        ]);
+        stats.mazosFichas = mazosRes.count ?? 0;
+        stats.fichas = fichasRes.count ?? 0;
+      })(),
     );
   }
   if (resumenesOk) {
     extras.push(
-      countResumenesTotals().then((n) => {
-        stats.resumenes = n;
-      }),
+      (async () => {
+        const { count } = await supabase
+          .from("materia_resumenes")
+          .select("*", { count: "exact", head: true });
+        stats.resumenes = count ?? 0;
+      })(),
     );
   }
   if (extras.length) await Promise.all(extras);
