@@ -2,6 +2,7 @@ import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
 import { preguntasTableExists, preguntasRpcReady, resumenesSchemaReady, supuestosSchemaReady, fichasSchemaReady } from "@/lib/queries/schema";
+import { countFichasTotals } from "@/lib/queries/fichas";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -57,6 +58,10 @@ export type MaterialStats = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
+  /** Mazos de fichas Anki (0 si el esquema no está activo). */
+  mazosFichas: number;
+  /** Total de fichas pregunta/respuesta. */
+  fichas: number;
   porMateria: MateriaStatsRow[];
 };
 
@@ -391,6 +396,8 @@ function buildMaterialStats(
     preguntas: 0,
     teorico: emptyTipoStats(),
     practico: emptyTipoStats(),
+    mazosFichas: 0,
+    fichas: 0,
     porMateria: [],
   };
 
@@ -472,10 +479,17 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     ? await fetchPreguntaCountsByBanco(bancos.map((b) => b.id))
     : new Map<string, number>();
 
+  const stats = buildMaterialStats(materias, bancos, counts);
+  if (fichasOk) {
+    const fichasTotals = await countFichasTotals();
+    stats.mazosFichas = fichasTotals.mazos;
+    stats.fichas = fichasTotals.fichas;
+  }
+
   return {
     bancos: sortBancosByNombre(attachPreguntaCounts(bancos, counts)),
     materias: buildMateriasWithCounts(materias, bancos),
-    stats: buildMaterialStats(materias, bancos, counts),
+    stats,
     schemaOk,
     supuestosOk,
     preguntasRpcOk,
@@ -486,10 +500,12 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
 
 export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const supabase = getSupabase();
-  const [{ data: materias, error: mErr }, { data: bancos, error: bErr }] = await Promise.all([
-    supabase.from("materias").select("id, nombre").order("nombre"),
-    supabase.from("bancos").select("id, materia_id, tipo"),
-  ]);
+  const [{ data: materias, error: mErr }, { data: bancos, error: bErr }, fichasOk] =
+    await Promise.all([
+      supabase.from("materias").select("id, nombre").order("nombre"),
+      supabase.from("bancos").select("id, materia_id, tipo"),
+      fichasSchemaReady(),
+    ]);
 
   if (mErr) throw mErr;
   if (bErr) throw bErr;
@@ -499,7 +515,13 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
     : new Map<string, number>();
 
-  return buildMaterialStats(materias ?? [], bancos ?? [], counts);
+  const stats = buildMaterialStats(materias ?? [], bancos ?? [], counts);
+  if (fichasOk) {
+    const fichasTotals = await countFichasTotals();
+    stats.mazosFichas = fichasTotals.mazos;
+    stats.fichas = fichasTotals.fichas;
+  }
+  return stats;
 }
 
 function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {

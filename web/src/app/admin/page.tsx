@@ -58,19 +58,14 @@ export default async function AdminPage({ searchParams }: PageProps) {
   const materias = data?.materias ?? [];
 
   const stats = data?.stats ?? {
-
     materias: 0,
-
     bancos: 0,
-
     preguntas: 0,
-
     teorico: { bancos: 0, preguntas: 0 },
-
     practico: { bancos: 0, preguntas: 0 },
-
+    mazosFichas: 0,
+    fichas: 0,
     porMateria: [],
-
   };
 
   const schemaOk = data?.schemaOk ?? true;

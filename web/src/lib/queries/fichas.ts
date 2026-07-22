@@ -149,3 +149,19 @@ export async function getMazoConFichas(mazoId: string): Promise<MazoConFichas | 
     fichas,
   };
 }
+
+/** Totales para el resumen de Material (0 si el esquema no está activo). */
+export async function countFichasTotals(): Promise<{ mazos: number; fichas: number }> {
+  if (!(await fichasSchemaReady())) return { mazos: 0, fichas: 0 };
+
+  const supabase = getSupabase();
+  const [mazosRes, fichasRes] = await Promise.all([
+    supabase.from("mazos_fichas").select("*", { count: "exact", head: true }),
+    supabase.from("fichas").select("*", { count: "exact", head: true }),
+  ]);
+
+  return {
+    mazos: mazosRes.count ?? 0,
+    fichas: fichasRes.count ?? 0,
+  };
+}
