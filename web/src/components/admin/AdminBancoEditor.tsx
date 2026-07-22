@@ -374,12 +374,20 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
           >
             Eliminar banco
           </button>
+          <button
+            type="button"
+            className="btn-secondary btn-sm"
+            disabled={rebalanceBusy || busy || preguntas.length < 2}
+            onClick={() => void reequilibrarOpciones()}
+          >
+            {rebalanceBusy ? "Reequilibrando…" : "Reequilibrar letras A–D"}
+          </button>
         </div>
       </div>
 
       {preguntas.length > 0 && (
         <div
-          className={`card ${answerDist.skewed ? "card-warning" : ""}`}
+          className={`card ${answerDist.skewed ? "card-warning" : "card-elevated"}`}
           style={{ marginBottom: "1rem" }}
         >
           <h3 className="admin-preguntas-title" style={{ marginTop: 0 }}>
@@ -393,12 +401,17 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
           <p className="muted small" style={{ marginTop: 0 }}>
             {formatDistribution(answerDist)}
           </p>
-          {answerDist.skewed && (
+          {answerDist.skewed ? (
             <p className="muted small">
               Más del {Math.round(answerDist.dominantPercent * 100)}% de las correctas están en{" "}
-              <strong>{ANSWER_LETTERS[answerDist.dominant] ?? "?"}</strong>. En el test online las
-              letras se barajan al empezar; esto importa sobre todo al <strong>imprimir PDF</strong>{" "}
-              o si alguien memoriza el banco en bruto.
+              <strong>{ANSWER_LETTERS[answerDist.dominant] ?? "?"}</strong>. Pulsa{" "}
+              <strong>Reequilibrar letras A–D</strong> (arriba o aquí) para repartirlas. En el
+              test online ya se barajan al empezar; esto corrige PDF y el banco guardado.
+            </p>
+          ) : (
+            <p className="muted small">
+              Si ves muchas correctas en la misma letra, usa <strong>Reequilibrar letras A–D</strong>.
+              No cambia los textos, solo en qué letra cae la respuesta correcta.
             </p>
           )}
           {answerDist.duplicateOptionIds.length > 0 && (
@@ -408,16 +421,6 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
               repetido (revisa a mano).
             </p>
           )}
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn-secondary btn-sm"
-              disabled={rebalanceBusy || busy || preguntas.length < 2}
-              onClick={() => void reequilibrarOpciones()}
-            >
-              {rebalanceBusy ? "Reequilibrando…" : "Reequilibrar letras A–D"}
-            </button>
-          </div>
         </div>
       )}
 
