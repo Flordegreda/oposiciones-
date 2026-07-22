@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateContentCache } from "@/lib/revalidate-content";
+import { revalidateAfterFichasChange } from "@/lib/revalidate-content";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
 
@@ -17,7 +17,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const { error } = await supabase.from("mazos_fichas").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  revalidateContentCache();
+  revalidateAfterFichasChange();
   return NextResponse.json({ ok: true });
 }
 
@@ -51,6 +51,6 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  revalidateContentCache();
+  revalidateAfterFichasChange();
   return NextResponse.json(data);
 }

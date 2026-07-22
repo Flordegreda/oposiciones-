@@ -6,7 +6,8 @@ import { JEX_SUBTITLE } from "@/lib/constants";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 
-export const revalidate = 300;
+/** Lista de mazos: siempre fresca tras importar (evita pantalla vacía por ISR). */
+export const dynamic = "force-dynamic";
 
 export default async function FichasPage() {
   let sections: Awaited<ReturnType<typeof fetchMazosGrouped>> = [];

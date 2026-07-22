@@ -1,18 +1,15 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
-import { revalidateAllCaches } from "@/lib/revalidate-content";
+import { revalidateAllCaches, revalidateAppPaths } from "@/lib/revalidate-content";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PATHS = ["/admin", "/practicar", "/simulacro", "/fichas", "/resumenes"] as const;
-
 export async function POST() {
   try {
     revalidateAllCaches();
-    for (const path of PATHS) {
-      revalidatePath(path);
-    }
+    revalidateAppPaths();
+    revalidatePath("/fichas", "layout");
 
     return NextResponse.json({
       message: "Caché del servidor limpiada. Los datos se volverán a cargar desde Supabase.",

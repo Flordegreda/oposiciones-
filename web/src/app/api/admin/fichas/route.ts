@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateContentCache } from "@/lib/revalidate-content";
+import { revalidateAfterFichasChange } from "@/lib/revalidate-content";
 import { parseFichasText } from "@/lib/parse-fichas-text";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
   const { error: insErr } = await supabase.from("fichas").insert(rows);
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
-  revalidateContentCache();
+  revalidateAfterFichasChange();
 
   return NextResponse.json({
     mazoId,

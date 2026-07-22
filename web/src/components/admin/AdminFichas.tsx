@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { MazoFichas } from "@/lib/queries/fichas";
@@ -15,17 +15,18 @@ type Props = {
   schemaOk: boolean;
 };
 
-const EJEMPLO = `P: ¿Qué es el principio de legalidad?
-R: Que la Administración solo puede actuar cuando una norma se lo permite.
+const EJEMPLO = `P: ¿Quién garantiza el derecho a la tutela judicial efectiva?
+R: Art. 24.1 CE: todos tienen derecho a obtener la tutela efectiva de los jueces y tribunales en el ejercicio de sus derechos e intereses legítimos, sin que, en ningún caso, pueda producirse indefensión.
 
-P: Artículo 103 CE — ¿a quién sirve la Administración?
-R: Con objetividad los intereses generales.
+P: ¿Puede la Administración actuar sin habilitación legal?
+R: No. Principio de legalidad (art. 103.1 CE / art. 9.1 CE): la Administración pública actúa con sometimiento pleno a la ley y al Derecho.
 
-frente :: dorso en una línea
-pregunta con tab\trespuesta con tab`;
+P: Art. 103.1 CE — ¿a quién sirve la Administración?
+R: Con objetividad los intereses generales y actúa de acuerdo con los principios de eficacia, jerarquía, descentralización, desconcentración y coordinación.`;
 
 export function AdminFichas({ materias, mazos, fichasOk, schemaOk }: Props) {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [materiaId, setMateriaId] = useState(materias[0]?.id ?? "");
   const [nombre, setNombre] = useState("");
   const [texto, setTexto] = useState("");
@@ -121,13 +122,28 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk }: Props) {
       {err && <p className="error">{err}</p>}
 
       <div className="card card-elevated">
-        <h2>Importar fichas</h2>
-        <p className="muted small">
-          Pega texto con <strong>pregunta y respuesta</strong> (no opciones A/B/C/D). Formatos:{" "}
-          <code>P:</code>/<code>R:</code>, <code>Q:</code>/<code>A:</code>,{" "}
-          <code>Respuesta:</code>, o <code>frente :: dorso</code>. Se verán en{" "}
-          <Link href="/fichas">Fichas</Link>.
+        <h2 className="admin-section-title">Pegar fichas en texto plano</h2>
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Igual que los tests: pega el bloque generado por tu IA (docenas o cientos de
+          fichas) o carga un <code>.txt</code>. Solo pregunta/respuesta — sin A/B/C/D. Se
+          verán en <Link href="/fichas">Fichas</Link>.
         </p>
+
+        <div className="cafe-highlight" style={{ marginTop: "0.75rem" }}>
+          <strong>Formato de importación (salida del prompt):</strong>
+          <pre className="format-ejemplo">{`P: ¿pregunta breve y concreta?
+R: Respuesta con el dato normativo (art. X norma: …).
+
+P: ¿otra pregunta?
+R: Otra respuesta.
+
+---`}</pre>
+          <p className="muted small" style={{ marginTop: "0.5rem" }}>
+            Una ficha = bloque <code>P:</code> + <code>R:</code> separado por línea en
+            blanco (o <code>---</code>). También vale <code>Q:</code>/<code>A:</code> o{" "}
+            <code>frente :: dorso</code> en una línea.
+          </p>
+        </div>
 
         <div className="form-grid-fields carga-campos" style={{ marginTop: "0.75rem" }}>
           <label>
@@ -196,22 +212,53 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk }: Props) {
           )}
         </div>
 
+        <label className="file-upload" style={{ marginTop: "0.75rem" }}>
+          Archivo .txt (opcional)
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".txt,text/plain"
+            disabled={busy !== null}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                const text = typeof reader.result === "string" ? reader.result : "";
+                setTexto(text);
+                if (!nombre.trim()) {
+                  setNombre(file.name.replace(/\.txt$/i, "").trim() || "Mazo");
+                }
+                setMsg(`Cargado «${file.name}»`);
+                setErr(null);
+              };
+              reader.onerror = () => setErr("No se pudo leer el archivo");
+              reader.readAsText(file, "UTF-8");
+              if (fileRef.current) fileRef.current.value = "";
+            }}
+          />
+          <span className="btn-secondary btn-sm">Elegir .txt</span>
+        </label>
+
         <label style={{ display: "block", marginTop: "0.75rem" }}>
-          Texto
+          Texto de las fichas
           <textarea
+            className="textarea-taller"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            rows={12}
-            placeholder={EJEMPLO}
+            rows={16}
+            placeholder="Pega aquí el bloque completo generado por la IA…"
             disabled={busy !== null}
-            style={{ width: "100%", fontFamily: "inherit" }}
           />
         </label>
 
-        <p className="muted small">
-          Vista previa: <strong>{previewCount}</strong> ficha
-          {previewCount !== 1 ? "s" : ""} detectada{previewCount !== 1 ? "s" : ""}.
-        </p>
+        {texto.trim() && (
+          <p className={previewCount > 0 ? "ok" : "error"} style={{ marginTop: "0.5rem" }}>
+            {previewCount > 0
+              ? `${previewCount} ficha${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""} — listas para importar`
+              : "No se detectan fichas. Revisa que cada bloque tenga P: y R:."}
+          </p>
+        )}
 
         <div className="form-actions">
           <button
@@ -220,7 +267,11 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk }: Props) {
             disabled={busy !== null || !texto.trim() || previewCount === 0}
             onClick={() => void importar()}
           >
-            {busy === "import" ? "Importando…" : "Importar fichas"}
+            {busy === "import"
+              ? "Importando…"
+              : previewCount > 0
+                ? `Importar ${previewCount} ficha${previewCount !== 1 ? "s" : ""}`
+                : "Importar fichas"}
           </button>
           <button
             type="button"
