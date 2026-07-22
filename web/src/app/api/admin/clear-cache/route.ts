@@ -5,7 +5,7 @@ import { revalidateAllCaches } from "@/lib/revalidate-content";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PATHS = ["/admin", "/practicar", "/simulacro"] as const;
+const PATHS = ["/admin", "/practicar", "/simulacro", "/fichas", "/resumenes"] as const;
 
 export async function POST() {
   try {

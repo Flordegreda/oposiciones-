@@ -106,3 +106,19 @@ async function uncachedResumenesSchemaReady(): Promise<boolean> {
 export function resumenesSchemaReady(): Promise<boolean> {
   return withSchemaCache("resumenes-ready", uncachedResumenesSchemaReady);
 }
+
+async function uncachedFichasSchemaReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("mazos_fichas").select("id, nombre").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "mazos_fichas" does not exist') ||
+    (msg.includes("mazos_fichas") && msg.includes("does not exist"))
+  );
+}
+
+export function fichasSchemaReady(): Promise<boolean> {
+  return withSchemaCache("fichas-ready", uncachedFichasSchemaReady);
+}

@@ -16,6 +16,11 @@ const items = [
       p === "/practicar" || p.startsWith("/test/") || p.startsWith("/tarjetas/"),
   },
   {
+    href: "/fichas",
+    label: "Fichas",
+    match: (p: string) => p.startsWith("/fichas"),
+  },
+  {
     href: "/resumenes",
     label: "Resúmenes",
     match: (p: string) => p.startsWith("/resumenes") || p.startsWith("/resumen/"),

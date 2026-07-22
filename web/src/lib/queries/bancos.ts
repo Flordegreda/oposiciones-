@@ -1,7 +1,7 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
-import { preguntasTableExists, preguntasRpcReady, resumenesSchemaReady, supuestosSchemaReady } from "@/lib/queries/schema";
+import { preguntasTableExists, preguntasRpcReady, resumenesSchemaReady, supuestosSchemaReady, fichasSchemaReady } from "@/lib/queries/schema";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -435,24 +435,33 @@ export type AdminPageData = {
   supuestosOk: boolean;
   preguntasRpcOk: boolean;
   resumenesOk: boolean;
+  fichasOk: boolean;
 };
 
 /** Una sola pasada: bancos + materias + stats (evita consultas duplicadas en /admin). */
 export async function getAdminPageDataUncached(): Promise<AdminPageData> {
   const supabase = getSupabase();
 
-  const [schemaOk, supuestosOk, preguntasRpcOk, resumenesOk, materiasRes, bancosRes] =
-    await Promise.all([
-      preguntasTableExists(),
-      supuestosSchemaReady(),
-      preguntasRpcReady(),
-      resumenesSchemaReady(),
-      supabase.from("materias").select("id, nombre").order("nombre"),
-      supabase
-        .from("bancos")
-        .select("id, nombre, tipo, materia_id, active, linea_id, materias(nombre)")
-        .order("nombre"),
-    ]);
+  const [
+    schemaOk,
+    supuestosOk,
+    preguntasRpcOk,
+    resumenesOk,
+    fichasOk,
+    materiasRes,
+    bancosRes,
+  ] = await Promise.all([
+    preguntasTableExists(),
+    supuestosSchemaReady(),
+    preguntasRpcReady(),
+    resumenesSchemaReady(),
+    fichasSchemaReady(),
+    supabase.from("materias").select("id, nombre").order("nombre"),
+    supabase
+      .from("bancos")
+      .select("id, nombre, tipo, materia_id, active, linea_id, materias(nombre)")
+      .order("nombre"),
+  ]);
 
   if (materiasRes.error) throw materiasRes.error;
   if (bancosRes.error) throw bancosRes.error;
@@ -471,6 +480,7 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     supuestosOk,
     preguntasRpcOk,
     resumenesOk,
+    fichasOk,
   };
 }
 

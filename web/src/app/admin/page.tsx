@@ -9,12 +9,14 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 
 import { AdminPreguntasRpcSetup } from "@/components/admin/AdminPreguntasRpcSetup";
 import { AdminResumenesSetup } from "@/components/admin/AdminResumenesSetup";
+import { AdminFichasSetup } from "@/components/admin/AdminFichasSetup";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
 import { fetchResumenesGrouped } from "@/lib/queries/resumenes";
+import { fetchMazosFichas } from "@/lib/queries/fichas";
 
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -76,7 +78,9 @@ export default async function AdminPage({ searchParams }: PageProps) {
   const supuestosOk = data?.supuestosOk ?? true;
   const preguntasRpcOk = data?.preguntasRpcOk ?? true;
   const resumenesOk = data?.resumenesOk ?? false;
+  const fichasOk = data?.fichasOk ?? false;
   const resumenesSections = resumenesOk ? await fetchResumenesGrouped() : [];
+  const mazosFichas = fichasOk ? await fetchMazosFichas({ activeOnly: false }) : [];
 
 
 
@@ -128,6 +132,8 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
         {schemaOk && !resumenesOk && <AdminResumenesSetup />}
 
+        {schemaOk && !fichasOk && <AdminFichasSetup />}
+
 
 
         {schemaOk && stats.preguntas === 0 && bancos.length > 0 && (
@@ -156,6 +162,8 @@ export default async function AdminPage({ searchParams }: PageProps) {
           supuestosOk={supuestosOk}
           resumenesOk={resumenesOk}
           resumenesSections={resumenesSections}
+          fichasOk={fichasOk}
+          mazosFichas={mazosFichas}
         />
 
 
