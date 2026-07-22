@@ -22,7 +22,7 @@ import { JEX_SUBTITLE } from "@/lib/constants";
 
 
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 const LEGACY_MAIN_TABS = new Set(["temario", "contenido", "materias", "bancos"]);
 
@@ -65,6 +65,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
     practico: { bancos: 0, preguntas: 0 },
     mazosFichas: 0,
     fichas: 0,
+    resumenes: 0,
     porMateria: [],
   };
 

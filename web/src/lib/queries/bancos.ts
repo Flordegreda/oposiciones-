@@ -3,6 +3,7 @@ import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
 import { preguntasTableExists, preguntasRpcReady, resumenesSchemaReady, supuestosSchemaReady, fichasSchemaReady } from "@/lib/queries/schema";
 import { countFichasTotals } from "@/lib/queries/fichas";
+import { countResumenesTotals } from "@/lib/queries/resumenes";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -62,6 +63,8 @@ export type MaterialStats = {
   mazosFichas: number;
   /** Total de fichas pregunta/respuesta. */
   fichas: number;
+  /** PDFs de resúmenes subidos. */
+  resumenes: number;
   porMateria: MateriaStatsRow[];
 };
 
@@ -398,6 +401,7 @@ function buildMaterialStats(
     practico: emptyTipoStats(),
     mazosFichas: 0,
     fichas: 0,
+    resumenes: 0,
     porMateria: [],
   };
 
@@ -480,11 +484,23 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     : new Map<string, number>();
 
   const stats = buildMaterialStats(materias, bancos, counts);
+  const extras: Promise<void>[] = [];
   if (fichasOk) {
-    const fichasTotals = await countFichasTotals();
-    stats.mazosFichas = fichasTotals.mazos;
-    stats.fichas = fichasTotals.fichas;
+    extras.push(
+      countFichasTotals().then((t) => {
+        stats.mazosFichas = t.mazos;
+        stats.fichas = t.fichas;
+      }),
+    );
   }
+  if (resumenesOk) {
+    extras.push(
+      countResumenesTotals().then((n) => {
+        stats.resumenes = n;
+      }),
+    );
+  }
+  if (extras.length) await Promise.all(extras);
 
   return {
     bancos: sortBancosByNombre(attachPreguntaCounts(bancos, counts)),
@@ -500,11 +516,12 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
 
 export async function getMaterialStatsUncached(): Promise<MaterialStats> {
   const supabase = getSupabase();
-  const [{ data: materias, error: mErr }, { data: bancos, error: bErr }, fichasOk] =
+  const [{ data: materias, error: mErr }, { data: bancos, error: bErr }, fichasOk, resumenesOk] =
     await Promise.all([
       supabase.from("materias").select("id, nombre").order("nombre"),
       supabase.from("bancos").select("id, materia_id, tipo"),
       fichasSchemaReady(),
+      resumenesSchemaReady(),
     ]);
 
   if (mErr) throw mErr;
@@ -516,11 +533,23 @@ export async function getMaterialStatsUncached(): Promise<MaterialStats> {
     : new Map<string, number>();
 
   const stats = buildMaterialStats(materias ?? [], bancos ?? [], counts);
+  const extras: Promise<void>[] = [];
   if (fichasOk) {
-    const fichasTotals = await countFichasTotals();
-    stats.mazosFichas = fichasTotals.mazos;
-    stats.fichas = fichasTotals.fichas;
+    extras.push(
+      countFichasTotals().then((t) => {
+        stats.mazosFichas = t.mazos;
+        stats.fichas = t.fichas;
+      }),
+    );
   }
+  if (resumenesOk) {
+    extras.push(
+      countResumenesTotals().then((n) => {
+        stats.resumenes = n;
+      }),
+    );
+  }
+  if (extras.length) await Promise.all(extras);
   return stats;
 }
 

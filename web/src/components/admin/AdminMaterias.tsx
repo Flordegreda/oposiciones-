@@ -24,6 +24,7 @@ function downloadJson(data: unknown, filename: string) {
 export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
   const fichas = stats.fichas ?? 0;
   const mazosFichas = stats.mazosFichas ?? 0;
+  const resumenes = stats.resumenes ?? 0;
 
   return (
     <section className="admin-overview card card-elevated" aria-label="Resumen del material">
@@ -32,9 +33,8 @@ export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
         <p className="admin-overview-total">{stats.preguntas.toLocaleString("es-ES")}</p>
         <p className="muted small admin-overview-meta">
           {stats.materias} materias · {stats.bancos} bancos
-          {fichas > 0 || mazosFichas > 0
-            ? ` · ${fichas.toLocaleString("es-ES")} fichas`
-            : ""}
+          {fichas > 0 ? ` · ${fichas.toLocaleString("es-ES")} fichas` : ""}
+          {resumenes > 0 ? ` · ${resumenes.toLocaleString("es-ES")} resúmenes` : ""}
         </p>
       </div>
       <div className="admin-overview-types">
@@ -58,6 +58,13 @@ export function AdminMaterialStats({ stats }: { stats: MaterialStats }) {
           <span className="muted small">
             {mazosFichas} mazo{mazosFichas !== 1 ? "s" : ""}
           </span>
+        </div>
+        <div className="admin-overview-type admin-overview-type--resumenes">
+          <span className="admin-overview-type-label">Resúmenes</span>
+          <span className="admin-overview-type-value">
+            {resumenes.toLocaleString("es-ES")}
+          </span>
+          <span className="muted small">PDF{resumenes !== 1 ? "s" : ""}</span>
         </div>
       </div>
     </section>
