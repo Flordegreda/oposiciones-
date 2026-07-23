@@ -47,7 +47,7 @@ export function materiasFromSections(
   return sections.map((s) => ({ id: s.id, nombre: s.nombre }));
 }
 
-export function materiasFromResumenes(
+export function materiasFromMateriaSections(
   sections: { materiaId: string; materiaNombre: string }[],
 ): MateriaOption[] {
   return sections

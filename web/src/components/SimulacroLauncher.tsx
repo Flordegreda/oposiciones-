@@ -113,7 +113,6 @@ export function SimulacroLauncher({ meta }: Props) {
           backLabel="Simulacro"
         />
         <ExamSession
-          bancoId="simulacro"
           title={running.title}
           preguntas={running.list}
           examMode={running.examMode}

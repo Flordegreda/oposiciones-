@@ -21,12 +21,6 @@ const items = [
     label: "Fichas",
     match: (p: string) => p.startsWith("/fichas"),
   },
-  {
-    href: "/resumenes",
-    label: "Resúmenes",
-    match: (p: string) => p.startsWith("/resumenes") || p.startsWith("/resumen/"),
-    desktopOnly: true,
-  },
   { href: "/simulacro", label: "Simulacro", match: (p: string) => p.startsWith("/simulacro") },
   { href: "/admin", label: "Material", match: (p: string) => p.startsWith("/admin") },
 ];

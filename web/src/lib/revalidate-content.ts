@@ -17,7 +17,7 @@ export function revalidateAllCaches() {
 
 /** Rutas ISR que deben refrescarse tras cambios de contenido. */
 export function revalidateAppPaths() {
-  for (const path of ["/practicar", "/fichas", "/admin", "/simulacro", "/resumenes"] as const) {
+  for (const path of ["/practicar", "/fichas", "/admin", "/simulacro"] as const) {
     revalidatePath(path);
   }
 }

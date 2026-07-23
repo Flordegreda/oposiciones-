@@ -90,23 +90,6 @@ export function preguntasRpcReady(): Promise<boolean> {
   return withSchemaCache("preguntas-rpc", uncachedPreguntasRpcReady);
 }
 
-async function uncachedResumenesSchemaReady(): Promise<boolean> {
-  const supabase = getSupabase();
-  const { error } = await supabase.from("materia_resumenes").select("id, titulo").limit(0);
-  if (!error) return true;
-  const msg = error.message.toLowerCase();
-  return !(
-    msg.includes("could not find the table") ||
-    msg.includes('relation "materia_resumenes" does not exist') ||
-    (msg.includes("materia_resumenes") && msg.includes("does not exist")) ||
-    (msg.includes("titulo") && msg.includes("does not exist"))
-  );
-}
-
-export function resumenesSchemaReady(): Promise<boolean> {
-  return withSchemaCache("resumenes-ready", uncachedResumenesSchemaReady);
-}
-
 async function uncachedFichasSchemaReady(): Promise<boolean> {
   const supabase = getSupabase();
   const { error } = await supabase.from("mazos_fichas").select("id, nombre").limit(0);

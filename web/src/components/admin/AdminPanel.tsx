@@ -7,9 +7,7 @@ import { AdminCocinar } from "@/components/admin/AdminCocinar";
 import { AdminBancos } from "@/components/admin/AdminBancos";
 import { AdminBackup } from "@/components/admin/AdminBackup";
 import { AdminMaterias, AdminMaterialStats } from "@/components/admin/AdminMaterias";
-import { AdminResumenes } from "@/components/admin/AdminResumenes";
 import { AdminFichas } from "@/components/admin/AdminFichas";
-import type { ResumenPdfSection } from "@/lib/resumenes-types";
 import type { BancoRow, MaterialStats } from "@/lib/queries/bancos";
 import type { MazoFichas } from "@/lib/queries/fichas";
 
@@ -21,13 +19,11 @@ type Props = {
   stats: MaterialStats;
   schemaOk: boolean;
   supuestosOk?: boolean;
-  resumenesOk?: boolean;
-  resumenesSections?: ResumenPdfSection[];
   fichasOk?: boolean;
   mazosFichas?: MazoFichas[];
 };
 
-const tabs = ["importar", "resumenes", "fichas", "copia"] as const;
+const tabs = ["importar", "fichas", "copia"] as const;
 
 type AdminTab = (typeof tabs)[number] | null;
 
@@ -37,8 +33,6 @@ export function AdminPanel({
   stats,
   schemaOk,
   supuestosOk = true,
-  resumenesOk = false,
-  resumenesSections = [],
   fichasOk = false,
   mazosFichas = [],
 }: Props) {
@@ -73,15 +67,6 @@ export function AdminPanel({
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "resumenes"}
-          className={tab === "resumenes" ? "active" : ""}
-          onClick={() => setTab("resumenes")}
-        >
-          Resúmenes
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={tab === "fichas"}
           className={tab === "fichas" ? "active" : ""}
           onClick={() => setTab("fichas")}
@@ -109,14 +94,6 @@ export function AdminPanel({
       )}
       {tab === "importar" && (
         <AdminCocinar materias={materias} schemaOk={schemaOk} supuestosOk={supuestosOk} />
-      )}
-      {tab === "resumenes" && (
-        <AdminResumenes
-          materias={materias}
-          sections={resumenesSections}
-          resumenesOk={resumenesOk}
-          schemaOk={schemaOk}
-        />
       )}
       {tab === "fichas" && (
         <AdminFichas

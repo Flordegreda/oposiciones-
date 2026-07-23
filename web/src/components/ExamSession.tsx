@@ -17,7 +17,6 @@ type AnswerMeta = {
 };
 
 type Props = {
-  bancoId: string;
   title: string;
   preguntas: PublicExamPregunta[];
   examMode: boolean;
@@ -43,7 +42,6 @@ function emptyFlags(n: number): boolean[] {
 }
 
 export function ExamSession({
-  bancoId: _bancoId,
   title,
   preguntas: active,
   examMode,

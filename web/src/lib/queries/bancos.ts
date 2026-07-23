@@ -1,7 +1,7 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
-import { preguntasTableExists, preguntasRpcReady, resumenesSchemaReady, supuestosSchemaReady, fichasSchemaReady } from "@/lib/queries/schema";
+import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady, fichasSchemaReady } from "@/lib/queries/schema";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -61,8 +61,6 @@ export type MaterialStats = {
   mazosFichas: number;
   /** Total de fichas pregunta/respuesta. */
   fichas: number;
-  /** PDFs de resúmenes subidos. */
-  resumenes: number;
   porMateria: MateriaStatsRow[];
 };
 
@@ -377,7 +375,6 @@ function buildMaterialStats(
     practico: emptyTipoStats(),
     mazosFichas: 0,
     fichas: 0,
-    resumenes: 0,
     porMateria: [],
   };
 
@@ -421,7 +418,6 @@ export type AdminPageData = {
   schemaOk: boolean;
   supuestosOk: boolean;
   preguntasRpcOk: boolean;
-  resumenesOk: boolean;
   fichasOk: boolean;
 };
 
@@ -433,7 +429,6 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     schemaOk,
     supuestosOk,
     preguntasRpcOk,
-    resumenesOk,
     fichasOk,
     materiasRes,
     bancosRes,
@@ -441,7 +436,6 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     preguntasTableExists(),
     supuestosSchemaReady(),
     preguntasRpcReady(),
-    resumenesSchemaReady(),
     fichasSchemaReady(),
     supabase.from("materias").select("id, nombre").order("nombre"),
     supabase
@@ -474,16 +468,6 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
       })(),
     );
   }
-  if (resumenesOk) {
-    extras.push(
-      (async () => {
-        const { count } = await getSupabase()
-          .from("materia_resumenes")
-          .select("*", { count: "exact", head: true });
-        stats.resumenes = count ?? 0;
-      })(),
-    );
-  }
   if (extras.length) await Promise.all(extras);
 
   return {
@@ -493,7 +477,6 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     schemaOk,
     supuestosOk,
     preguntasRpcOk,
-    resumenesOk,
     fichasOk,
   };
 }

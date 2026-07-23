@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { buildFullBackup, buildMateriaBackup } from "@/lib/queries/export";
-import { deleteResumenFiles } from "@/lib/resumenes-storage";
-import { fetchStoragePathsForMateria } from "@/lib/queries/resumenes";
-import { resumenesSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
@@ -86,16 +83,6 @@ export async function DELETE(req: NextRequest) {
     .from("bancos")
     .select("*", { count: "exact", head: true })
     .eq("materia_id", id);
-  if (await resumenesSchemaReady()) {
-    const paths = await fetchStoragePathsForMateria(id);
-    if (paths.length) {
-      try {
-        await deleteResumenFiles(paths);
-      } catch {
-        /* ignore storage cleanup errors */
-      }
-    }
-  }
   await supabase.from("bancos").delete().eq("materia_id", id);
   const { error } = await supabase.from("materias").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

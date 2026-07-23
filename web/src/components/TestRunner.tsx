@@ -45,7 +45,6 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
   if (session) {
     return (
       <ExamSession
-        bancoId={bancoId}
         title={bancoNombre}
         preguntas={session.list}
         examMode={session.examMode}

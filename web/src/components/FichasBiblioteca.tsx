@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { MateriaFilter, materiasFromResumenes } from "@/components/MateriaFilter";
+import { MateriaFilter, materiasFromMateriaSections } from "@/components/MateriaFilter";
 import type { MazoFichasSection } from "@/lib/queries/fichas";
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
 export function FichasBiblioteca({ sections }: Props) {
   const [materiaId, setMateriaId] = useState<string | null>(null);
 
-  const materias = useMemo(() => materiasFromResumenes(sections), [sections]);
+  const materias = useMemo(() => materiasFromMateriaSections(sections), [sections]);
 
   const visible = useMemo(() => {
     if (!materiaId) return sections;
