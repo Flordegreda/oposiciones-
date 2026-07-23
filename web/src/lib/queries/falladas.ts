@@ -19,10 +19,21 @@ export type ColaRepasoCounts = {
 };
 
 function normalizeDeviceId(raw: string): string | null {
-  const id = raw.trim();
-  if (id.length < 8 || id.length > 80) return null;
-  if (!/^[\w.-]+$/.test(id)) return null;
-  return id;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  const upper = trimmed.toUpperCase().replace(/\s+/g, "");
+  const jex = upper.replace(/[^A-Z0-9-]/g, "");
+  const m = jex.match(/^JEX-?[A-Z0-9]{4}-?[A-Z0-9]{4}$/);
+  if (m) {
+    const body = jex.replace(/^JEX-?/, "").replace(/-/g, "");
+    if (body.length !== 8) return null;
+    return `JEX-${body.slice(0, 4)}-${body.slice(4)}`;
+  }
+
+  if (trimmed.length < 8 || trimmed.length > 80) return null;
+  if (!/^[\w.-]+$/.test(trimmed)) return null;
+  return trimmed;
 }
 
 export async function getColaCounts(dispositivoId: string): Promise<ColaRepasoCounts> {
