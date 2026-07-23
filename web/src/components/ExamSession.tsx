@@ -9,7 +9,9 @@ import {
   formatExamTime,
   originalOptionToDisplay,
 } from "@/lib/exam-utils";
+import { getDispositivoId } from "@/lib/dispositivo-id";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
+import Link from "next/link";
 
 type AnswerMeta = {
   respuesta: number;
@@ -28,6 +30,11 @@ type Props = {
   optionMaps?: number[][];
   /** Opciones originales antes de barajar (resultado e impresión). */
   originalOpciones?: string[][];
+  /**
+   * Si true, al terminar se quitan de la cola las acertadas
+   * (modo repaso de falladas).
+   */
+  repasoMode?: boolean;
 };
 
 type Phase = "test" | "result";
@@ -43,6 +50,7 @@ function emptyFlags(n: number): boolean[] {
 }
 
 export function ExamSession({
+  bancoId,
   title,
   preguntas: active,
   examMode,
@@ -51,10 +59,12 @@ export function ExamSession({
   onFinish,
   optionMaps: optionMapsProp,
   originalOpciones: originalOpcionesProp,
+  repasoMode = false,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const timerIdRef = useRef<number | null>(null);
+  const colaSyncedRef = useRef(false);
   const [phase, setPhase] = useState<Phase>("test");
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(() =>
@@ -65,6 +75,7 @@ export function ExamSession({
   const [remaining, setRemaining] = useState<number | null>(timerSeconds);
   const [timerEnded, setTimerEnded] = useState(false);
   const [grading, setGrading] = useState(false);
+  const [colaMsg, setColaMsg] = useState<string | null>(null);
 
   const optionMaps = useMemo(
     () =>
@@ -117,6 +128,109 @@ export function ExamSession({
     [active, answerMeta, originalOpciones],
   );
   const canPrintWithKey = phase === "result" && answerMeta.size > 0;
+
+  useEffect(() => {
+    if (phase !== "result") return;
+    if (colaSyncedRef.current) return;
+    // En modo examen esperamos a tener metadatos de corrección
+    if (examMode && answerMeta.size === 0) return;
+
+    colaSyncedRef.current = true;
+    const dispositivoId = getDispositivoId();
+    if (!dispositivoId) return;
+
+    const failedOrFlagged: {
+      preguntaId: string;
+      bancoId?: string | null;
+      motivo: "fallada" | "dudosa";
+    }[] = [];
+    const acertadas: string[] = [];
+
+    for (let i = 0; i < active.length; i++) {
+      const q = active[i];
+      if (!q) continue;
+      const ans = answers[i];
+      const meta = answerMeta.get(q.id);
+      const map = optionMaps[i] ?? [];
+      const isOk =
+        ans !== null &&
+        meta !== undefined &&
+        displayOptionToOriginal(map, ans) === meta.respuesta;
+
+      if (isOk) {
+        acertadas.push(q.id);
+        continue;
+      }
+
+      // Incorrecta, sin responder o dudosa → cola
+      if (ans !== null && meta !== undefined && !isOk) {
+        failedOrFlagged.push({
+          preguntaId: q.id,
+          bancoId: q.bancoId || bancoId,
+          motivo: "fallada",
+        });
+      } else if (flags[i]) {
+        failedOrFlagged.push({
+          preguntaId: q.id,
+          bancoId: q.bancoId || bancoId,
+          motivo: "dudosa",
+        });
+      } else if (ans === null && examMode) {
+        // En examen, no respondidas también conviene repasar
+        failedOrFlagged.push({
+          preguntaId: q.id,
+          bancoId: q.bancoId || bancoId,
+          motivo: "fallada",
+        });
+      }
+    }
+
+    void (async () => {
+      try {
+        if (repasoMode && acertadas.length) {
+          await fetch("/api/repaso/falladas", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dispositivoId, preguntaIds: acertadas }),
+          });
+        }
+
+        if (failedOrFlagged.length) {
+          const res = await fetch("/api/repaso/falladas", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dispositivoId, items: failedOrFlagged }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setColaMsg(
+              data.message ||
+                `Guardadas ${failedOrFlagged.length} en la cola de repaso.`,
+            );
+          } else if (data.error) {
+            // Tabla no activa u otro error: no bloquear el resultado
+            setColaMsg(null);
+          }
+        } else if (repasoMode && acertadas.length) {
+          setColaMsg(
+            `Quitadas ${acertadas.length} acertada${acertadas.length !== 1 ? "s" : ""} de la cola.`,
+          );
+        }
+      } catch {
+        /* silencio: el resultado del test no depende de la cola */
+      }
+    })();
+  }, [
+    phase,
+    examMode,
+    answerMeta,
+    active,
+    answers,
+    flags,
+    optionMaps,
+    bancoId,
+    repasoMode,
+  ]);
 
   const finishTest = useCallback(async () => {
     if (examMode) {
@@ -305,6 +419,16 @@ export function ExamSession({
           </div>
         )}
 
+        {colaMsg && <p className="ok">{colaMsg}</p>}
+
+        {(failCount > 0 || dudosaCount > 0) && !repasoMode && (
+          <p className="muted small">
+            Las incorrectas y dudosas se guardan para repasar más adelante en{" "}
+            <Link href="/repaso">Repaso</Link>
+            {failCount + dudosaCount > 0 ? ` (${failCount + (examMode ? 0 : dudosaCount)} en este intento)` : ""}.
+          </p>
+        )}
+
         <div className="result-grid">
           <div className="result-stat">
             <span className="result-stat-label">Correctas</span>
@@ -368,6 +492,11 @@ export function ExamSession({
         <div className="test-actions test-actions--result">
           {canPrintWithKey && (
             <TestPrintButton title={title} preguntas={printable} />
+          )}
+          {!repasoMode && (failCount > 0 || dudosaCount > 0) && (
+            <Link href="/repaso" className="btn-secondary">
+              Ir a repaso
+            </Link>
           )}
           <button type="button" className="btn-primary" onClick={() => onFinish?.()}>
             {onFinish ? "Volver" : "Repetir"}

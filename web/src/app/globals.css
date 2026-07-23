@@ -1593,6 +1593,16 @@ h1 {
   gap: 0.65rem;
 }
 
+.flashcard-grade {
+  justify-content: stretch;
+}
+
+.flashcard-grade .btn-primary,
+.flashcard-grade .btn-secondary {
+  flex: 1;
+  min-height: 2.75rem;
+}
+
 .flashcard-nav .btn-secondary {
   flex: 1;
 }
@@ -2438,6 +2448,14 @@ code {
  border-left: 4px solid var(--accent);
 }
 
+.admin-overview-type--fichas {
+ border-left: 4px solid #2f6f5e;
+}
+
+.admin-overview-type--resumenes {
+ border-left: 4px solid #6b5b4f;
+}
+
 .admin-overview-type-label {
  display: block;
  font-size: 0.75rem;
@@ -2453,6 +2471,12 @@ code {
  font-weight: 700;
  line-height: 1.1;
  color: var(--text);
+}
+
+@media (min-width: 900px) {
+  .admin-overview-types {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 @media (max-width: 720px) {

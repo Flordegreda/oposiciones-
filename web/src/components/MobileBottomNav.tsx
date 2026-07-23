@@ -13,7 +13,15 @@ const items = [
     href: "/practicar",
     label: "Tests",
     match: (p: string) =>
-      p === "/practicar" || p.startsWith("/test/") || p.startsWith("/tarjetas/"),
+      p === "/practicar" ||
+      p.startsWith("/test/") ||
+      p.startsWith("/tarjetas/") ||
+      p.startsWith("/repaso"),
+  },
+  {
+    href: "/fichas",
+    label: "Fichas",
+    match: (p: string) => p.startsWith("/fichas"),
   },
   {
     href: "/resumenes",

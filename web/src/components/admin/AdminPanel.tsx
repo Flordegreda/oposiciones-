@@ -8,8 +8,10 @@ import { AdminBancos } from "@/components/admin/AdminBancos";
 import { AdminBackup } from "@/components/admin/AdminBackup";
 import { AdminMaterias, AdminMaterialStats } from "@/components/admin/AdminMaterias";
 import { AdminResumenes } from "@/components/admin/AdminResumenes";
+import { AdminFichas } from "@/components/admin/AdminFichas";
 import type { ResumenPdfSection } from "@/lib/resumenes-types";
 import type { BancoRow, MaterialStats } from "@/lib/queries/bancos";
+import type { MazoFichas } from "@/lib/queries/fichas";
 
 type Materia = { id: string; nombre: string; bancos: number };
 
@@ -21,9 +23,11 @@ type Props = {
   supuestosOk?: boolean;
   resumenesOk?: boolean;
   resumenesSections?: ResumenPdfSection[];
+  fichasOk?: boolean;
+  mazosFichas?: MazoFichas[];
 };
 
-const tabs = ["importar", "resumenes", "copia"] as const;
+const tabs = ["importar", "resumenes", "fichas", "copia"] as const;
 
 type AdminTab = (typeof tabs)[number] | null;
 
@@ -35,6 +39,8 @@ export function AdminPanel({
   supuestosOk = true,
   resumenesOk = false,
   resumenesSections = [],
+  fichasOk = false,
+  mazosFichas = [],
 }: Props) {
   const router = useRouter();
   const params = useSearchParams();
@@ -76,6 +82,15 @@ export function AdminPanel({
         <button
           type="button"
           role="tab"
+          aria-selected={tab === "fichas"}
+          className={tab === "fichas" ? "active" : ""}
+          onClick={() => setTab("fichas")}
+        >
+          Fichas
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === "copia"}
           className={tab === "copia" ? "active" : ""}
           onClick={() => setTab("copia")}
@@ -100,6 +115,14 @@ export function AdminPanel({
           materias={materias}
           sections={resumenesSections}
           resumenesOk={resumenesOk}
+          schemaOk={schemaOk}
+        />
+      )}
+      {tab === "fichas" && (
+        <AdminFichas
+          materias={materias}
+          mazos={mazosFichas}
+          fichasOk={fichasOk}
           schemaOk={schemaOk}
         />
       )}

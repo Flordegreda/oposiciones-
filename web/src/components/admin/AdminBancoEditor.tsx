@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BancoRow, PreguntaRow } from "@/lib/queries/bancos";
 import { isEncadenadoBankName } from "@/lib/encadenado-utils";
 import { TestPrintButton } from "@/components/TestPrintButton";
+import {
+  analyzeAnswerDistribution,
+  formatDistribution,
+  ANSWER_LETTERS,
+} from "@/lib/answer-distribution";
 
 type Materia = { id: string; nombre: string };
 
@@ -53,12 +58,25 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
     () => preguntas.find((p) => p.supuesto_texto)?.supuesto_texto ?? "",
   );
   const [supuestoBusy, setSupuestoBusy] = useState(false);
+  const [rebalanceBusy, setRebalanceBusy] = useState(false);
   const savedRef = useRef<Map<string, string>>(new Map());
   const tieneSupuesto = preguntas.some((p) => p.supuesto_id || p.supuesto_texto);
   const muestraSupuesto =
     banco.tipo === "practico" ||
     isEncadenadoBankName(banco.nombre) ||
     tieneSupuesto;
+
+  const answerDist = useMemo(
+    () =>
+      analyzeAnswerDistribution(
+        preguntas.map((p) => ({
+          id: p.id,
+          opciones: p.opciones,
+          respuesta: p.respuesta,
+        })),
+      ),
+    [preguntas],
+  );
 
   useEffect(() => {
     const map = new Map<string, string>();
@@ -200,6 +218,50 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
     router.refresh();
   }
 
+  async function reequilibrarOpciones() {
+    if (!preguntas.length) return;
+    const preview = await fetch(`/api/admin/bancos/${banco.id}/reequilibrar-opciones`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dryRun: true }),
+    });
+    const previewData = await preview.json();
+    if (!preview.ok) {
+      setErr(previewData.error || "No se pudo analizar el banco");
+      return;
+    }
+
+    const ok = confirm(
+      `¿Reequilibrar las letras correctas de este banco?\n\n` +
+        `Ahora: ${previewData.before}\n` +
+        `Después: ${previewData.after}\n\n` +
+        `Se reordenarán las opciones de ${previewData.wouldChange} pregunta(s). ` +
+        `Los textos no cambian — solo la letra A/B/C/D de la correcta.\n\n` +
+        `Útil para PDFs y para que no se memorice «casi siempre B». ` +
+        `En el test online ya se barajan al empezar.`,
+    );
+    if (!ok) return;
+
+    setRebalanceBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/bancos/${banco.id}/reequilibrar-opciones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al reequilibrar");
+      setMsg(`${data.message} Antes: ${data.before}. Ahora: ${data.after}.`);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error al reequilibrar");
+    } finally {
+      setRebalanceBusy(false);
+    }
+  }
+
   function updatePregunta(id: string, patch: Partial<PreguntaRow>) {
     setPreguntas((list) =>
       list.map((p) => (p.id === id ? { ...p, ...patch } : p)),
@@ -312,8 +374,55 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
           >
             Eliminar banco
           </button>
+          <button
+            type="button"
+            className="btn-secondary btn-sm"
+            disabled={rebalanceBusy || busy || preguntas.length < 2}
+            onClick={() => void reequilibrarOpciones()}
+          >
+            {rebalanceBusy ? "Reequilibrando…" : "Reequilibrar letras A–D"}
+          </button>
         </div>
       </div>
+
+      {preguntas.length > 0 && (
+        <div
+          className={`card ${answerDist.skewed ? "card-warning" : "card-elevated"}`}
+          style={{ marginBottom: "1rem" }}
+        >
+          <h3 className="admin-preguntas-title" style={{ marginTop: 0 }}>
+            Distribución de respuestas correctas
+            {answerDist.skewed && (
+              <span className="tipo-pill practico" style={{ marginLeft: "0.5rem" }}>
+                sesgado → {ANSWER_LETTERS[answerDist.dominant] ?? "?"}
+              </span>
+            )}
+          </h3>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            {formatDistribution(answerDist)}
+          </p>
+          {answerDist.skewed ? (
+            <p className="muted small">
+              Más del {Math.round(answerDist.dominantPercent * 100)}% de las correctas están en{" "}
+              <strong>{ANSWER_LETTERS[answerDist.dominant] ?? "?"}</strong>. Pulsa{" "}
+              <strong>Reequilibrar letras A–D</strong> (arriba o aquí) para repartirlas. En el
+              test online ya se barajan al empezar; esto corrige PDF y el banco guardado.
+            </p>
+          ) : (
+            <p className="muted small">
+              Si ves muchas correctas en la misma letra, usa <strong>Reequilibrar letras A–D</strong>.
+              No cambia los textos, solo en qué letra cae la respuesta correcta.
+            </p>
+          )}
+          {answerDist.duplicateOptionIds.length > 0 && (
+            <p className="error" style={{ marginTop: "0.5rem" }}>
+              {answerDist.duplicateOptionIds.length} pregunta
+              {answerDist.duplicateOptionIds.length !== 1 ? "s" : ""} con opciones de texto
+              repetido (revisa a mano).
+            </p>
+          )}
+        </div>
+      )}
 
       {muestraSupuesto && (
         <div className="card admin-supuesto-card">

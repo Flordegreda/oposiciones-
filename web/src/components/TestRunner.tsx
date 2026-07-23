@@ -71,8 +71,9 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
       <div className="test-start-head">
         <h2 className="test-start-title">¿Cómo quieres practicar?</h2>
         <p className="muted small test-start-lead">
-          Elige test con opciones o tarjetas para repaso rápido. Las opciones A/B/C/D se
-          barajan en cada intento.
+          Elige cuántas preguntas hacer. Las opciones A/B/C/D se barajan en cada intento.
+          Para repaso con pregunta/respuesta, usa{" "}
+          <Link href="/fichas">Fichas</Link>.
         </p>
         <div className="test-start-actions">
           <Link href={`/admin/bancos/${bancoId}`} className="btn-secondary btn-sm">
@@ -97,12 +98,6 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
             {bancoNombre}
           </span>
         </button>
-        <Link href={`/tarjetas/${bancoId}`} className="test-mode-btn test-mode-btn--link">
-          <strong>Tarjetas rápidas</strong>
-          <span className="muted small">
-            Enunciado → tap → respuesta y explicación · ideal en móvil
-          </span>
-        </Link>
       </div>
 
       <label className="sim-toggle">

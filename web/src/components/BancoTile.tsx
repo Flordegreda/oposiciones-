@@ -27,9 +27,6 @@ export function BancoTile({ banco }: Props) {
         <Link href={`/test/${banco.id}`} className="banco-tile-action">
           Test
         </Link>
-        <Link href={`/tarjetas/${banco.id}`} className="banco-tile-action banco-tile-action--flash">
-          Tarjetas
-        </Link>
       </div>
     </div>
   );

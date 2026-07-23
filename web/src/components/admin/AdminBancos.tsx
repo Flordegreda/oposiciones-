@@ -211,6 +211,17 @@ export function AdminBancos({ bancos: initial }: Props) {
       {(brokenBancos.length > 0 || bancos.length > 0) && (
         <div className="info-box sim-info" style={{ marginBottom: "1rem" }}>
           <p style={{ margin: 0 }}>
+            <strong>Letras A/B/C/D sesgadas:</strong> si un banco tiene casi siempre la misma
+            respuesta correcta (p. ej. B), ábrelo con <strong>Editar</strong> y usa{" "}
+            <strong>Reequilibrar letras A–D</strong>. No cambia los textos, solo reparte la letra
+            correcta.
+          </p>
+        </div>
+      )}
+
+      {(brokenBancos.length > 0 || bancos.length > 0) && (
+        <div className="info-box sim-info" style={{ marginBottom: "1rem" }}>
+          <p style={{ margin: 0 }}>
             <strong>Enlaces rotos:</strong> bancos sin preguntas o sin materia válida (quedan
             tras partir/fusionar). No aparecen en Tests pero ensucian Material.
             {brokenBancos.length > 0 && (

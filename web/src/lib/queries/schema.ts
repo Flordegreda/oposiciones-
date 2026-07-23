@@ -106,3 +106,51 @@ async function uncachedResumenesSchemaReady(): Promise<boolean> {
 export function resumenesSchemaReady(): Promise<boolean> {
   return withSchemaCache("resumenes-ready", uncachedResumenesSchemaReady);
 }
+
+async function uncachedFichasSchemaReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("mazos_fichas").select("id, nombre").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "mazos_fichas" does not exist') ||
+    (msg.includes("mazos_fichas") && msg.includes("does not exist"))
+  );
+}
+
+export function fichasSchemaReady(): Promise<boolean> {
+  return withSchemaCache("fichas-ready", uncachedFichasSchemaReady);
+}
+
+async function uncachedFalladasSchemaReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("cola_repaso").select("id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "cola_repaso" does not exist') ||
+    (msg.includes("cola_repaso") && msg.includes("does not exist"))
+  );
+}
+
+export function falladasSchemaReady(): Promise<boolean> {
+  return withSchemaCache("falladas-ready", uncachedFalladasSchemaReady);
+}
+
+async function uncachedColaFichasSchemaReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("cola_fichas").select("id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "cola_fichas" does not exist') ||
+    (msg.includes("cola_fichas") && msg.includes("does not exist"))
+  );
+}
+
+export function colaFichasSchemaReady(): Promise<boolean> {
+  return withSchemaCache("cola-fichas-ready", uncachedColaFichasSchemaReady);
+}
