@@ -1,3 +1,5 @@
+import { shuffleQuestionOptions } from "@/lib/exam-utils";
+
 export type PrintablePregunta = {
   enunciado: string;
   opciones: string[];
@@ -7,6 +9,11 @@ export type PrintablePregunta = {
   supuestoTitulo?: string | null;
   supuestoTexto?: string | null;
 };
+
+export function shufflePrintPregunta(p: PrintablePregunta): PrintablePregunta {
+  const { opciones, respuesta } = shuffleQuestionOptions(p.opciones, p.respuesta);
+  return { ...p, opciones, respuesta };
+}
 
 export type PrintSupuesto = {
   id?: string | null;
@@ -19,6 +26,13 @@ export type PrintSection = {
   preguntas: PrintablePregunta[];
   supuestos?: PrintSupuesto[];
 };
+
+export function shufflePrintSections(sections: PrintSection[]): PrintSection[] {
+  return sections.map((section) => ({
+    ...section,
+    preguntas: section.preguntas.map(shufflePrintPregunta),
+  }));
+}
 
 export type PrintBundle = {
   title: string;

@@ -5,6 +5,7 @@ import { join } from "path";
 import {
   collectPrintSupuestos,
   flattenSections,
+  shufflePrintSections,
   type PrintSection,
 } from "@/lib/print-test";
 
@@ -36,14 +37,15 @@ function printCss(): string {
 }
 
 function buildPrintBody(job: PrintHtmlJob): string {
+  const sections = shufflePrintSections(job.sections);
   const date = new Date().toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
   const inline = job.answerStyle === "inline";
-  const flat = flattenSections(job.sections);
-  const multi = job.sections.length > 1 || job.sections.some((s) => s.title);
+  const flat = flattenSections(sections);
+  const multi = sections.length > 1 || sections.some((s) => s.title);
   let counter = 0;
   let body = "";
 
@@ -52,12 +54,12 @@ function buildPrintBody(job: PrintHtmlJob): string {
   body += `<h1 class="print-sheet-title">${esc(job.title)}</h1>`;
   if (job.subtitle) body += `<p class="print-sheet-sub">${esc(job.subtitle)}</p>`;
   body += `<p class="print-sheet-meta">${flat.length} pregunta${flat.length !== 1 ? "s" : ""} · ${esc(date)}`;
-  if (multi && job.sections.length > 1) body += ` · ${job.sections.length} bancos`;
+  if (multi && sections.length > 1) body += ` · ${sections.length} bancos`;
   body += inline ? " · Respuestas marcadas en cada pregunta" : " · Solucionario al final";
   body += `</p></header>`;
 
-  for (let si = 0; si < job.sections.length; si++) {
-    const section = job.sections[si];
+  for (let si = 0; si < sections.length; si++) {
+    const section = sections[si];
     const sectionTitle = section.title.trim() || job.title;
     const sectionSupuestos = collectPrintSupuestos(section);
     const supuestoAtTop = sectionSupuestos.length === 1;
