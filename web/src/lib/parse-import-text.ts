@@ -23,16 +23,36 @@ export type ImportContext = {
 };
 
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
-const ANSWER_RE =
-  /^(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:?\s*([A-Da-d])\s*$/i;
-const INLINE_ANSWER_RE =
-  /(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:\s*([A-Da-d])(?:\s+(?:Explicaci[oó]n|E)\s*:\s*(.+))?$/i;
 const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i;
-const INLINE_OPTION_SPLIT_RE = /\s+(?=[A-D]\)\s)/;
+const INLINE_OPTION_SPLIT_RE = /\s+(?=[A-D][\.\)]\s)/;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
 const SUPUESTO_START_RE = /^={3}\s*SUPUESTO(?:\s*:\s*(.*))?\s*$/i;
 const SUPUESTO_END_RE = /^={3}\s*$/;
+
+/** Acepta `Respuesta: B`, `Respuesta: B.`, `(B)`, `**Respuesta:** B`, etc. */
+function parseAnswerLine(line: string): { respuesta: number; explicacion?: string } | null {
+  const cleaned = line.trim().replace(/\*\*/g, "");
+  const m = cleaned.match(
+    /^(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:+\s*(?:\(?([A-Da-d])\)?)[\.\)]?\s*(.*)$/i,
+  );
+  if (!m) return null;
+
+  const respuesta = m[1].toUpperCase().charCodeAt(0) - 65;
+  if (respuesta < 0 || respuesta > 3) return null;
+
+  let explicacion: string | undefined;
+  const tail = m[2]?.trim();
+  if (tail) {
+    const expl = tail.match(/^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i);
+    if (expl) explicacion = expl[1].trim();
+  }
+
+  return { respuesta, explicacion };
+}
+
+const INLINE_ANSWER_RE =
+  /(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:+\s*(?:\(?([A-Da-d])\)?)[\.\)]?(?:\s+(?:Explicaci[oó]n|E)\s*:\s*(.+))?/i;
 
 function lineTrim(line: string): string {
   return line.trim();
@@ -94,9 +114,10 @@ function parseNumberedBlocks(texto: string): ParsedQuestion[] {
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      const ans = line.match(ANSWER_RE);
+      const ans = parseAnswerLine(line);
       if (ans) {
-        respuesta = ans[1].toUpperCase().charCodeAt(0) - 65;
+        respuesta = ans.respuesta;
+        if (ans.explicacion) explicacion = ans.explicacion;
         continue;
       }
       const expl = line.match(EXPLAIN_RE);
@@ -133,6 +154,7 @@ function parseInlineNumberedBlocks(texto: string): ParsedQuestion[] {
     let content = numMatch[1];
     if (isIntroLine(content)) continue;
 
+    content = content.replace(/\*\*/g, "");
     const ansMatch = content.match(INLINE_ANSWER_RE);
     if (!ansMatch) continue;
 
@@ -146,7 +168,7 @@ function parseInlineNumberedBlocks(texto: string): ParsedQuestion[] {
     const enunciado = parts[0].trim();
     const opciones: string[] = [];
     for (let i = 1; i < parts.length; i++) {
-      const optMatch = parts[i].match(/^([A-D])\)\s*(.+)$/i);
+      const optMatch = parts[i].match(/^([A-D])[\.\)]\s*(.+)$/i);
       if (optMatch) opciones.push(optMatch[2].trim());
     }
 
@@ -169,14 +191,14 @@ function parseOptionBlocks(texto: string): ParsedQuestion[] {
 
   let i = 0;
   while (i < lines.length) {
-    while (i < lines.length && (isIntroLine(lines[i]) || ANSWER_RE.test(lines[i]))) {
+    while (i < lines.length && (isIntroLine(lines[i]) || parseAnswerLine(lines[i]))) {
       i++;
     }
     if (i >= lines.length) break;
 
     const enunciadoParts: string[] = [];
     while (i < lines.length && !OPTION_RE.test(lines[i])) {
-      if (ANSWER_RE.test(lines[i]) || EXPLAIN_RE.test(lines[i])) break;
+      if (parseAnswerLine(lines[i]) || EXPLAIN_RE.test(lines[i])) break;
       if (!isIntroLine(lines[i])) enunciadoParts.push(lines[i]);
       i++;
     }
@@ -190,10 +212,13 @@ function parseOptionBlocks(texto: string): ParsedQuestion[] {
 
     let respuesta = -1;
     let explicacion: string | undefined;
-    if (i < lines.length && ANSWER_RE.test(lines[i])) {
-      const m = lines[i].match(ANSWER_RE);
-      if (m) respuesta = m[1].toUpperCase().charCodeAt(0) - 65;
-      i++;
+    if (i < lines.length) {
+      const ans = parseAnswerLine(lines[i]);
+      if (ans) {
+        respuesta = ans.respuesta;
+        if (ans.explicacion) explicacion = ans.explicacion;
+        i++;
+      }
     }
     if (i < lines.length && EXPLAIN_RE.test(lines[i])) {
       const m = lines[i].match(EXPLAIN_RE);
@@ -234,6 +259,19 @@ export function countParsedQuestions(doc: ParsedImportDocument): number {
   return (
     doc.sueltas.length + doc.supuestos.reduce((n, s) => n + s.preguntas.length, 0)
   );
+}
+
+/** Cuenta líneas que parecen inicio de pregunta (`1.` / `P:`). */
+export function countQuestionHeaders(texto: string): number {
+  const normalized = normalizeText(texto);
+  if (!normalized) return 0;
+
+  let count = 0;
+  for (const line of normalized.split("\n")) {
+    const t = line.trim();
+    if (/^\d+[\.\)]\s+/.test(t) || /^P:\s/i.test(t)) count++;
+  }
+  return count;
 }
 
 /** Texto antes de la primera pregunta numerada (1. / P:). */

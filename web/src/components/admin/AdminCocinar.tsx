@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { countParsedQuestions, parseImportForContext } from "@/lib/parse-import-text";
+import { countParsedQuestions, countQuestionHeaders, parseImportForContext } from "@/lib/parse-import-text";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -61,6 +61,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     [texto, supuestoEncadenado],
   );
   const previewCount = useMemo(() => countParsedQuestions(preview), [preview]);
+  const headerCount = useMemo(
+    () => (texto.trim() ? countQuestionHeaders(texto) : 0),
+    [texto],
+  );
+  const preguntasPerdidas = headerCount > 0 && previewCount < headerCount;
   const supuesto = preview.supuestos[0];
   const encadenadoSinSupuesto =
     supuestoEncadenado && texto.trim() && previewCount > 0 && preview.supuestos.length === 0;
@@ -244,6 +249,9 @@ E: Art. 29 LEF: …`}</pre>
             >
               {previewCount > 0
                 ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""}` +
+                  (headerCount > previewCount
+                    ? ` (hay ${headerCount} numeradas; revisa las que falten)`
+                    : "") +
                   (supuesto
                     ? ` · supuesto vinculado${supuesto.titulo ? `: «${supuesto.titulo}»` : ""}`
                     : supuestoEncadenado
@@ -261,6 +269,13 @@ E: Art. 29 LEF: …`}</pre>
                   {previewSnippet(supuesto.texto)}
                 </p>
               </div>
+            )}
+            {preguntasPerdidas && (
+              <p className="error small" style={{ marginTop: "0.5rem" }}>
+                Hay {headerCount} preguntas numeradas pero solo {previewCount} válidas.
+                Suele deberse a una sin <code>Respuesta: A-D</code>, opciones incompletas o
+                letra incorrecta. Revisa el texto antes de guardar.
+              </p>
             )}
             {encadenadoSinSupuesto && (
               <p className="error small" style={{ marginTop: "0.5rem" }}>
