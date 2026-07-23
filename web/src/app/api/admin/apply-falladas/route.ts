@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       message:
-        "Colas activadas: falladas de tests + fichas «No sé». Usa el mismo código JEX para sincronizar dispositivos.",
+        "Colas activadas: falladas de tests + fichas «No sé» (por navegador, sin login).",
     });
   } catch (e) {
     return NextResponse.json(

@@ -14,7 +14,7 @@ export default function RepasoPage() {
           <p className="hero-eyebrow">Cola personal</p>
           <h1 className="page-title">Repaso</h1>
           <p className="lead lead--compact">
-            Incorrectas y dudosas · sincroniza móvil y PC con un código (sin login)
+            Incorrectas y dudosas guardadas en este navegador (sin login)
           </p>
         </section>
 

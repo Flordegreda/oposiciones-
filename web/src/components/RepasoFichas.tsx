@@ -80,7 +80,7 @@ export function RepasoFichas() {
         <h2>Sin fichas pendientes</h2>
         <p className="muted">
           Al estudiar un mazo, pulsa <strong>No sé</strong> tras ver la respuesta. Esas fichas
-          se guardan con tu código JEX (mismo que el repaso de tests).
+          se guardan en la cola de repaso de este navegador.
         </p>
         <Link href="/fichas" className="btn-primary">
           Ir a mazos

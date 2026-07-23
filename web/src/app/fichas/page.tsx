@@ -32,7 +32,7 @@ export default async function FichasPage() {
           <p className="hero-eyebrow">Repaso rápido</p>
           <h1 className="page-title">Fichas</h1>
           <p className="lead lead--compact">
-            Voltea · Sé / No sé · la cola se sincroniza con tu código JEX
+            Voltea · Sé / No sé · las que no sepas quedan en cola para repasar
           </p>
         </section>
 

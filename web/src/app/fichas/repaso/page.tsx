@@ -14,7 +14,7 @@ export default function FichasRepasoPage() {
           <p className="hero-eyebrow">Cola «No sé»</p>
           <h1 className="page-title">Repaso de fichas</h1>
           <p className="lead lead--compact">
-            Mismo código JEX que las falladas de tests · sin login
+            Fichas marcadas como «No sé» en este navegador
           </p>
         </section>
         <RepasoFichas />

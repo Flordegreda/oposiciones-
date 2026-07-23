@@ -31,7 +31,7 @@ export function AdminFalladasSetup() {
       <h2>Cola de falladas</h2>
       <p className="muted small">
         Activa las tablas <code>cola_repaso</code> (tests) y <code>cola_fichas</code> (Sé /
-        No sé). Mismo código JEX de sync, sin login. Luego:{" "}
+        No sé). Sin login; cada navegador guarda su propia cola. Luego:{" "}
         <strong>Repaso</strong> y <strong>Fichas → Repaso</strong>.
       </p>
       <label>

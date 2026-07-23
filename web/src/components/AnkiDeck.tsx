@@ -121,8 +121,7 @@ export function AnkiDeck({
       <div className="card">
         <h2>Repaso de fichas listo</h2>
         <p className="muted">
-          Has pasado la cola. Las que marcaste «No sé» siguen guardadas con tu código de
-          sync.
+          Has pasado la cola. Las que marcaste «No sé» siguen guardadas para otro día.
         </p>
         <Link href={exitHref} className="btn-primary">
           Volver a Fichas
@@ -225,7 +224,7 @@ export function AnkiDeck({
 
       <p className="muted small flashcard-swipe-hint">
         {flipped
-          ? "Sé = sale de la cola · No sé = se guarda para otro día (mismo código JEX)"
+          ? "Sé = sale de la cola · No sé = se guarda para otro día"
           : "Toca la tarjeta para voltear · luego Sé / No sé"}
       </p>
 
