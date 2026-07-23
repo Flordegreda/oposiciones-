@@ -23,6 +23,7 @@ export type ImportContext = {
 };
 
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
+const EMPTY_OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*$/;
 const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:\s*(.+)$/i;
 const INLINE_OPTION_SPLIT_RE = /\s+(?=[A-D][\.\)]\s)/;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
@@ -90,6 +91,188 @@ function isIntroLine(line: string): boolean {
     l === "o" ||
     l === "— o —"
   );
+}
+
+/** Pregunta detectada pero no importable. */
+export type ImportRejection = {
+  /** Número del enunciado (`1.` / `2.`) si existe. */
+  numero?: number;
+  /** Resumen del enunciado para localizarla en el texto. */
+  enunciado: string;
+  motivo: string;
+};
+
+export type ImportDiagnostics = {
+  validas: number;
+  numeradas: number;
+  rechazadas: ImportRejection[];
+};
+
+function extractQuestionNumber(line: string): number | undefined {
+  const m = line.match(/^(\d+)[\.\)]\s+/);
+  return m ? parseInt(m[1], 10) : undefined;
+}
+
+function parseBlockLines(lines: string[]): {
+  enunciado: string;
+  opciones: string[];
+  opcionesVacias: string[];
+  respuesta: number;
+} {
+  const opciones: string[] = [];
+  const opcionesVacias: string[] = [];
+  let respuesta = -1;
+
+  for (const line of lines) {
+    const ans = parseAnswerLine(line);
+    if (ans) {
+      respuesta = ans.respuesta;
+      continue;
+    }
+    if (EXPLAIN_RE.test(line)) continue;
+    if (EMPTY_OPTION_RE.test(line)) {
+      const m = line.match(EMPTY_OPTION_RE);
+      if (m) opcionesVacias.push(m[1].toUpperCase());
+      continue;
+    }
+    const opt = line.match(OPTION_RE);
+    if (opt) {
+      const text = opt[2].trim();
+      if (text) opciones.push(text);
+      else opcionesVacias.push(opt[1].toUpperCase());
+    }
+  }
+
+  return { enunciado: "", opciones, opcionesVacias, respuesta };
+}
+
+function describeRejection(
+  enunciado: string,
+  opciones: string[],
+  opcionesVacias: string[],
+  respuesta: number,
+): string | null {
+  if (!enunciado) return "Sin enunciado";
+  if (opcionesVacias.length) {
+    return opcionesVacias.length === 1
+      ? `Opción vacía: ${opcionesVacias[0]}`
+      : `Opciones vacías: ${opcionesVacias.join(", ")}`;
+  }
+  if (opciones.length === 0) return "Sin opciones con texto (A-D)";
+  if (opciones.length < 2) return `Solo ${opciones.length} opción con texto (se necesitan al menos 2)`;
+  if (respuesta < 0) return "Falta línea Respuesta: A-D";
+  if (respuesta >= opciones.length) return "Respuesta inválida (letra incorrecta o fuera de rango)";
+  return null;
+}
+
+function diagnoseNumberedBlocks(texto: string): ImportRejection[] {
+  const blocks = texto
+    .split(/\n(?=\d+[\.\)]\s+|P:\s)/i)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  const rechazadas: ImportRejection[] = [];
+
+  for (const block of blocks) {
+    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) continue;
+
+    const numero = extractQuestionNumber(lines[0]);
+    const head = lines[0]
+      .replace(NUMBERED_HEAD_RE, "")
+      .replace(P_HEAD_RE, "")
+      .trim();
+    if (!head || isIntroLine(head)) continue;
+
+    const parsed = parseBlockLines(lines.slice(1));
+    parsed.enunciado = head;
+
+    const motivo = describeRejection(
+      parsed.enunciado,
+      parsed.opciones,
+      parsed.opcionesVacias,
+      parsed.respuesta,
+    );
+    if (motivo) {
+      rechazadas.push({ numero, enunciado: head.slice(0, 90), motivo });
+    }
+  }
+
+  return rechazadas;
+}
+
+function diagnoseOptionBlocks(texto: string): ImportRejection[] {
+  const rechazadas: ImportRejection[] = [];
+  const lines = texto.split("\n").map((l) => l.trim()).filter(Boolean);
+  let i = 0;
+
+  while (i < lines.length) {
+    while (i < lines.length && (isIntroLine(lines[i]) || parseAnswerLine(lines[i]))) {
+      i++;
+    }
+    if (i >= lines.length) break;
+
+    const enunciadoParts: string[] = [];
+    while (i < lines.length && !OPTION_RE.test(lines[i]) && !EMPTY_OPTION_RE.test(lines[i])) {
+      if (parseAnswerLine(lines[i]) || EXPLAIN_RE.test(lines[i])) break;
+      if (!isIntroLine(lines[i])) enunciadoParts.push(lines[i]);
+      i++;
+    }
+
+    const bodyLines: string[] = [];
+    while (i < lines.length && (OPTION_RE.test(lines[i]) || EMPTY_OPTION_RE.test(lines[i]))) {
+      bodyLines.push(lines[i]);
+      i++;
+    }
+
+    const answerLine = i < lines.length && parseAnswerLine(lines[i]) ? lines[i] : null;
+    if (answerLine) {
+      bodyLines.push(answerLine);
+      i++;
+    }
+    if (i < lines.length && EXPLAIN_RE.test(lines[i])) i++;
+
+    if (!enunciadoParts.length && !bodyLines.length) continue;
+
+    const enunciado = enunciadoParts.join(" ").trim();
+    const parsed = parseBlockLines(bodyLines);
+    parsed.enunciado = enunciado;
+
+    const motivo = describeRejection(
+      parsed.enunciado,
+      parsed.opciones,
+      parsed.opcionesVacias,
+      parsed.respuesta,
+    );
+    if (motivo && enunciado) {
+      rechazadas.push({ enunciado: enunciado.slice(0, 90), motivo });
+    }
+  }
+
+  return rechazadas;
+}
+
+/** Detecta preguntas en el texto que no pasan validación de importación. */
+export function getImportDiagnostics(texto: string): ImportDiagnostics {
+  const normalized = normalizeText(texto);
+  if (!normalized) {
+    return { validas: 0, numeradas: 0, rechazadas: [] };
+  }
+
+  const doc = parseImportDocument(texto);
+  const validas = countParsedQuestions(doc);
+  const numeradas = countQuestionHeaders(texto);
+
+  let rechazadas =
+    numeradas > 0 ? diagnoseNumberedBlocks(normalized) : diagnoseOptionBlocks(normalized);
+
+  if (numeradas > 0) {
+    rechazadas = rechazadas.sort(
+      (a, b) => (a.numero ?? 9999) - (b.numero ?? 9999),
+    );
+  }
+
+  return { validas, numeradas, rechazadas };
 }
 
 function parseNumberedBlocks(texto: string): ParsedQuestion[] {

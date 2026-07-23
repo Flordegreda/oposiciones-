@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { countParsedQuestions, countQuestionHeaders, parseImportForContext } from "@/lib/parse-import-text";
+import { countParsedQuestions, getImportDiagnostics, parseImportForContext } from "@/lib/parse-import-text";
+import { PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -40,11 +41,13 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
   }, [initial, ctx.materiaId]);
 
   const [nombre, setNombre] = useState("");
+  const [esperadas, setEsperadas] = useState("");
   const [supuestoEncadenado, setSupuestoEncadenado] = useState(false);
   const [texto, setTexto] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [promptCopiado, setPromptCopiado] = useState(false);
 
   useEffect(() => {
     if (SUPUESTO_MARKER_RE.test(texto)) {
@@ -61,11 +64,15 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     [texto, supuestoEncadenado],
   );
   const previewCount = useMemo(() => countParsedQuestions(preview), [preview]);
-  const headerCount = useMemo(
-    () => (texto.trim() ? countQuestionHeaders(texto) : 0),
+  const diagnostics = useMemo(
+    () => (texto.trim() ? getImportDiagnostics(texto) : null),
     [texto],
   );
-  const preguntasPerdidas = headerCount > 0 && previewCount < headerCount;
+  const rechazadas = diagnostics?.rechazadas ?? [];
+  const numeradas = diagnostics?.numeradas ?? 0;
+  const esperadasNum = esperadas.trim() ? parseInt(esperadas, 10) : null;
+  const cuentaEsperadasMal =
+    esperadasNum !== null && !Number.isNaN(esperadasNum) && previewCount !== esperadasNum;
   const supuesto = preview.supuestos[0];
   const encadenadoSinSupuesto =
     supuestoEncadenado && texto.trim() && previewCount > 0 && preview.supuestos.length === 0;
@@ -76,6 +83,8 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     materias.length > 0 &&
     texto.trim() &&
     previewCount > 0 &&
+    rechazadas.length === 0 &&
+    !cuentaEsperadasMal &&
     !encadenadoSinSupuesto;
 
   async function guardarBanco() {
@@ -105,6 +114,16 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     router.refresh();
   }
 
+  async function copiarPromptTeorico() {
+    try {
+      await navigator.clipboard.writeText(PROMPT_TEST_TEORICO_JEX);
+      setPromptCopiado(true);
+      setTimeout(() => setPromptCopiado(false), 2500);
+    } catch {
+      setErr("No se pudo copiar el prompt al portapapeles");
+    }
+  }
+
   return (
     <>
       {!schemaOk && (
@@ -126,6 +145,24 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
           encadenados pega el bloque completo tal cual (desde{" "}
           <code>=== SUPUESTO:</code> hasta la última pregunta).
         </p>
+
+        {ctx.tipo === "teorico" && !supuestoEncadenado && (
+          <div className="info-box sim-info" style={{ marginTop: "0.75rem" }}>
+            <p style={{ margin: 0 }}>
+              <strong>Prompt para IA (teórico):</strong> copia el prompt compatible con este
+              importador, pégalo en ChatGPT/Claude y añade tu temario al final.
+            </p>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              style={{ marginTop: "0.65rem" }}
+              onClick={() => void copiarPromptTeorico()}
+            >
+              {promptCopiado ? "Copiado" : "Copiar prompt teórico JEX"}
+            </button>
+          </div>
+        )}
+
         <div className="cafe-highlight" style={{ marginTop: "0.75rem" }}>
           <strong>Supuesto encadenado (formato de tu prompt):</strong>
           <pre className="format-ejemplo">{`=== SUPUESTO: Título breve del caso
@@ -225,6 +262,21 @@ E: Art. 29 LEF: …`}</pre>
         </label>
 
         <label>
+          Preguntas esperadas (opcional)
+          <input
+            type="number"
+            min={1}
+            value={esperadas}
+            onChange={(e) => setEsperadas(e.target.value)}
+            placeholder="50"
+          />
+        </label>
+        <p className="muted small" style={{ marginTop: "-0.5rem" }}>
+          Si indicas 50, no dejará guardar hasta que la vista previa detecte exactamente 50
+          válidas y ninguna rechazada.
+        </p>
+
+        <label>
           {supuestoEncadenado ? "Texto del supuesto encadenado" : "Texto del test"}
           <textarea
             className="textarea-taller"
@@ -248,9 +300,12 @@ E: Art. 29 LEF: …`}</pre>
               style={{ marginTop: "0.5rem" }}
             >
               {previewCount > 0
-                ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""}` +
-                  (headerCount > previewCount
-                    ? ` (hay ${headerCount} numeradas; revisa las que falten)`
+                ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} válida${previewCount !== 1 ? "s" : ""}` +
+                  (numeradas > previewCount
+                    ? ` · ${numeradas} numeradas en el texto`
+                    : "") +
+                  (rechazadas.length
+                    ? ` · ${rechazadas.length} rechazada${rechazadas.length !== 1 ? "s" : ""}`
                     : "") +
                   (supuesto
                     ? ` · supuesto vinculado${supuesto.titulo ? `: «${supuesto.titulo}»` : ""}`
@@ -270,11 +325,36 @@ E: Art. 29 LEF: …`}</pre>
                 </p>
               </div>
             )}
-            {preguntasPerdidas && (
+            {rechazadas.length > 0 && (
+              <div className="card card-warning" style={{ marginTop: "0.75rem", padding: "0.75rem 1rem" }}>
+                <p className="small" style={{ margin: 0 }}>
+                  <strong>
+                    {rechazadas.length} pregunta{rechazadas.length !== 1 ? "s" : ""} no se
+                    importará{rechazadas.length !== 1 ? "n" : ""}
+                  </strong>{" "}
+                  — corrige el texto o pide a la IA que regenere esas preguntas.
+                </p>
+                <ul className="muted small" style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
+                  {rechazadas.map((r, idx) => (
+                    <li key={`${r.numero ?? idx}-${r.enunciado.slice(0, 20)}`} style={{ marginBottom: "0.35rem" }}>
+                      {r.numero !== undefined ? (
+                        <strong>Pregunta {r.numero}:</strong>
+                      ) : (
+                        <strong>Sin número:</strong>
+                      )}{" "}
+                      {r.motivo}
+                      <span className="muted" style={{ display: "block", marginTop: "0.15rem" }}>
+                        {previewSnippet(r.enunciado, 100)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {cuentaEsperadasMal && (
               <p className="error small" style={{ marginTop: "0.5rem" }}>
-                Hay {headerCount} preguntas numeradas pero solo {previewCount} válidas.
-                Suele deberse a una sin <code>Respuesta: A-D</code>, opciones incompletas o
-                letra incorrecta. Revisa el texto antes de guardar.
+                Esperabas {esperadasNum} preguntas pero solo hay {previewCount} válidas. Corrige
+                el texto antes de guardar.
               </p>
             )}
             {encadenadoSinSupuesto && (

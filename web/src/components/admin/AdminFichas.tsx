@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { MazoFichas } from "@/lib/queries/fichas";
-import { parseFichasText } from "@/lib/parse-fichas-text";
+import { getFichasDiagnostics, parseFichasText } from "@/lib/parse-fichas-text";
 
 type Materia = { id: string; nombre: string };
 
@@ -14,6 +14,12 @@ type Props = {
   fichasOk: boolean;
   schemaOk: boolean;
 };
+
+function previewSnippet(text: string, max = 100): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= max) return flat;
+  return `${flat.slice(0, max).trim()}…`;
+}
 
 const EJEMPLO = `P: ¿Quién garantiza el derecho a la tutela judicial efectiva?
 R: Art. 24.1 CE: todos tienen derecho a obtener la tutela efectiva de los jueces y tribunales en el ejercicio de sus derechos e intereses legítimos, sin que, en ningún caso, pueda producirse indefensión.
@@ -35,8 +41,25 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [esperadas, setEsperadas] = useState("");
 
   const previewCount = useMemo(() => parseFichasText(texto).length, [texto]);
+  const diagnostics = useMemo(
+    () => (texto.trim() ? getFichasDiagnostics(texto) : null),
+    [texto],
+  );
+  const rechazadas = diagnostics?.rechazadas ?? [];
+  const bloques = diagnostics?.bloques ?? 0;
+  const marcadas = diagnostics?.marcadas ?? 0;
+  const esperadasNum = esperadas.trim() ? parseInt(esperadas, 10) : null;
+  const cuentaEsperadasMal =
+    esperadasNum !== null && !Number.isNaN(esperadasNum) && previewCount !== esperadasNum;
+  const puedeImportar =
+    !busy &&
+    texto.trim() &&
+    previewCount > 0 &&
+    rechazadas.length === 0 &&
+    !cuentaEsperadasMal;
 
   const mazosMateria = useMemo(
     () => mazos.filter((m) => !materiaId || m.materiaId === materiaId),
@@ -240,6 +263,22 @@ R: Otra respuesta.
           <span className="btn-secondary btn-sm">Elegir .txt</span>
         </label>
 
+        <label>
+          Fichas esperadas (opcional)
+          <input
+            type="number"
+            min={1}
+            value={esperadas}
+            onChange={(e) => setEsperadas(e.target.value)}
+            placeholder="100"
+            disabled={busy !== null}
+          />
+        </label>
+        <p className="muted small" style={{ marginTop: "-0.5rem" }}>
+          Si indicas 100, no dejará importar hasta que la vista previa detecte exactamente 100
+          válidas y ninguna rechazada.
+        </p>
+
         <label style={{ display: "block", marginTop: "0.75rem" }}>
           Texto de las fichas
           <textarea
@@ -253,18 +292,59 @@ R: Otra respuesta.
         </label>
 
         {texto.trim() && (
-          <p className={previewCount > 0 ? "ok" : "error"} style={{ marginTop: "0.5rem" }}>
-            {previewCount > 0
-              ? `${previewCount} ficha${previewCount !== 1 ? "s" : ""} detectada${previewCount !== 1 ? "s" : ""} — listas para importar`
-              : "No se detectan fichas. Revisa que cada bloque tenga P: y R:."}
-          </p>
+          <>
+            <p className={previewCount > 0 ? "ok" : "error"} style={{ marginTop: "0.5rem" }}>
+              {previewCount > 0
+                ? `${previewCount} ficha${previewCount !== 1 ? "s" : ""} válida${previewCount !== 1 ? "s" : ""}` +
+                  (bloques > previewCount ? ` · ${bloques} bloques en el texto` : "") +
+                  (marcadas > previewCount ? ` · ${marcadas} con P:/Q:` : "") +
+                  (rechazadas.length
+                    ? ` · ${rechazadas.length} rechazada${rechazadas.length !== 1 ? "s" : ""}`
+                    : "")
+                : "No se detectan fichas válidas — revisa que cada bloque tenga P: y R:."}
+            </p>
+            {rechazadas.length > 0 && (
+              <div className="card card-warning" style={{ marginTop: "0.75rem", padding: "0.75rem 1rem" }}>
+                <p className="small" style={{ margin: 0 }}>
+                  <strong>
+                    {rechazadas.length} ficha{rechazadas.length !== 1 ? "s" : ""} no se
+                    importará{rechazadas.length !== 1 ? "n" : ""}
+                  </strong>{" "}
+                  — corrige el texto o pide a la IA que regenere esos bloques.
+                </p>
+                <ul className="muted small" style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
+                  {rechazadas.map((r, idx) => (
+                    <li key={`${r.numero ?? idx}-${r.enunciado.slice(0, 20)}`} style={{ marginBottom: "0.35rem" }}>
+                      {r.numero !== undefined ? (
+                        <strong>Bloque {r.numero}:</strong>
+                      ) : (
+                        <strong>Sin número:</strong>
+                      )}{" "}
+                      {r.motivo}
+                      {r.enunciado && (
+                        <span className="muted" style={{ display: "block", marginTop: "0.15rem" }}>
+                          {previewSnippet(r.enunciado)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {cuentaEsperadasMal && (
+              <p className="error small" style={{ marginTop: "0.5rem" }}>
+                Esperabas {esperadasNum} fichas pero solo hay {previewCount} válidas. Corrige el
+                texto antes de importar.
+              </p>
+            )}
+          </>
         )}
 
         <div className="form-actions">
           <button
             type="button"
             className="btn-primary"
-            disabled={busy !== null || !texto.trim() || previewCount === 0}
+            disabled={!puedeImportar}
             onClick={() => void importar()}
           >
             {busy === "import"
