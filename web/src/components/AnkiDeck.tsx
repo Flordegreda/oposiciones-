@@ -3,33 +3,20 @@
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { shuffle } from "@/lib/exam-utils";
-import { getDispositivoId } from "@/lib/dispositivo-id";
 import type { FichaCard } from "@/lib/queries/fichas";
 
 const EXIT_HREF = "/fichas";
 
 type Props = {
   fichas: FichaCard[];
-  mazoId?: string;
-  /** Solo cola «No sé»: al marcar Sé se quita y al acabar se recarga. */
-  repasoMode?: boolean;
   exitHref?: string;
-  onQueueEmpty?: () => void;
 };
 
-export function AnkiDeck({
-  fichas,
-  mazoId,
-  repasoMode = false,
-  exitHref = EXIT_HREF,
-  onQueueEmpty,
-}: Props) {
+export function AnkiDeck({ fichas, exitHref = EXIT_HREF }: Props) {
   const cards = useMemo(() => fichas, [fichas]);
   const [order, setOrder] = useState(() => cards.map((_, i) => i));
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
 
   const total = order.length;
@@ -44,57 +31,18 @@ export function AnkiDeck({
     [total],
   );
 
-  const advanceAfterGrade = useCallback(() => {
+  const advance = useCallback(() => {
     if (index >= total - 1) {
-      if (repasoMode) {
-        setDone(true);
-        onQueueEmpty?.();
-      } else {
-        setFlipped(false);
-      }
+      setFlipped(false);
       return;
     }
     goTo(index + 1);
-  }, [index, total, repasoMode, goTo, onQueueEmpty]);
-
-  const grade = useCallback(
-    async (know: boolean) => {
-      if (!current || busy) return;
-      setBusy(true);
-      const dispositivoId = getDispositivoId();
-      try {
-        if (know) {
-          await fetch("/api/repaso/fichas", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dispositivoId, fichaId: current.id }),
-          });
-        } else {
-          await fetch("/api/repaso/fichas", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              dispositivoId,
-              fichaId: current.id,
-              mazoId: mazoId || undefined,
-            }),
-          });
-        }
-      } catch {
-        /* no bloquear el estudio si falla la red */
-      } finally {
-        setBusy(false);
-        advanceAfterGrade();
-      }
-    },
-    [current, busy, mazoId, advanceAfterGrade],
-  );
+  }, [index, total, goTo]);
 
   const reshuffle = useCallback(() => {
     setOrder(shuffle(cards.map((_, i) => i)));
     setIndex(0);
     setFlipped(false);
-    setDone(false);
   }, [cards]);
 
   const progress = total ? Math.round(((index + 1) / total) * 100) : 0;
@@ -107,7 +55,7 @@ export function AnkiDeck({
   function onTouchEnd(e: React.TouchEvent) {
     const start = touchRef.current;
     touchRef.current = null;
-    if (!start || flipped) return; // con respuesta visible, priorizar Sé/No sé
+    if (!start || flipped) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
@@ -116,26 +64,10 @@ export function AnkiDeck({
     else goTo(index - 1);
   }
 
-  if (done) {
-    return (
-      <div className="card">
-        <h2>Repaso de fichas listo</h2>
-        <p className="muted">
-          Has pasado la cola. Las que marcaste «No sé» siguen guardadas para otro día.
-        </p>
-        <Link href={exitHref} className="btn-primary">
-          Volver a Fichas
-        </Link>
-      </div>
-    );
-  }
-
   if (!current) {
     return (
       <div className="card">
-        <p className="muted">
-          {repasoMode ? "No hay fichas pendientes de «No sé»." : "Este mazo no tiene fichas."}
-        </p>
+        <p className="muted">Este mazo no tiene fichas.</p>
         <Link href={exitHref} className="btn-primary">
           Volver a Fichas
         </Link>
@@ -148,7 +80,6 @@ export function AnkiDeck({
       <div className="flashcard-toolbar">
         <span className="flashcard-count">
           {index + 1} / {total}
-          {repasoMode ? " · No sé" : ""}
         </span>
         <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
           Mezclar
@@ -184,20 +115,10 @@ export function AnkiDeck({
 
       {flipped ? (
         <div className="flashcard-nav flashcard-grade">
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={busy}
-            onClick={() => void grade(false)}
-          >
+          <button type="button" className="btn-secondary" onClick={advance}>
             No sé
           </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={busy}
-            onClick={() => void grade(true)}
-          >
+          <button type="button" className="btn-primary" onClick={advance}>
             Sé
           </button>
         </div>
@@ -224,7 +145,7 @@ export function AnkiDeck({
 
       <p className="muted small flashcard-swipe-hint">
         {flipped
-          ? "Sé = sale de la cola · No sé = se guarda para otro día"
+          ? "Sé / No sé = siguiente tarjeta"
           : "Toca la tarjeta para voltear · luego Sé / No sé"}
       </p>
 

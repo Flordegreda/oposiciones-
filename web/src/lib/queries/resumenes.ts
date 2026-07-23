@@ -100,15 +100,3 @@ export async function fetchStoragePathsForMateria(materiaId: string): Promise<st
   return data.map((r) => r.storage_path);
 }
 
-/** Totales para el resumen de Material (0 si el esquema no está activo). */
-export async function countResumenesTotals(): Promise<number> {
-  if (!(await resumenesSchemaReady())) return 0;
-
-  const supabase = getSupabase();
-  const { count, error } = await supabase
-    .from("materia_resumenes")
-    .select("*", { count: "exact", head: true });
-
-  if (error) return 0;
-  return count ?? 0;
-}

@@ -12,10 +12,7 @@ services:
       - ./postgres/01-base-schema.sql:/docker-entrypoint-initdb.d/01-base-schema.sql:ro
       - ../web/supabase/APLICAR-AHORA.sql:/docker-entrypoint-initdb.d/02-preguntas.sql:ro
       - ../web/supabase/SUPUESTOS.sql:/docker-entrypoint-initdb.d/03-supuestos.sql:ro
-      - ../web/supabase/INTENTOS-DETALLE.sql:/docker-entrypoint-initdb.d/04-intentos.sql:ro
-      - ../web/supabase/RESULTADOS-FAVORITOS.sql:/docker-entrypoint-initdb.d/05-resultados.sql:ro
-      - ../web/supabase/PREGUNTAS-COUNTS-RPC.sql:/docker-entrypoint-initdb.d/06-rpc-counts.sql:ro
-      - ../web/supabase/PENDING-FALLOS-RPC.sql:/docker-entrypoint-initdb.d/07-rpc-fallos.sql:ro
+      - ../web/supabase/PREGUNTAS-COUNTS-RPC.sql:/docker-entrypoint-initdb.d/04-rpc-counts.sql:ro
       - ./postgres/99-grants.sql:/docker-entrypoint-initdb.d/99-grants.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d jex"]

@@ -72,7 +72,7 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
         <h2 className="test-start-title">¿Cómo quieres practicar?</h2>
         <p className="muted small test-start-lead">
           Elige cuántas preguntas hacer. Las opciones A/B/C/D se barajan en cada intento.
-          Para repaso con pregunta/respuesta, usa{" "}
+          Para repaso con pregunta/respuesta corta, usa{" "}
           <Link href="/fichas">Fichas</Link>.
         </p>
         <div className="test-start-actions">

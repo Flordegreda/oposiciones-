@@ -10,7 +10,6 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 import { AdminPreguntasRpcSetup } from "@/components/admin/AdminPreguntasRpcSetup";
 import { AdminResumenesSetup } from "@/components/admin/AdminResumenesSetup";
 import { AdminFichasSetup } from "@/components/admin/AdminFichasSetup";
-import { AdminFalladasSetup } from "@/components/admin/AdminFalladasSetup";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
@@ -18,7 +17,6 @@ import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
 import { fetchResumenesGrouped } from "@/lib/queries/resumenes";
 import { fetchMazosFichas } from "@/lib/queries/fichas";
-import { falladasSchemaReady, colaFichasSchemaReady } from "@/lib/queries/schema";
 
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -79,9 +77,6 @@ export default async function AdminPage({ searchParams }: PageProps) {
   const fichasOk = data?.fichasOk ?? false;
   const resumenesSections = resumenesOk ? await fetchResumenesGrouped() : [];
   const mazosFichas = fichasOk ? await fetchMazosFichas({ activeOnly: false }) : [];
-  const falladasOk = await falladasSchemaReady();
-  const colaFichasOk = await colaFichasSchemaReady();
-  const colasRepasoOk = falladasOk && colaFichasOk;
 
 
 
@@ -134,8 +129,6 @@ export default async function AdminPage({ searchParams }: PageProps) {
         {schemaOk && !resumenesOk && <AdminResumenesSetup />}
 
         {schemaOk && !fichasOk && <AdminFichasSetup />}
-
-        {schemaOk && !colasRepasoOk && <AdminFalladasSetup />}
 
 
 

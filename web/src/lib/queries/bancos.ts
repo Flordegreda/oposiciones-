@@ -285,17 +285,6 @@ async function queryBancosForPracticar() {
   return (data ?? []) as unknown as BancoRow[];
 }
 
-async function queryAllBancos() {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("bancos")
-    .select("id, nombre, tipo, materia_id, active, linea_id, materias(nombre)")
-    .order("nombre");
-
-  if (error) throw error;
-  return (data ?? []) as unknown as BancoRow[];
-}
-
 /** Temario único jurídicas JEX: bancos con preguntas (legacy común + JEX). */
 export async function getPracticarDataUncached() {
   const rows = await queryBancosForPracticar();
@@ -312,15 +301,6 @@ export async function getPracticarDataUncached() {
   return {
     sections: groupByMateria(practicables),
   };
-}
-
-export async function getAdminBancos(): Promise<BancoRow[]> {
-  const rows = await queryAllBancos();
-  const hasPreguntas = await preguntasTableExists();
-  if (!hasPreguntas) return rows;
-
-  const counts = await fetchPreguntaCountsByBanco(rows.map((b) => b.id));
-  return sortBancosByNombre(attachPreguntaCounts(rows, counts));
 }
 
 export async function getBancoForAdmin(id: string) {
@@ -342,8 +322,6 @@ export async function getBancoForAdmin(id: string) {
 
   return { banco: banco as BancoRow, preguntas };
 }
-
-export const getBancoWithPreguntas = getBancoForAdmin;
 
 export async function getMateriasWithCounts() {
   const supabase = getSupabase();
@@ -520,52 +498,6 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
   };
 }
 
-export async function getMaterialStatsUncached(): Promise<MaterialStats> {
-  const supabase = getSupabase();
-  const [{ data: materias, error: mErr }, { data: bancos, error: bErr }, fichasOk, resumenesOk] =
-    await Promise.all([
-      supabase.from("materias").select("id, nombre").order("nombre"),
-      supabase.from("bancos").select("id, materia_id, tipo"),
-      fichasSchemaReady(),
-      resumenesSchemaReady(),
-    ]);
-
-  if (mErr) throw mErr;
-  if (bErr) throw bErr;
-
-  const hasPreguntas = await preguntasTableExists();
-  const counts = hasPreguntas
-    ? await fetchPreguntaCountsByBanco((bancos ?? []).map((b) => b.id))
-    : new Map<string, number>();
-
-  const stats = buildMaterialStats(materias ?? [], bancos ?? [], counts);
-  const extras: Promise<void>[] = [];
-  if (fichasOk) {
-    extras.push(
-      (async () => {
-        const [mazosRes, fichasRes] = await Promise.all([
-          supabase.from("mazos_fichas").select("*", { count: "exact", head: true }),
-          supabase.from("fichas").select("*", { count: "exact", head: true }),
-        ]);
-        stats.mazosFichas = mazosRes.count ?? 0;
-        stats.fichas = fichasRes.count ?? 0;
-      })(),
-    );
-  }
-  if (resumenesOk) {
-    extras.push(
-      (async () => {
-        const { count } = await supabase
-          .from("materia_resumenes")
-          .select("*", { count: "exact", head: true });
-        stats.resumenes = count ?? 0;
-      })(),
-    );
-  }
-  if (extras.length) await Promise.all(extras);
-  return stats;
-}
-
 function mapPrintablePregunta(p: PreguntaRow): PrintablePregunta {
   return {
     enunciado: p.enunciado,
@@ -669,20 +601,6 @@ export async function getPrintBundleForBanco(bancoId: string): Promise<PrintBund
     sections: [section],
     totalPreguntas: section.preguntas.length,
   };
-}
-
-/** IDs de bancos sin ninguna pregunta (conteo paginado fiable). */
-export async function findEmptyBancoIds(): Promise<{ id: string; nombre: string }[]> {
-  const supabase = getSupabase();
-  const { data: bancos, error: bErr } = await supabase
-    .from("bancos")
-    .select("id, nombre")
-    .order("nombre");
-
-  if (bErr) throw bErr;
-
-  const counts = await fetchPreguntaCountsByBanco();
-  return (bancos ?? []).filter((b) => (counts.get(b.id) ?? 0) === 0);
 }
 
 export type BrokenBancoRow = {

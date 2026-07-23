@@ -1,5 +1,4 @@
 import { PracticarTemario } from "@/components/PracticarTemario";
-import { FalladasPromoCard } from "@/components/FalladasPromoCard";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -32,8 +31,6 @@ export default async function PracticarPage() {
           </p>
         </div>
       )}
-
-      {!error && <FalladasPromoCard />}
 
       {!error && sections.length > 0 && <PracticarTemario sections={sections} />}
 
