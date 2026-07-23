@@ -22,7 +22,7 @@ import { JEX_SUBTITLE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-const LEGACY_MAIN_TABS = new Set(["temario", "contenido", "materias", "bancos"]);
+const LEGACY_MAIN_TABS = new Set(["temario", "contenido", "materias", "bancos", "resumenes"]);
 
 type PageProps = {
   searchParams: Promise<{ tab?: string }>;
@@ -31,7 +31,6 @@ type PageProps = {
 export default async function AdminPage({ searchParams }: PageProps) {
   const { tab } = await searchParams;
   if (tab === "cocinar") redirect("/admin?tab=importar");
-  if (tab === "resumenes") redirect("/admin");
   if (tab && LEGACY_MAIN_TABS.has(tab)) redirect("/admin");
 
   let error: string | null = null;

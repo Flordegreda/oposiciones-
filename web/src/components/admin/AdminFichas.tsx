@@ -289,17 +289,17 @@ R: Otra respuesta.
         {mazos.length === 0 ? (
           <p className="muted small">Aún no hay mazos.</p>
         ) : (
-          <ul className="admin-resumenes-list">
+          <ul className="admin-fichas-list">
             {mazos.map((m) => (
-              <li key={m.id} className="admin-resumenes-row">
-                <div className="admin-resumenes-row-main">
+              <li key={m.id} className="admin-fichas-row">
+                <div className="admin-fichas-row-main">
                   <strong>{m.nombre}</strong>
                   <span className="muted small">
                     {m.materiaNombre} · {m.numFichas} ficha{m.numFichas !== 1 ? "s" : ""}
                     {!m.active ? " · oculto" : ""}
                   </span>
                 </div>
-                <div className="admin-resumenes-row-actions">
+                <div className="admin-fichas-row-actions">
                   <Link href={`/fichas/${m.id}`} className="btn-link btn-sm">
                     Ver
                   </Link>

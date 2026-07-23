@@ -49,7 +49,7 @@ export function MobileBottomNav() {
 
             href={item.href}
 
-            className={`mobile-bottom-nav__item${active ? " mobile-bottom-nav__item--active" : ""}${"desktopOnly" in item && item.desktopOnly ? " mobile-bottom-nav__item--desktop-only" : ""}`}
+            className={`mobile-bottom-nav__item${active ? " mobile-bottom-nav__item--active" : ""}`}
 
             aria-current={active ? "page" : undefined}
 

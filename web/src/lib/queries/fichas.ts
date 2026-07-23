@@ -150,7 +150,7 @@ export async function getMazoConFichas(mazoId: string): Promise<MazoConFichas | 
   };
 }
 
-/** Totales para el resumen de Material (0 si el esquema no está activo). */
+/** Totales para las estadísticas de Material (0 si el esquema no está activo). */
 export async function countFichasTotals(): Promise<{ mazos: number; fichas: number }> {
   if (!(await fichasSchemaReady())) return { mazos: 0, fichas: 0 };
 
