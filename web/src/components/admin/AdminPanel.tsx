@@ -5,6 +5,7 @@ import { AdminRebalanceBancos } from "@/components/admin/AdminRebalanceBancos";
 import { AdminClearCache } from "@/components/admin/AdminClearCache";
 import { AdminCocinar } from "@/components/admin/AdminCocinar";
 import { AdminBancos } from "@/components/admin/AdminBancos";
+import { AdminAuditImport } from "@/components/admin/AdminAuditImport";
 import { AdminBackup } from "@/components/admin/AdminBackup";
 import { AdminMaterias, AdminMaterialStats } from "@/components/admin/AdminMaterias";
 import { AdminFichas } from "@/components/admin/AdminFichas";
@@ -87,13 +88,17 @@ export function AdminPanel({
       {tab === null && (
         <div className="admin-contenido">
           {schemaOk && <AdminRebalanceBancos materias={materias} />}
+          {schemaOk && bancos.length > 0 && <AdminAuditImport />}
           <AdminMaterias stats={stats} schemaOk={schemaOk} hideStats />
           <hr className="admin-section-divider" />
           <AdminBancos bancos={bancos} />
         </div>
       )}
       {tab === "importar" && (
-        <AdminCocinar materias={materias} schemaOk={schemaOk} supuestosOk={supuestosOk} />
+        <>
+          <AdminAuditImport />
+          <AdminCocinar materias={materias} schemaOk={schemaOk} supuestosOk={supuestosOk} />
+        </>
       )}
       {tab === "fichas" && (
         <AdminFichas

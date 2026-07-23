@@ -23,7 +23,7 @@ export type ImportContext = {
 };
 
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
-const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i;
+const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:\s*(.+)$/i;
 const INLINE_OPTION_SPLIT_RE = /\s+(?=[A-D][\.\)]\s)/;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
@@ -44,7 +44,7 @@ function parseAnswerLine(line: string): { respuesta: number; explicacion?: strin
   let explicacion: string | undefined;
   const tail = m[2]?.trim();
   if (tail) {
-    const expl = tail.match(/^(?:Explicaci[oó]n|E)\s*:?\s*(.+)$/i);
+    const expl = tail.match(/^(?:Explicaci[oó]n|E)\s*:\s*(.+)$/i);
     if (expl) explicacion = expl[1].trim();
   }
 
@@ -72,7 +72,9 @@ function normalizeText(texto: string): string {
     .replace(/\r/g, "\n")
     .replace(/\u00a0/g, " ")
     .replace(/\t/g, " ")
-    .replace(/[ \t]+(?=\d+[\.\)]\s+)/g, "\n")
+    // Preguntas pegadas en la misma línea (p. ej. «…Respuesta: B 50. Siguiente…»).
+    // No partir fechas (2024.) ni «artículo 10.» cuando la línea siguiente es D).
+    .replace(/[ \t]+(?=\d{1,3}[\.\)]\s+(?![A-D][\.\)]\s))/g, "\n")
     .trim();
 }
 
