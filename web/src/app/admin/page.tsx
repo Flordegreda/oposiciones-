@@ -18,7 +18,7 @@ import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
 import { fetchResumenesGrouped } from "@/lib/queries/resumenes";
 import { fetchMazosFichas } from "@/lib/queries/fichas";
-import { falladasSchemaReady } from "@/lib/queries/schema";
+import { falladasSchemaReady, colaFichasSchemaReady } from "@/lib/queries/schema";
 
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -80,6 +80,8 @@ export default async function AdminPage({ searchParams }: PageProps) {
   const resumenesSections = resumenesOk ? await fetchResumenesGrouped() : [];
   const mazosFichas = fichasOk ? await fetchMazosFichas({ activeOnly: false }) : [];
   const falladasOk = await falladasSchemaReady();
+  const colaFichasOk = await colaFichasSchemaReady();
+  const colasRepasoOk = falladasOk && colaFichasOk;
 
 
 
@@ -133,7 +135,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
         {schemaOk && !fichasOk && <AdminFichasSetup />}
 
-        {schemaOk && !falladasOk && <AdminFalladasSetup />}
+        {schemaOk && !colasRepasoOk && <AdminFalladasSetup />}
 
 
 

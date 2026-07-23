@@ -30,9 +30,9 @@ export function AdminFalladasSetup() {
     <div className="card card-warning">
       <h2>Cola de falladas</h2>
       <p className="muted small">
-        Activa la tabla <code>cola_repaso</code> para guardar incorrectas y dudosas al terminar
-        un test (por dispositivo, sin login). Luego puedes repasarla en{" "}
-        <strong>Repaso</strong>.
+        Activa las tablas <code>cola_repaso</code> (tests) y <code>cola_fichas</code> (Sé /
+        No sé). Mismo código JEX de sync, sin login. Luego:{" "}
+        <strong>Repaso</strong> y <strong>Fichas → Repaso</strong>.
       </p>
       <label>
         Contraseña BD (opcional si está en <code>SUPABASE_DB_PASSWORD</code>)

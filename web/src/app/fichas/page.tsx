@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FichasBiblioteca } from "@/components/FichasBiblioteca";
+import { FichasNoSePromo } from "@/components/FichasNoSePromo";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { JEX_SUBTITLE } from "@/lib/constants";
@@ -31,7 +32,7 @@ export default async function FichasPage() {
           <p className="hero-eyebrow">Repaso rápido</p>
           <h1 className="page-title">Fichas</h1>
           <p className="lead lead--compact">
-            Pregunta y respuesta propias · toca para voltear
+            Voltea · Sé / No sé · la cola se sincroniza con tu código JEX
           </p>
         </section>
 
@@ -49,6 +50,8 @@ export default async function FichasPage() {
             </p>
           </div>
         )}
+
+        {!error && fichasOk && <FichasNoSePromo />}
 
         {!error && fichasOk && total === 0 && (
           <div className="card">

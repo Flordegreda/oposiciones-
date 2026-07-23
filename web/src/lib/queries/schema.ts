@@ -138,3 +138,19 @@ async function uncachedFalladasSchemaReady(): Promise<boolean> {
 export function falladasSchemaReady(): Promise<boolean> {
   return withSchemaCache("falladas-ready", uncachedFalladasSchemaReady);
 }
+
+async function uncachedColaFichasSchemaReady(): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("cola_fichas").select("id").limit(0);
+  if (!error) return true;
+  const msg = error.message.toLowerCase();
+  return !(
+    msg.includes("could not find the table") ||
+    msg.includes('relation "cola_fichas" does not exist') ||
+    (msg.includes("cola_fichas") && msg.includes("does not exist"))
+  );
+}
+
+export function colaFichasSchemaReady(): Promise<boolean> {
+  return withSchemaCache("cola-fichas-ready", uncachedColaFichasSchemaReady);
+}

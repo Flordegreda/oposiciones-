@@ -1593,6 +1593,16 @@ h1 {
   gap: 0.65rem;
 }
 
+.flashcard-grade {
+  justify-content: stretch;
+}
+
+.flashcard-grade .btn-primary,
+.flashcard-grade .btn-secondary {
+  flex: 1;
+  min-height: 2.75rem;
+}
+
 .flashcard-nav .btn-secondary {
   flex: 1;
 }
