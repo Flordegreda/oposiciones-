@@ -73,6 +73,50 @@ export async function obtenerPreguntasParaRepaso(
   return shuffle(pool);
 }
 
+/**
+ * Maratón: 50 preguntas aleatorias de TODAS las falladas (con repetición).
+ */
+export async function obtenerPreguntasParaMaraton(
+  objetivo = 50,
+): Promise<PreguntaParaRepaso[]> {
+  const resultados = await getResultadosFromCache();
+  const bancos = await getLocalCache().getBancos().catch(() => []);
+  const todas = obtenerPreguntasMasFalladas(
+    resultados,
+    Number.MAX_SAFE_INTEGER,
+    bancos,
+  );
+  if (!todas.length) return [];
+
+  const seen = new Set<string>();
+  const pool: PreguntaParaRepaso[] = [];
+  for (let i = 0; i < objetivo; i++) {
+    const p = todas[Math.floor(Math.random() * todas.length)]!;
+    const duplicada = seen.has(p.preguntaId);
+    seen.add(p.preguntaId);
+    pool.push({
+      preguntaId: p.preguntaId,
+      texto: p.texto,
+      banco: p.banco,
+      bancoNombre: p.bancoNombre,
+      fallos: p.fallos,
+      duplicada,
+    });
+  }
+
+  return shuffle(pool);
+}
+
+export type ModoRepaso = "top" | "maraton";
+
+export async function obtenerPoolSegunModo(
+  modo: ModoRepaso,
+): Promise<PreguntaParaRepaso[]> {
+  return modo === "maraton"
+    ? obtenerPreguntasParaMaraton(50)
+    : obtenerPreguntasParaRepaso(10);
+}
+
 export type RepasoStats = {
   total: number;
   acertadasAhora: number;
@@ -135,6 +179,10 @@ export async function marcarRepasoCompletado(
 /** Alias de arranque: navegar a la página de repaso (cliente). */
 export function iniciarRepasoFallos(navigate: (href: string) => void): void {
   navigate("/repaso-fallos");
+}
+
+export function iniciarMaratonFallos(navigate: (href: string) => void): void {
+  navigate("/repaso-fallos?modo=maraton");
 }
 
 export async function enriquecerFalladasConRepaso(

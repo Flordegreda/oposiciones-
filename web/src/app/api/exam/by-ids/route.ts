@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (!ids.length) {
       return NextResponse.json({ error: "Falta ids" }, { status: 400 });
     }
-    if (ids.length > 40) {
+    if (ids.length > 80) {
       return NextResponse.json({ error: "Demasiados ids" }, { status: 400 });
     }
 

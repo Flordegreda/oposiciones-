@@ -317,16 +317,28 @@ export function EstadisticasDashboard() {
                   </h2>
                   <p className="text-sm text-slate-500">TOP 10 del periodo</p>
                 </div>
-                <button
-                  type="button"
-                  className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
-                  disabled={(data?.preguntasFalladas.length ?? 0) === 0}
-                  onClick={() => {
-                    router.push("/repaso-fallos");
-                  }}
-                >
-                  🔄 Repasar estas preguntas
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+                    disabled={(data?.preguntasFalladas.length ?? 0) === 0}
+                    onClick={() => {
+                      router.push("/repaso-fallos");
+                    }}
+                  >
+                    🔄 Repasar estas preguntas
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-medium text-orange-800 shadow-sm transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                    disabled={(data?.preguntasFalladas.length ?? 0) === 0}
+                    onClick={() => {
+                      router.push("/repaso-fallos?modo=maraton");
+                    }}
+                  >
+                    🏃 Maratón de fallos
+                  </button>
+                </div>
               </div>
               {(data?.preguntasFalladas.length ?? 0) === 0 ? (
                 <p className="text-sm text-slate-500">

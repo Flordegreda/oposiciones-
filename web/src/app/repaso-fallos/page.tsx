@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ExamSession } from "@/components/ExamSession";
@@ -11,8 +11,9 @@ import { prepareExamSessionQuestions } from "@/lib/exam-utils";
 import { JEX_SUBTITLE } from "@/lib/constants";
 import { fetchWithRetry } from "@/lib/retry";
 import {
-  obtenerPreguntasParaRepaso,
+  obtenerPoolSegunModo,
   sessionPreguntaId,
+  type ModoRepaso,
 } from "@/lib/persistence/repaso-fallos";
 
 type SessionState = {
@@ -20,10 +21,17 @@ type SessionState = {
   optionMaps: number[][];
   originalOpciones: string[][];
   banner: string;
+  title: string;
 };
 
-export default function RepasoFallosPage() {
+function parseModo(raw: string | null): ModoRepaso {
+  return raw === "maraton" ? "maraton" : "top";
+}
+
+function RepasoFallosInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const modo = parseModo(searchParams.get("modo"));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [empty, setEmpty] = useState(false);
@@ -35,8 +43,10 @@ export default function RepasoFallosPage() {
     async function boot() {
       setLoading(true);
       setError(null);
+      setEmpty(false);
+      setSession(null);
       try {
-        const pool = await obtenerPreguntasParaRepaso(10);
+        const pool = await obtenerPoolSegunModo(modo);
         if (cancelled) return;
         if (!pool.length) {
           setEmpty(true);
@@ -81,11 +91,15 @@ export default function RepasoFallosPage() {
 
         const prepared = prepareExamSessionQuestions(list);
         const unicas = new Set(list.map((q) => q.id.replace(/__dup\d+$/, ""))).size;
+        const isMaraton = modo === "maraton";
         setSession({
           list: prepared.questions,
           optionMaps: prepared.optionMaps,
           originalOpciones: prepared.originalOpciones,
-          banner: `📝 Repasando tus fallos. Tienes ${list.length} pregunta${list.length === 1 ? "" : "s"} (${unicas} única${unicas === 1 ? "" : "s"}).`,
+          title: isMaraton ? "Maratón de fallos" : "Repaso de fallos",
+          banner: isMaraton
+            ? `🏃 Maratón de fallos: ${list.length} preguntas aleatorias (${unicas} única${unicas === 1 ? "" : "s"}, con repetición).`
+            : `📝 Repasando tus fallos. Tienes ${list.length} pregunta${list.length === 1 ? "" : "s"} (${unicas} única${unicas === 1 ? "" : "s"}).`,
         });
       } catch (e) {
         if (!cancelled) {
@@ -100,7 +114,7 @@ export default function RepasoFallosPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [modo]);
 
   if (session) {
     return (
@@ -108,7 +122,7 @@ export default function RepasoFallosPage() {
         <SiteHeader />
         <main className="site-main">
           <ExamSession
-            title="Repaso de fallos"
+            title={session.title}
             preguntas={session.list}
             examMode={false}
             timerSeconds={null}
@@ -129,20 +143,30 @@ export default function RepasoFallosPage() {
     );
   }
 
+  const isMaraton = modo === "maraton";
+
   return (
     <div className="site site--mobile-nav">
       <SiteHeader />
       <main className="site-main">
         <section className="hero hero--compact">
           <p className="hero-eyebrow">Repaso</p>
-          <h1 className="page-title">Repaso de fallos</h1>
+          <h1 className="page-title">
+            {isMaraton ? "Maratón de fallos" : "Repaso de fallos"}
+          </h1>
           <p className="lead lead--compact">
-            Practica solo las preguntas que más te cuestan
+            {isMaraton
+              ? "50 preguntas aleatorias de todas tus falladas"
+              : "Practica solo las preguntas que más te cuestan"}
           </p>
         </section>
 
         <div className="card">
-          {loading && <p className="muted">Preparando tu repaso…</p>}
+          {loading && (
+            <p className="muted">
+              {isMaraton ? "Preparando tu maratón…" : "Preparando tu repaso…"}
+            </p>
+          )}
           {empty && (
             <>
               <p>🎉 ¡No tienes preguntas falladas! Sigue así.</p>
@@ -171,5 +195,25 @@ export default function RepasoFallosPage() {
       </footer>
       <MobileBottomNav />
     </div>
+  );
+}
+
+export default function RepasoFallosPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="site site--mobile-nav">
+          <SiteHeader />
+          <main className="site-main">
+            <div className="card">
+              <p className="muted">Preparando…</p>
+            </div>
+          </main>
+          <MobileBottomNav />
+        </div>
+      }
+    >
+      <RepasoFallosInner />
+    </Suspense>
   );
 }
