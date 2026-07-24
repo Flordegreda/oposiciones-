@@ -125,7 +125,7 @@ function collapseSpaces(value: string): string {
 
 /** Reglas genéricas aplicadas cuando no hay override exacto. */
 export function normalizeBankNameRules(original: string): string {
-  let name = original.trim();
+  let name = collapseSpaces(original);
 
   name = name.replace(/\s*\(\+\d+\s*temas?\)(?:\s*\(\+\d+\s*temas?\))*/gi, "");
   name = name.replace(/\s*\((\d+)\/(\d+)\)\s*/g, " - PARTE $1");
@@ -155,7 +155,7 @@ export function normalizeBankNameRules(original: string): string {
 }
 
 export function normalizeBankName(original: string): string {
-  const trimmed = original.trim();
+  const trimmed = collapseSpaces(original);
   const override = BANK_NAME_OVERRIDES[trimmed];
   if (override) return override;
   return normalizeBankNameRules(trimmed);

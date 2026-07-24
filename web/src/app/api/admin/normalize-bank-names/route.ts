@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { mergeBancosByIds } from "@/lib/merge-bancos";
 import { planBankRenames } from "@/lib/normalize-bank-name";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
@@ -31,18 +32,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (conflicts.length) {
-      return NextResponse.json(
-        {
-          error:
-            "Hay nombres duplicados tras normalizar. Revisa conflictos en dryRun.",
-          conflicts,
-          updated: 0,
-        },
-        { status: 409 },
-      );
-    }
-
     let updated = 0;
     const errors: Array<{ id: string; from: string; error: string }> = [];
 
@@ -59,7 +48,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (updated > 0) {
+    const merged = [];
+    for (const conflict of conflicts) {
+      try {
+        merged.push(
+          await mergeBancosByIds(supabase, conflict.ids, conflict.name),
+        );
+      } catch (e) {
+        errors.push({
+          id: conflict.ids.join(","),
+          from: conflict.from.join(" | "),
+          error: e instanceof Error ? e.message : "Error al fusionar duplicados",
+        });
+      }
+    }
+
+    if (updated > 0 || merged.length > 0) {
       revalidateContentCache();
     }
 
@@ -67,7 +71,9 @@ export async function POST(req: NextRequest) {
       dryRun: false,
       total: bancos?.length ?? 0,
       updated,
+      merged,
       unchanged: unchanged.length,
+      conflicts: conflicts.length,
       errors,
       plans,
     });
