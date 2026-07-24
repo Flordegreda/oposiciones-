@@ -460,8 +460,8 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
       (async () => {
         const supabaseCounts = getSupabase();
         const [mazosRes, fichasRes] = await Promise.all([
-          supabaseCounts.from("mazos_fichas").select("*", { count: "exact", head: true }),
-          supabaseCounts.from("fichas").select("*", { count: "exact", head: true }),
+          supabaseCounts.from("mazos_fichas").select("id", { count: "exact", head: true }),
+          supabaseCounts.from("fichas").select("id", { count: "exact", head: true }),
         ]);
         stats.mazosFichas = mazosRes.count ?? 0;
         stats.fichas = fichasRes.count ?? 0;

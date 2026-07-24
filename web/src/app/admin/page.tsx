@@ -9,12 +9,14 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 
 import { AdminPreguntasRpcSetup } from "@/components/admin/AdminPreguntasRpcSetup";
 import { AdminFichasSetup } from "@/components/admin/AdminFichasSetup";
+import { AdminResultadosSetup } from "@/components/admin/AdminResultadosSetup";
 import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
 import { fetchMazosFichas } from "@/lib/queries/fichas";
+import { resultadosSchemaReady } from "@/lib/queries/schema";
 
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -72,6 +74,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
   const preguntasRpcOk = data?.preguntasRpcOk ?? true;
   const fichasOk = data?.fichasOk ?? false;
   const mazosFichas = fichasOk ? await fetchMazosFichas({ activeOnly: false }) : [];
+  const resultadosOk = await resultadosSchemaReady().catch(() => false);
 
 
 
@@ -122,6 +125,8 @@ export default async function AdminPage({ searchParams }: PageProps) {
         {schemaOk && !supuestosOk && <AdminSupuestosSetup />}
 
         {schemaOk && !fichasOk && <AdminFichasSetup />}
+
+        {schemaOk && !resultadosOk && <AdminResultadosSetup />}
 
 
 

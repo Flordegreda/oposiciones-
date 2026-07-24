@@ -156,8 +156,8 @@ export async function countFichasTotals(): Promise<{ mazos: number; fichas: numb
 
   const supabase = getSupabase();
   const [mazosRes, fichasRes] = await Promise.all([
-    supabase.from("mazos_fichas").select("*", { count: "exact", head: true }),
-    supabase.from("fichas").select("*", { count: "exact", head: true }),
+    supabase.from("mazos_fichas").select("id", { count: "exact", head: true }),
+    supabase.from("fichas").select("id", { count: "exact", head: true }),
   ]);
 
   return {

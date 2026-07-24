@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { fetchWithRetry } from "@/lib/retry";
 
 export function AdminClearCache() {
   const router = useRouter();
@@ -14,7 +15,11 @@ export function AdminClearCache() {
     setErr(null);
     setMsg(null);
     try {
-      const res = await fetch("/api/admin/clear-cache", { method: "POST" });
+      const res = await fetchWithRetry("/api/admin/clear-cache", { method: "POST" }, {
+        retries: 2,
+        baseDelayMs: 300,
+        maxDelayMs: 4_000,
+      });
       const data = (await res.json()) as { message?: string; error?: string };
       if (!res.ok) throw new Error(data.error || "Error al limpiar caché");
       setMsg(data.message || "Caché limpiada");
@@ -31,8 +36,8 @@ export function AdminClearCache() {
       <div className="admin-cache-clear-body">
         <p className="admin-cache-clear-title">¿Va lento o ves datos viejos?</p>
         <p className="muted small admin-cache-clear-hint">
-          Borra la caché del servidor (listados, material y comprobaciones de tablas). No
-          borra tus preguntas ni bancos.
+          Borra la caché del servidor (listados de tests ~10 min, material y
+          comprobaciones de tablas). No borra tus preguntas ni bancos.
         </p>
       </div>
       <button

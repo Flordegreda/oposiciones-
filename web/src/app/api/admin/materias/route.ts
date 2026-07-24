@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest) {
 
   const { count } = await supabase
     .from("bancos")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact", head: true })
     .eq("materia_id", id);
 
   revalidateContentCache();
@@ -81,7 +81,7 @@ export async function DELETE(req: NextRequest) {
   const supabase = getSupabase();
   const { count } = await supabase
     .from("bancos")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact", head: true })
     .eq("materia_id", id);
   await supabase.from("bancos").delete().eq("materia_id", id);
   const { error } = await supabase.from("materias").delete().eq("id", id);

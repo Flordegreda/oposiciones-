@@ -6,7 +6,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { getBancoForTest } from "@/lib/queries/bancos-cached";
 import { TestRunner } from "@/components/TestRunner";
 
-export const revalidate = 300;
+export const revalidate = 600;
 
 type Props = { params: Promise<{ id: string }> };
 

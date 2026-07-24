@@ -1,6 +1,19 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { fetchWithRetry } from "@/lib/retry";
 
 let client: SupabaseClient | null = null;
+
+/** fetch de Supabase con backoff ante 503/502/429 (PostgREST / red). */
+function supabaseFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  return fetchWithRetry(input, init, {
+    retries: 3,
+    baseDelayMs: 250,
+    maxDelayMs: 6_000,
+  });
+}
 
 export function getSupabase(): SupabaseClient {
   if (client) return client;
@@ -16,6 +29,8 @@ export function getSupabase(): SupabaseClient {
     );
   }
 
-  client = createClient(url, key);
+  client = createClient(url, key, {
+    global: { fetch: supabaseFetch },
+  });
   return client;
 }

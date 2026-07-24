@@ -17,6 +17,11 @@ const items = [
       p.startsWith("/test/"),
   },
   {
+    href: "/estadisticas",
+    label: "Stats",
+    match: (p: string) => p.startsWith("/estadisticas"),
+  },
+  {
     href: "/fichas",
     label: "Fichas",
     match: (p: string) => p.startsWith("/fichas"),

@@ -1,3 +1,6 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
 :root {
   --bg: #f0ebe3;
   --bg-accent: #dce8f4;
@@ -1706,6 +1709,59 @@ h1 {
 
 .result-panel {
   text-align: center;
+}
+
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0.75rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.sync-status--local {
+  background: rgba(30, 77, 123, 0.08);
+  color: var(--primary);
+}
+
+.sync-status--syncing {
+  background: rgba(180, 140, 40, 0.12);
+  color: #8a6a12;
+}
+
+.sync-status--ok {
+  background: rgba(34, 120, 70, 0.12);
+  color: var(--success, #1f7a45);
+}
+
+.sync-status--warn {
+  background: rgba(160, 70, 40, 0.1);
+  color: var(--danger, #a33);
+}
+
+.sync-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: sync-pulse 1s ease-in-out infinite;
+}
+
+.sync-status-icon {
+  font-weight: 700;
+}
+
+@keyframes sync-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .result-score {

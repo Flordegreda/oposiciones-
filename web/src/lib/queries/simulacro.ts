@@ -5,6 +5,7 @@ import {
   simulacroTimerSeconds,
 } from "@/lib/exam-utils";
 import { getSupabase } from "@/lib/supabase/server";
+import { CACHE_TAGS, cachedQuery } from "@/lib/content-cache";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { preguntasTableExists, supuestosSchemaReady } from "@/lib/queries/schema";
 import {
@@ -154,12 +155,17 @@ function buildMetaFromSections(
   return { materias, pool: { teorico, practico } };
 }
 
-export async function getSimulacroMeta(): Promise<SimulacroMeta> {
+async function getSimulacroMetaUncached(): Promise<SimulacroMeta> {
   if (!(await preguntasTableExists())) {
     return { materias: [], pool: { teorico: 0, practico: 0 } };
   }
   const { sections } = await getPracticarData();
   return buildMetaFromSections(sections);
+}
+
+/** Meta del launcher de simulacro (derivada de la lista de tests cacheada). */
+export async function getSimulacroMeta(): Promise<SimulacroMeta> {
+  return cachedQuery("get-simulacro-meta", getSimulacroMetaUncached, CACHE_TAGS.temario);
 }
 
 export async function startSimulacroSession(

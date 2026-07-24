@@ -14,6 +14,7 @@ import { ExamSession } from "@/components/ExamSession";
 import { SetPageHeader } from "@/components/page-header-context";
 import { TestPrintButton } from "@/components/TestPrintButton";
 import type { SimulacroMeta } from "@/lib/queries/simulacro";
+import { fetchWithRetry } from "@/lib/retry";
 
 type Props = {
   meta: SimulacroMeta;
@@ -77,13 +78,24 @@ export function SimulacroLauncher({ meta }: Props) {
     setStarting(true);
     setStartErr(null);
     try {
-      const res = await fetch("/api/simulacro/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ presetId, materiaId }),
-      });
+      const res = await fetchWithRetry(
+        "/api/simulacro/start",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ presetId, materiaId }),
+        },
+        { retries: 3, baseDelayMs: 400, maxDelayMs: 8_000 },
+      );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "No se pudo iniciar");
+      if (!res.ok) {
+        if (res.status === 503) {
+          throw new Error(
+            "El servicio está temporalmente saturado. Espera unos segundos e inténtalo de nuevo.",
+          );
+        }
+        throw new Error(data.error || "No se pudo iniciar");
+      }
 
       const selected = presets.find((p) => p.id === presetId)!;
       const materiaSuffix = materiaLabel ? ` · ${materiaLabel}` : "";
@@ -121,6 +133,7 @@ export function SimulacroLauncher({ meta }: Props) {
           onFinish={exitSimulacro}
           optionMaps={running.optionMaps}
           originalOpciones={running.originalOpciones}
+          bancoId="simulacro"
         />
       </>
     );

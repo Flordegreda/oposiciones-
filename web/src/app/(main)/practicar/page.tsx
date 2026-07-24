@@ -2,7 +2,7 @@ import { PracticarTemario } from "@/components/PracticarTemario";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
-export const revalidate = 300;
+export const revalidate = 600;
 
 export default async function PracticarPage() {
   let sections: Awaited<ReturnType<typeof getPracticarData>>["sections"] = [];

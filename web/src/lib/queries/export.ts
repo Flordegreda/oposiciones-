@@ -19,11 +19,15 @@ async function fetchAllPreguntas(): Promise<Map<string, Record<string, unknown>[
   const supabase = getSupabase();
   const byBanco = new Map<string, Record<string, unknown>[]>();
   const pageSize = 1000;
+  const withSupuesto = await supuestosSchemaReady();
+  const preguntaSelect = withSupuesto
+    ? "id, banco_id, enunciado, opciones, respuesta, explicacion, orden, supuesto_id"
+    : "id, banco_id, enunciado, opciones, respuesta, explicacion, orden";
 
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
       .from("preguntas")
-      .select("*")
+      .select(preguntaSelect)
       .order("banco_id")
       .order("orden")
       .range(from, from + pageSize - 1);
@@ -53,7 +57,7 @@ async function fetchAllSupuestos(): Promise<Map<string, Record<string, unknown>[
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
       .from("supuestos")
-      .select("*")
+      .select("id, banco_id, titulo, texto, orden")
       .order("banco_id")
       .order("orden")
       .range(from, from + pageSize - 1);
@@ -113,9 +117,12 @@ export async function buildFullBackup(): Promise<BackupPayload> {
   const hasPreguntas = await preguntasTableExists();
 
   const [materiasRes, lineasRes, bancosRes] = await Promise.all([
-    supabase.from("materias").select("*").order("nombre"),
-    supabase.from("lineas").select("*").order("nombre"),
-    supabase.from("bancos").select("*").order("nombre"),
+    supabase.from("materias").select("id, nombre").order("nombre"),
+    supabase.from("lineas").select("id, nombre, slug").order("nombre"),
+    supabase
+      .from("bancos")
+      .select("id, nombre, tipo, materia_id, active, linea_id")
+      .order("nombre"),
   ]);
 
   if (materiasRes.error) throw new Error(materiasRes.error.message);

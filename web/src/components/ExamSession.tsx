@@ -10,6 +10,9 @@ import {
   originalOptionToDisplay,
 } from "@/lib/exam-utils";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
+import { fetchWithRetry } from "@/lib/retry";
+import { getSyncService } from "@/lib/persistence";
 
 type AnswerMeta = {
   respuesta: number;
@@ -27,6 +30,8 @@ type Props = {
   optionMaps?: number[][];
   /** Opciones originales antes de barajar (resultado e impresión). */
   originalOpciones?: string[][];
+  /** Id de banco o "simulacro" para persistencia. */
+  bancoId?: string;
 };
 
 type Phase = "test" | "result";
@@ -50,10 +55,13 @@ export function ExamSession({
   onFinish,
   optionMaps: optionMapsProp,
   originalOpciones: originalOpcionesProp,
+  bancoId,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const timerIdRef = useRef<number | null>(null);
+  const startedAtRef = useRef<number>(Date.now());
+  const savedResultRef = useRef(false);
   const [phase, setPhase] = useState<Phase>("test");
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(() =>
@@ -64,6 +72,7 @@ export function ExamSession({
   const [remaining, setRemaining] = useState<number | null>(timerSeconds);
   const [timerEnded, setTimerEnded] = useState(false);
   const [grading, setGrading] = useState(false);
+  const [localSaved, setLocalSaved] = useState(false);
 
   const optionMaps = useMemo(
     () =>
@@ -121,19 +130,23 @@ export function ExamSession({
     if (examMode) {
       setGrading(true);
       try {
-        const res = await fetch("/api/exam/grade", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            answers: active.map((q, i) => ({
-              id: q.id,
-              selected:
-                answers[i] === null
-                  ? null
-                  : displayOptionToOriginal(optionMaps[i] ?? [], answers[i]!),
-            })),
-          }),
-        });
+        const res = await fetchWithRetry(
+          "/api/exam/grade",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              answers: active.map((q, i) => ({
+                id: q.id,
+                selected:
+                  answers[i] === null
+                    ? null
+                    : displayOptionToOriginal(optionMaps[i] ?? [], answers[i]!),
+              })),
+            }),
+          },
+          { retries: 3, baseDelayMs: 400, maxDelayMs: 8_000 },
+        );
         const data = (await res.json()) as {
           results?: {
             id: string;
@@ -154,6 +167,72 @@ export function ExamSession({
     }
     setPhase("result");
   }, [examMode, active, answers, optionMaps]);
+
+  // Persistencia híbrida: IndexedDB al instante + sync en background
+  useEffect(() => {
+    if (phase !== "result" || savedResultRef.current) return;
+    if (examMode && answerMeta.size === 0) return;
+
+    savedResultRef.current = true;
+    const banco = bancoId || active[0]?.bancoId || "desconocido";
+    const respuestas: Record<string, number | null> = {};
+    const detallePreguntas: {
+      preguntaId: string;
+      enunciado: string;
+      correcta: boolean;
+      respondida: boolean;
+      seleccion: number | null;
+      respuestaCorrecta?: number;
+    }[] = [];
+    let aciertos = 0;
+    let fallos = 0;
+
+    for (let i = 0; i < active.length; i++) {
+      const q = active[i];
+      const ans = answers[i];
+      const selected =
+        ans === null ? null : displayOptionToOriginal(optionMaps[i] ?? [], ans);
+      respuestas[q.id] = selected;
+      const meta = answerMeta.get(q.id);
+      const respondida = selected !== null && meta !== undefined;
+      const correcta = respondida && selected === meta!.respuesta;
+      if (respondida) {
+        if (correcta) aciertos += 1;
+        else fallos += 1;
+      }
+      detallePreguntas.push({
+        preguntaId: q.id,
+        enunciado: q.enunciado,
+        correcta: Boolean(correcta),
+        respondida,
+        seleccion: selected,
+        respuestaCorrecta: meta?.respuesta,
+      });
+    }
+
+    const elapsedSec = Math.max(
+      0,
+      Math.round((Date.now() - startedAtRef.current) / 1000),
+    );
+
+    void getSyncService()
+      .saveResultAndEnqueue({
+        id: crypto.randomUUID(),
+        banco,
+        test: title,
+        fecha: new Date().toISOString(),
+        totalPreguntas: active.length,
+        aciertos,
+        fallos,
+        tiempoTotal: elapsedSec,
+        respuestas,
+        detallePreguntas,
+      })
+      .then(() => setLocalSaved(true))
+      .catch(() => {
+        savedResultRef.current = false;
+      });
+  }, [phase, examMode, answerMeta, active, answers, optionMaps, bancoId, title]);
 
   const stopTimer = useCallback(() => {
     if (timerIdRef.current !== null) {
@@ -233,14 +312,18 @@ export function ExamSession({
 
       if (examMode) return;
 
-      void fetch("/api/exam/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: current.id,
-          selected: displayOptionToOriginal(optionMaps[index] ?? [], optionIndex),
-        }),
-      })
+      void fetchWithRetry(
+        "/api/exam/check",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: current.id,
+            selected: displayOptionToOriginal(optionMaps[index] ?? [], optionIndex),
+          }),
+        },
+        { retries: 2, baseDelayMs: 300, maxDelayMs: 4_000 },
+      )
         .then(async (res) => {
           const data = (await res.json()) as {
             correct?: boolean;
@@ -281,6 +364,7 @@ export function ExamSession({
     return (
       <div className="card result-panel">
         <h2>Resultado{examMode ? " — modo examen" : ""}</h2>
+        <SyncStatusIndicator localSaved={localSaved} />
         {timerEnded && (
           <p className="muted small">Tiempo agotado. Se han guardado tus respuestas.</p>
         )}

@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BancoTile } from "@/components/BancoTile";
 import { MateriaFilter, materiasFromSections } from "@/components/MateriaFilter";
 import { TestPrintButton } from "@/components/TestPrintButton";
 import type { MateriaSection } from "@/lib/queries/bancos";
+import { getLocalCache } from "@/lib/persistence";
+import type { BancoCacheEntry } from "@/lib/persistence/types";
 
 type Props = {
   sections: MateriaSection[];
@@ -12,6 +14,26 @@ type Props = {
 
 export function PracticarTemario({ sections }: Props) {
   const [materiaId, setMateriaId] = useState<string | null>(null);
+
+  // Cache local de la lista de bancos (cambia poco)
+  useEffect(() => {
+    const entries: BancoCacheEntry[] = [];
+    const now = new Date().toISOString();
+    for (const section of sections) {
+      for (const b of section.bancos) {
+        entries.push({
+          id: b.id,
+          nombre: b.nombre,
+          tipo: b.tipo,
+          materiaId: section.id,
+          materiaNombre: section.nombre,
+          numPreguntas: b.numPreguntas,
+          cachedAt: now,
+        });
+      }
+    }
+    void getLocalCache().saveBancos(entries).catch(() => undefined);
+  }, [sections]);
 
   const materias = useMemo(() => materiasFromSections(sections), [sections]);
 

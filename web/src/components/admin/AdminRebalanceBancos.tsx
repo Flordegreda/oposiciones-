@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { RebalancePreview } from "@/lib/rebalance-bancos";
-import { fetchErrorMessage, readFetchJson } from "@/lib/fetch-json";
+import { fetchErrorMessage, fetchJsonWithRetry } from "@/lib/fetch-json";
 
 type Materia = { id: string; nombre: string };
 
@@ -28,8 +28,9 @@ export function AdminRebalanceBancos({ materias }: Props) {
     try {
       const qs = new URLSearchParams({ targetSize: String(targetSize) });
       if (materiaId) qs.set("materiaId", materiaId);
-      const res = await fetch(`/api/admin/bancos/rebalance?${qs}`);
-      const { data, text } = await readFetchJson<{ error?: string }>(res);
+      const { res, data, text } = await fetchJsonWithRetry<{ error?: string }>(
+        `/api/admin/bancos/rebalance?${qs}`,
+      );
       if (!res.ok) {
         throw new Error(fetchErrorMessage(res, data, text, "Error al previsualizar"));
       }
@@ -61,7 +62,10 @@ export function AdminRebalanceBancos({ materias }: Props) {
     setErr(null);
     setMsg(null);
     try {
-      const res = await fetch("/api/admin/bancos/rebalance/apply", {
+      const { res, data, text } = await fetchJsonWithRetry<{
+        error?: string;
+        message?: string;
+      }>("/api/admin/bancos/rebalance/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -69,7 +73,6 @@ export function AdminRebalanceBancos({ materias }: Props) {
           materiaId: materiaId || null,
         }),
       });
-      const { data, text } = await readFetchJson<{ error?: string; message?: string }>(res);
       if (!res.ok) {
         throw new Error(fetchErrorMessage(res, data, text, "Error al aplicar"));
       }

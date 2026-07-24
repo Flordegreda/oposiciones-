@@ -32,6 +32,7 @@ export function SiteHeader({ backHref, backLabel, pageTitle }: Props) {
         </Link>
         <nav className="site-nav site-nav--desktop" aria-label="Principal">
           <Link href="/practicar">Tests</Link>
+          <Link href="/estadisticas">Stats</Link>
           <Link href="/fichas">Fichas</Link>
           <Link href="/simulacro">Simulacro</Link>
           <Link href="/admin">Material</Link>
