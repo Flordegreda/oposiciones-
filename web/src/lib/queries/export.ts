@@ -20,14 +20,19 @@ async function fetchAllPreguntas(): Promise<Map<string, Record<string, unknown>[
   const byBanco = new Map<string, Record<string, unknown>[]>();
   const pageSize = 1000;
   const withSupuesto = await supuestosSchemaReady();
-  const preguntaSelect = withSupuesto
-    ? "id, banco_id, enunciado, opciones, respuesta, explicacion, orden, supuesto_id"
-    : "id, banco_id, enunciado, opciones, respuesta, explicacion, orden";
 
   for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabase
-      .from("preguntas")
-      .select(preguntaSelect)
+    const query = withSupuesto
+      ? supabase
+          .from("preguntas")
+          .select(
+            "id, banco_id, enunciado, opciones, respuesta, explicacion, orden, supuesto_id",
+          )
+      : supabase
+          .from("preguntas")
+          .select("id, banco_id, enunciado, opciones, respuesta, explicacion, orden");
+
+    const { data, error } = await query
       .order("banco_id")
       .order("orden")
       .range(from, from + pageSize - 1);
@@ -35,10 +40,11 @@ async function fetchAllPreguntas(): Promise<Map<string, Record<string, unknown>[
     if (error) throw new Error(error.message);
     if (!data?.length) break;
 
-    for (const row of data) {
-      const list = byBanco.get(row.banco_id) ?? [];
+    for (const row of data as Record<string, unknown>[]) {
+      const bancoId = String(row.banco_id);
+      const list = byBanco.get(bancoId) ?? [];
       list.push(row);
-      byBanco.set(row.banco_id, list);
+      byBanco.set(bancoId, list);
     }
 
     if (data.length < pageSize) break;

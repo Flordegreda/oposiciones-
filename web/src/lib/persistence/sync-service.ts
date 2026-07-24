@@ -153,7 +153,8 @@ export class SyncService {
     await this.syncNow("interval");
   }
 
-  async syncNow(_reason: "startup" | "interval" | "manual" = "manual"): Promise<void> {
+  async syncNow(reason: "startup" | "interval" | "manual" = "manual"): Promise<void> {
+    void reason;
     if (this.running) return this.running;
     this.running = this.runSync().finally(() => {
       this.running = null;
