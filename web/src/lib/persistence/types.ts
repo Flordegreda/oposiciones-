@@ -16,7 +16,7 @@ export type BancoCacheEntry = {
 export type TestResultRecord = {
   id: string;
   usuarioId: string;
-  /** Identificador del banco (UUID) o etiqueta ("simulacro"). */
+  /** Identificador del banco (UUID) o etiqueta ("simulacro" / "repaso_fallos"). */
   banco: string;
   /** Título mostrado (nombre del banco / preset). */
   test: string;
@@ -30,9 +30,19 @@ export type TestResultRecord = {
   respuestas: Record<string, number | null>;
   /** Detalle por pregunta (para TOP falladas / revisión). */
   detallePreguntas?: PreguntaResultadoDetalle[];
+  /** Tipo de sesión (repaso vs test normal). */
+  tipo?: "normal" | "repaso_fallos";
   /** Fuente de verdad para conflictos. */
   updatedAt: string;
   syncStatus: SyncStatus;
+};
+
+/** Meta local de preguntas falladas (repaso). */
+export type FalladaMeta = {
+  preguntaId: string;
+  repasada: boolean;
+  fechaRepaso: string | null;
+  ultimoFallo?: string | null;
 };
 
 export type PreguntaResultadoDetalle = {

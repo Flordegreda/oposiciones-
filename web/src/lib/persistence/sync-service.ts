@@ -31,7 +31,7 @@ type CloudRow = {
 };
 
 function cloudToLocal(row: CloudRow): TestResultRecord {
-  const { selecciones, detalle } = extractDetalleFromRespuestas(
+  const { selecciones, detalle, tipo } = extractDetalleFromRespuestas(
     row.respuestas as Record<string, unknown> | null,
   );
   return {
@@ -46,6 +46,7 @@ function cloudToLocal(row: CloudRow): TestResultRecord {
     tiempoTotal: row.tiempo_total,
     respuestas: selecciones,
     detallePreguntas: detalle,
+    tipo: tipo ?? (row.banco === "repaso_fallos" ? "repaso_fallos" : "normal"),
     updatedAt: row.updated_at || row.fecha,
     syncStatus: "synced",
   };
@@ -62,7 +63,7 @@ function localToCloudPayload(r: TestResultRecord) {
     aciertos: r.aciertos,
     fallos: r.fallos,
     tiempo_total: r.tiempoTotal,
-    respuestas: embedDetalleInRespuestas(r.respuestas, r.detallePreguntas),
+    respuestas: embedDetalleInRespuestas(r.respuestas, r.detallePreguntas, r.tipo),
     updated_at: r.updatedAt,
   };
 }

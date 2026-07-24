@@ -10,10 +10,15 @@ export type GradedAnswer = {
 
 type GradeInput = { id: string; selected: number | null };
 
+/** Quita sufijo de duplicado de sesión de repaso (`uuid__dup1`). */
+function realPreguntaId(sessionId: string): string {
+  return sessionId.replace(/__dup\d+$/, "");
+}
+
 export async function gradeExamAnswers(items: GradeInput[]): Promise<GradedAnswer[]> {
   if (!items.length) return [];
 
-  const ids = [...new Set(items.map((i) => i.id))];
+  const ids = [...new Set(items.map((i) => realPreguntaId(i.id)))];
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("preguntas")
@@ -25,9 +30,10 @@ export async function gradeExamAnswers(items: GradeInput[]): Promise<GradedAnswe
   const byId = new Map((data ?? []).map((p) => [p.id as string, p]));
 
   return items.map((item) => {
-    const row = byId.get(item.id);
+    const realId = realPreguntaId(item.id);
+    const row = byId.get(realId);
     if (!row) {
-      throw new Error(`Pregunta no encontrada: ${item.id}`);
+      throw new Error(`Pregunta no encontrada: ${realId}`);
     }
     const respuesta = row.respuesta as number;
     const correct = item.selected !== null && item.selected === respuesta;

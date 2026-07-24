@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePersistence } from "@/components/PersistenceProvider";
 import {
@@ -86,6 +87,7 @@ const FILTROS: { id: FiltroTiempo; label: string }[] = [
 ];
 
 export function EstadisticasDashboard() {
+  const router = useRouter();
   const { phase, syncNow } = usePersistence();
   const [filtro, setFiltro] = useState<FiltroTiempo>("30dias");
   const [objetivoPct, setObjetivoPct] = useState(OBJETIVO_DEFAULT);
@@ -251,8 +253,11 @@ export function EstadisticasDashboard() {
               Evolución diaria
             </h2>
             <p className="mb-4 text-sm text-slate-500">
-              Tendencia · objetivo {objetivoPct}% · media del periodo · puntos
-              vacíos = sin tests
+              Desde tu primer test
+              {data?.evolucion[0]?.etiqueta
+                ? ` (${data.evolucion[0].etiqueta})`
+                : ""}{" "}
+              hasta hoy · objetivo {objetivoPct}% · media del periodo
             </p>
             <EvolucionDiariaChart
               data={data?.evolucion ?? []}
@@ -305,10 +310,24 @@ export function EstadisticasDashboard() {
 
             {/* TOP falladas */}
             <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-1 text-lg font-semibold text-slate-800">
-                Preguntas más falladas
-              </h2>
-              <p className="mb-4 text-sm text-slate-500">TOP 10 del periodo</p>
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="mb-1 text-lg font-semibold text-slate-800">
+                    Preguntas más falladas
+                  </h2>
+                  <p className="text-sm text-slate-500">TOP 10 del periodo</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+                  disabled={(data?.preguntasFalladas.length ?? 0) === 0}
+                  onClick={() => {
+                    router.push("/repaso-fallos");
+                  }}
+                >
+                  🔄 Repasar estas preguntas
+                </button>
+              </div>
               {(data?.preguntasFalladas.length ?? 0) === 0 ? (
                 <p className="text-sm text-slate-500">
                   Aún no hay fallos registrados con detalle. Completa tests nuevos
@@ -318,7 +337,10 @@ export function EstadisticasDashboard() {
                 <ul className="space-y-2">
                   {(data?.preguntasFalladas ?? []).map((p, i) => {
                     const href =
-                      p.banco && p.banco !== "simulacro" && p.banco !== "desconocido"
+                      p.banco &&
+                      p.banco !== "simulacro" &&
+                      p.banco !== "desconocido" &&
+                      p.banco !== "repaso_fallos"
                         ? `/test/${p.banco}`
                         : "/practicar";
                     return (
@@ -331,9 +353,16 @@ export function EstadisticasDashboard() {
                             <span className="text-xs font-semibold text-slate-400">
                               #{i + 1}
                             </span>
-                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                              {p.fallos} fallo{p.fallos === 1 ? "" : "s"}
-                            </span>
+                            <div className="flex flex-wrap items-center justify-end gap-1.5">
+                              {p.repasada && (
+                                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                  ✅ Repasado
+                                </span>
+                              )}
+                              <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                                {p.fallos} fallo{p.fallos === 1 ? "" : "s"}
+                              </span>
+                            </div>
                           </div>
                           <p className="text-sm font-medium text-slate-800">
                             {truncate(p.texto, 80)}

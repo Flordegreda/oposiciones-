@@ -62,6 +62,9 @@ export type PreguntaFallada = {
   porcentajeFallos: number;
   banco: string;
   bancoNombre: string;
+  /** Marcada tras un repaso de fallos. */
+  repasada?: boolean;
+  fechaRepaso?: string | null;
 };
 
 export type TestReciente = {
@@ -93,13 +96,17 @@ export type DashboardData = {
 };
 
 const DETALLE_KEY = "__detalle";
+const TIPO_KEY = "__tipo";
 
 export function embedDetalleInRespuestas(
   respuestas: Record<string, number | null>,
   detalle?: PreguntaResultadoDetalle[],
+  tipo?: TestResultRecord["tipo"],
 ): Record<string, unknown> {
-  if (!detalle?.length) return { ...respuestas };
-  return { ...respuestas, [DETALLE_KEY]: detalle };
+  const out: Record<string, unknown> = { ...respuestas };
+  if (detalle?.length) out[DETALLE_KEY] = detalle;
+  if (tipo) out[TIPO_KEY] = tipo;
+  return out;
 }
 
 export function extractDetalleFromRespuestas(
@@ -107,20 +114,26 @@ export function extractDetalleFromRespuestas(
 ): {
   selecciones: Record<string, number | null>;
   detalle?: PreguntaResultadoDetalle[];
+  tipo?: TestResultRecord["tipo"];
 } {
   if (!respuestas || typeof respuestas !== "object") {
     return { selecciones: {} };
   }
   const selecciones: Record<string, number | null> = {};
   let detalle: PreguntaResultadoDetalle[] | undefined;
+  let tipo: TestResultRecord["tipo"] | undefined;
   for (const [k, v] of Object.entries(respuestas)) {
     if (k === DETALLE_KEY && Array.isArray(v)) {
       detalle = v as PreguntaResultadoDetalle[];
       continue;
     }
+    if (k === TIPO_KEY && (v === "normal" || v === "repaso_fallos")) {
+      tipo = v;
+      continue;
+    }
     selecciones[k] = typeof v === "number" || v === null ? (v as number | null) : null;
   }
-  return { selecciones, detalle };
+  return { selecciones, detalle, tipo };
 }
 
 export async function getResultadosFromCache(): Promise<TestResultRecord[]> {
@@ -134,14 +147,20 @@ export async function getResultadosFromCache(): Promise<TestResultRecord[]> {
 }
 
 function normalizeResultado(r: TestResultRecord): TestResultRecord {
-  if (r.detallePreguntas?.length) return r;
-  const { selecciones, detalle } = extractDetalleFromRespuestas(
+  if (r.detallePreguntas?.length) {
+    return {
+      ...r,
+      tipo: r.tipo ?? (r.banco === "repaso_fallos" ? "repaso_fallos" : "normal"),
+    };
+  }
+  const { selecciones, detalle, tipo } = extractDetalleFromRespuestas(
     r.respuestas as Record<string, unknown>,
   );
   return {
     ...r,
     respuestas: selecciones,
     detallePreguntas: detalle,
+    tipo: r.tipo ?? tipo ?? (r.banco === "repaso_fallos" ? "repaso_fallos" : "normal"),
   };
 }
 
@@ -155,8 +174,26 @@ export function filtrarPorFecha(
   return resultados.filter((r) => Date.parse(r.fecha) >= from);
 }
 
+/** Día civil local `YYYY-MM-DD` (evita desfases UTC en España). */
+function localDayKey(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function dayKey(iso: string): string {
-  return iso.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  return localDayKey(d);
+}
+
+function addLocalDays(day: string, delta: number): string {
+  const [y, m, d] = day.split("-").map(Number);
+  const dt = new Date(y!, (m ?? 1) - 1, d ?? 1);
+  dt.setDate(dt.getDate() + delta);
+  return localDayKey(dt);
 }
 
 function labelDdMm(isoDay: string): string {
@@ -178,6 +215,7 @@ function bancoNombreFrom(
   const hit = bancos.find((b) => b.id === bancoId);
   if (hit?.nombre) return hit.nombre;
   if (bancoId === "simulacro") return "Simulacro";
+  if (bancoId === "repaso_fallos") return "Repaso de fallos";
   return testTitle || bancoId.slice(0, 8);
 }
 
@@ -209,8 +247,8 @@ export function calcularResumen(resultados: TestResultRecord[]): ResumenEstadist
 export function calcularRacha(resultados: TestResultRecord[]): number {
   if (!resultados.length) return 0;
   const days = new Set(resultados.map((r) => dayKey(r.fecha)));
-  const today = dayKey(new Date().toISOString());
-  const yesterday = dayKey(new Date(Date.now() - 86400000).toISOString());
+  const today = localDayKey();
+  const yesterday = addLocalDays(today, -1);
 
   let cursor = days.has(today) ? today : days.has(yesterday) ? yesterday : null;
   if (!cursor) return 0;
@@ -218,9 +256,7 @@ export function calcularRacha(resultados: TestResultRecord[]): number {
   let streak = 0;
   while (cursor && days.has(cursor)) {
     streak += 1;
-    const prev = new Date(`${cursor}T12:00:00.000Z`);
-    prev.setUTCDate(prev.getUTCDate() - 1);
-    cursor = dayKey(prev.toISOString());
+    cursor = addLocalDays(cursor, -1);
   }
   return streak;
 }
@@ -239,14 +275,22 @@ export function calcularEvolucionDiaria(
     byDay.set(k, cur);
   }
 
-  const out: PuntoEvolucion[] = [];
-  const end = new Date();
-  end.setHours(12, 0, 0, 0);
+  const hoy = localDayKey();
+  // Sin relleno vacío previo: el eje empieza en el primer test (o hoy).
+  let inicio = hoy;
+  if (resultados.length) {
+    let first = dayKey(resultados[0]!.fecha);
+    for (const r of resultados) {
+      const k = dayKey(r.fecha);
+      if (k < first) first = k;
+    }
+    const limiteFiltro = addLocalDays(hoy, -(Math.max(1, dias) - 1));
+    // No mostrar días anteriores al primer test; el filtro solo acota hacia atrás.
+    inicio = first < limiteFiltro ? limiteFiltro : first;
+  }
 
-  for (let i = dias - 1; i >= 0; i--) {
-    const d = new Date(end);
-    d.setDate(end.getDate() - i);
-    const key = dayKey(d.toISOString());
+  const out: PuntoEvolucion[] = [];
+  for (let key = inicio; ; key = addLocalDays(key, 1)) {
     const hit = byDay.get(key);
     if (!hit || hit.total === 0) {
       out.push({
@@ -265,6 +309,9 @@ export function calcularEvolucionDiaria(
         sinActividad: false,
       });
     }
+    if (key >= hoy) break;
+    // Seguridad ante bucles absurdos
+    if (out.length > 400) break;
   }
   return out;
 }
@@ -479,6 +526,25 @@ function diasParaEvolucion(filtro: FiltroTiempo): number {
   return 30;
 }
 
+async function enriquecerFalladas(
+  falladas: PreguntaFallada[],
+): Promise<PreguntaFallada[]> {
+  if (!falladas.length) return falladas;
+  try {
+    const map = await getLocalCache().getFalladaMetaMap();
+    return falladas.map((f) => {
+      const meta = map.get(f.preguntaId);
+      return {
+        ...f,
+        repasada: meta?.repasada ?? false,
+        fechaRepaso: meta?.fechaRepaso ?? null,
+      };
+    });
+  } catch {
+    return falladas;
+  }
+}
+
 /** Función principal del dashboard. */
 export async function obtenerDashboardData(
   filtro: FiltroTiempo = "30dias",
@@ -499,7 +565,9 @@ export async function obtenerDashboardData(
       resumen.testsCompletados > 0 ? resumen.aciertosGlobal : null,
     rendimientoBancos,
     tiempoMedioBancos: calcularTiempoMedioPorBanco(filtrados, bancos),
-    preguntasFalladas: obtenerPreguntasMasFalladas(filtrados, 10, bancos),
+    preguntasFalladas: await enriquecerFalladas(
+      obtenerPreguntasMasFalladas(filtrados, 10, bancos),
+    ),
     testsRecientes: obtenerTestsRecientes(filtrados, 50, bancos),
     recomendacion: generarRecomendacion(rendimientoBancos, filtrados),
     totalHistorial: resultados.length,

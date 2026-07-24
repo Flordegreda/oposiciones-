@@ -6,18 +6,20 @@
 import type {
   BancoCacheEntry,
   CacheMeta,
+  FalladaMeta,
   TestResultRecord,
   UserStatsRecord,
 } from "@/lib/persistence/types";
 
 const DB_NAME = "jex-oposiciones-cache";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORE = {
   bancos: "bancos",
   resultados: "resultados",
   stats: "stats",
   meta: "meta",
+  falladasMeta: "falladas_meta",
 } as const;
 
 const META_KEY = "sync";
@@ -51,6 +53,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE.meta)) {
         db.createObjectStore(STORE.meta, { keyPath: "key" });
+      }
+      if (!db.objectStoreNames.contains(STORE.falladasMeta)) {
+        db.createObjectStore(STORE.falladasMeta, { keyPath: "preguntaId" });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -312,6 +317,45 @@ export class LocalCacheService {
 
   async markDirty(dirty: boolean): Promise<void> {
     await this.setMeta({ dirty });
+  }
+
+  // —— Meta de falladas / repaso ———————————————————————————————
+
+  async getFalladasMeta(): Promise<FalladaMeta[]> {
+    const db = await this.db();
+    const tx = db.transaction(STORE.falladasMeta, "readonly");
+    const rows = await reqToPromise(tx.objectStore(STORE.falladasMeta).getAll());
+    await txDone(tx);
+    return (rows as FalladaMeta[]) ?? [];
+  }
+
+  async getFalladaMetaMap(): Promise<Map<string, FalladaMeta>> {
+    const rows = await this.getFalladasMeta();
+    return new Map(rows.map((r) => [r.preguntaId, r]));
+  }
+
+  async upsertFalladasMeta(entries: FalladaMeta[]): Promise<void> {
+    if (!entries.length) return;
+    const db = await this.db();
+    const tx = db.transaction(STORE.falladasMeta, "readwrite");
+    const store = tx.objectStore(STORE.falladasMeta);
+    for (const e of entries) store.put(e);
+    await txDone(tx);
+  }
+
+  async markPreguntasRepasadas(preguntaIds: string[], when = new Date().toISOString()): Promise<void> {
+    if (!preguntaIds.length) return;
+    const map = await this.getFalladaMetaMap();
+    const next: FalladaMeta[] = preguntaIds.map((preguntaId) => {
+      const prev = map.get(preguntaId);
+      return {
+        preguntaId,
+        repasada: true,
+        fechaRepaso: when,
+        ultimoFallo: prev?.ultimoFallo ?? null,
+      };
+    });
+    await this.upsertFalladasMeta(next);
   }
 }
 
