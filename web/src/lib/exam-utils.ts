@@ -111,12 +111,17 @@ export type PreparedExamSession = {
   originalOpciones: string[][];
 };
 
-/** Baraja las opciones de cada pregunta al iniciar test/simulacro. */
-export function prepareExamSessionQuestions(list: PublicExamPregunta[]): PreparedExamSession {
+/** Baraja orden de preguntas (Fisher-Yates) y opciones A/B/C/D de cada una. */
+export function prepareExamSessionQuestions(
+  list: PublicExamPregunta[],
+  options?: { shuffleQuestionOrder?: boolean },
+): PreparedExamSession {
+  const shuffleOrder = options?.shuffleQuestionOrder !== false;
+  const ordered = shuffleOrder ? shuffle([...list]) : [...list];
   const optionMaps: number[][] = [];
   const originalOpciones: string[][] = [];
 
-  const questions = list.map((q) => {
+  const questions = ordered.map((q) => {
     const n = q.opciones.length;
     const order = shuffle([...Array(n).keys()]);
     optionMaps.push(order);

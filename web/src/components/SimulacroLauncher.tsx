@@ -6,10 +6,14 @@ import type { PublicExamPregunta, SimulacroPresetId } from "@/lib/exam-utils";
 import {
   SIMULACRO_PRESETS,
   estimateSimulacroPick,
-  prepareExamSessionQuestions,
   presetSummary,
   simulacroTimerSeconds,
 } from "@/lib/exam-utils";
+import {
+  beginExamSession,
+  clearExamSession,
+  simulacroSessionScope,
+} from "@/lib/exam-session-storage";
 import { ExamSession } from "@/components/ExamSession";
 import { SetPageHeader } from "@/components/page-header-context";
 import { TestPrintButton } from "@/components/TestPrintButton";
@@ -28,6 +32,7 @@ type Running = {
   subtitle: string;
   optionMaps: number[][];
   originalOpciones: string[][];
+  sessionScope: string;
 };
 
 export function SimulacroLauncher({ meta }: Props) {
@@ -37,7 +42,12 @@ export function SimulacroLauncher({ meta }: Props) {
   const [running, setRunning] = useState<Running | null>(null);
   const [starting, setStarting] = useState(false);
   const [startErr, setStartErr] = useState<string | null>(null);
-  const exitSimulacro = useCallback(() => setRunning(null), []);
+  const exitSimulacro = useCallback(() => {
+    setRunning((prev) => {
+      if (prev?.sessionScope) clearExamSession(prev.sessionScope);
+      return null;
+    });
+  }, []);
 
   const materias = useMemo(
     () =>
@@ -99,7 +109,9 @@ export function SimulacroLauncher({ meta }: Props) {
 
       const selected = presets.find((p) => p.id === presetId)!;
       const materiaSuffix = materiaLabel ? ` · ${materiaLabel}` : "";
-      const prepared = prepareExamSessionQuestions(data.list as PublicExamPregunta[]);
+      const list = data.list as PublicExamPregunta[];
+      const sessionScope = simulacroSessionScope(list);
+      const prepared = beginExamSession(sessionScope, list);
       setRunning({
         list: prepared.questions,
         examMode,
@@ -108,6 +120,7 @@ export function SimulacroLauncher({ meta }: Props) {
         subtitle: data.subtitle as string,
         optionMaps: prepared.optionMaps,
         originalOpciones: prepared.originalOpciones,
+        sessionScope,
       });
     } catch (e) {
       setStartErr(e instanceof Error ? e.message : "Error al iniciar");
@@ -241,8 +254,8 @@ export function SimulacroLauncher({ meta }: Props) {
       </label>
 
       <p className="info-box sim-info">
-        El cronómetro arranca al iniciar. Preguntas aleatorias dentro de cada bloque
-        (teórico / práctico).
+        El cronómetro arranca al iniciar. Preguntas y opciones en orden aleatorio (se
+        mantiene si recargas durante el simulacro).
       </p>
 
       {startErr && <p className="error">{startErr}</p>}
