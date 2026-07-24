@@ -1,22 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateContentCache } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
-import { countParsedQuestions, hasSupuestoMarker, parseImportForContext, prepareImportText } from "@/lib/parse-import-text";
+import { countParsedQuestions, parseImportForContext } from "@/lib/parse-import-text";
 import { getJexLineaId } from "@/lib/queries/bancos";
 import { supuestosSchemaReady } from "@/lib/queries/schema";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { materiaId, tipo, nombre, texto, encadenado } = body;
+    const { materiaId, tipo, nombre, texto, textoCaso, encadenado } = body;
 
     if (!materiaId || !texto?.trim()) {
       return NextResponse.json({ error: "Faltan materia o texto" }, { status: 400 });
     }
 
-    const prepared = prepareImportText(texto);
-    const encadenadoEffective = !!encadenado || hasSupuestoMarker(prepared);
-    const doc = parseImportForContext(prepared, { encadenado: encadenadoEffective });
+    const doc = parseImportForContext(texto, {
+      encadenado: !!encadenado,
+      nombre: nombre?.trim(),
+      supuestoTexto: textoCaso?.trim(),
+    });
     const total = countParsedQuestions(doc);
     if (!total) {
       return NextResponse.json(
@@ -25,11 +27,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (encadenadoEffective && doc.supuestos.length === 0) {
+    if (encadenado && doc.supuestos.length === 0) {
       return NextResponse.json(
         {
           error:
-            "Supuesto encadenado marcado pero no se detectó el bloque === SUPUESTO ===. Revisa el formato.",
+            "Supuesto práctico marcado pero falta el texto del caso o las preguntas. Usa las dos cajas.",
         },
         { status: 400 },
       );

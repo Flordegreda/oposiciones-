@@ -20,6 +20,8 @@ export type ImportContext = {
   tipo?: "teorico" | "practico";
   nombre?: string;
   encadenado?: boolean;
+  /** Texto del caso (campo separado en admin). */
+  supuestoTexto?: string;
 };
 
 const OPTION_RE = /^([A-Da-d])[\.\)\]:\-]\s*(.+)$/;
@@ -28,12 +30,7 @@ const EXPLAIN_RE = /^(?:Explicaci[oó]n|E)\s*:\s*(.+)$/i;
 const INLINE_OPTION_SPLIT_RE = /\s+(?=[A-D][\.\)]\s)/;
 const NUMBERED_HEAD_RE = /^\d+[\.\)]\s+/;
 const P_HEAD_RE = /^P:\s*/i;
-const NUMBERED_QUESTION_START_RE = /^\s*\d+[\.\)]\s+/;
-const SUPUESTO_START_RE =
-  /^\s*={3,}\s*SUPUESTO\s*:?\s*(?<titulo>.*?)\s*={0,}\s*$/i;
-const SUPUESTO_END_RE = /^\s*={3,}\s*(FIN(\s+SUPUESTO)?)?\s*={0,}\s*$/i;
 
-/** Acepta `Respuesta: B`, `Respuesta: B.`, `(B)`, `**Respuesta:** B`, etc. */
 function parseAnswerLine(line: string): { respuesta: number; explicacion?: string } | null {
   const cleaned = line.trim().replace(/\*\*/g, "");
   const m = cleaned.match(
@@ -57,56 +54,6 @@ function parseAnswerLine(line: string): { respuesta: number; explicacion?: strin
 const INLINE_ANSWER_RE =
   /(?:Respuesta|R|Soluci[oó]n|Correcta|Clave)\s*:+\s*(?:\(?([A-Da-d])\)?)[\.\)]?(?:\s+(?:Explicaci[oó]n|E)\s*:\s*(.+))?/i;
 
-function lineTrim(line: string): string {
-  return line.trim();
-}
-
-function isSupuestoStart(line: string): boolean {
-  return parseSupuestoStartLine(line) !== null;
-}
-
-function parseSupuestoStartLine(line: string): { titulo?: string } | null {
-  const trimmed = lineTrim(line);
-  let slice = trimmed;
-  const inlineIdx = trimmed.search(/={3,}\s*SUPUESTO\s*:?\s*/i);
-  if (inlineIdx > 0) slice = trimmed.slice(inlineIdx);
-  const m = slice.match(SUPUESTO_START_RE);
-  if (!m) return null;
-  let titulo = m.groups?.titulo?.trim();
-  if (titulo) titulo = titulo.replace(/\s*={3,}\s*$/, "").trim() || undefined;
-  return { titulo };
-}
-
-function isSupuestoEnd(line: string): boolean {
-  const trimmed = lineTrim(line);
-  if (isSupuestoStart(line)) return false;
-  return SUPUESTO_END_RE.test(trimmed);
-}
-
-function isSupuestoMarkerLine(line: string): boolean {
-  const t = lineTrim(line);
-  if (isSupuestoStart(line) || isSupuestoEnd(line)) return true;
-  if (SUPUESTO_MARKER_SEARCH.test(t)) return true;
-  if (/^\s*={3,}\s*$/.test(t)) return true;
-  return false;
-}
-
-function isSupuestoRelatedRejection(r: ImportRejection): boolean {
-  for (const line of [r.primeraLinea, r.enunciado]) {
-    if (!line) continue;
-    if (isSupuestoMarkerLine(line)) return true;
-    if (SUPUESTO_MARKER_SEARCH.test(line)) return true;
-  }
-  return false;
-}
-
-/** Detecta si el texto incluye un bloque === SUPUESTO === (tras normalización). */
-export function hasSupuestoMarker(texto: string): boolean {
-  const normalized = normalizeText(texto);
-  if (!normalized) return false;
-  return normalized.split("\n").some((line) => isSupuestoStart(line));
-}
-
 function normalizeText(texto: string): string {
   return texto
     .replace(/^\uFEFF/, "")
@@ -118,30 +65,14 @@ function normalizeText(texto: string): string {
     .replace(/\r/g, "\n")
     .replace(/\u00a0/g, " ")
     .replace(/\t/g, " ")
-    // Preguntas pegadas en la misma línea (p. ej. «…Respuesta: B 50. Siguiente…»).
-    // No partir fechas (2024.) ni «artículo 10.» cuando la línea siguiente es D).
     .replace(/[ \t]+(?=\d{1,3}[\.\)]\s+(?![A-D][\.\)]\s))/g, "\n")
     .trim();
 }
 
-const SUPUESTO_MARKER_SEARCH = /={3,}\s*SUPUESTO\s*:?\s*/i;
-
-/** Normaliza y recorta el texto antes de importar (preamble, unicode, basura final). */
+/** Normaliza unicode y quita basura final (VALIDACIÓN, markdown). */
 export function prepareImportText(texto: string): string {
-  let text = normalizeText(texto);
+  const text = normalizeText(texto);
   if (!text) return text;
-
-  const lines = text.split("\n");
-  let startIdx = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (SUPUESTO_MARKER_SEARCH.test(lines[i]) || /^\d+[\.\)]\s+/.test(lines[i].trim())) {
-      startIdx = i;
-      const markerAt = lines[i].search(SUPUESTO_MARKER_SEARCH);
-      if (markerAt > 0) lines[i] = lines[i].slice(markerAt);
-      break;
-    }
-  }
-  text = lines.slice(startIdx).join("\n");
 
   const out = text.split("\n");
   while (out.length > 0) {
@@ -150,12 +81,7 @@ export function prepareImportText(texto: string): string {
       out.pop();
       continue;
     }
-    if (
-      /^VALIDACIÓN:/i.test(t) ||
-      /^validacion:/i.test(t) ||
-      /^---+/.test(t) ||
-      /^#+\s/.test(t)
-    ) {
+    if (/^VALIDACIÓN:/i.test(t) || /^validacion:/i.test(t) || /^---+/.test(t) || /^#+\s/.test(t)) {
       out.pop();
       continue;
     }
@@ -179,16 +105,11 @@ function isIntroLine(line: string): boolean {
   );
 }
 
-/** Pregunta detectada pero no importable. */
 export type ImportRejection = {
-  /** Número del enunciado (`1.` / `2.`) si existe. */
   numero?: number;
-  /** Resumen del enunciado para localizarla en el texto. */
   enunciado: string;
   motivo: string;
-  /** Línea (1-based) del bloque rechazado en el texto original. */
   linea?: number;
-  /** Primera línea literal del bloque rechazado. */
   primeraLinea?: string;
 };
 
@@ -197,13 +118,6 @@ export type ImportDiagnostics = {
   numeradas: number;
   rechazadas: ImportRejection[];
   avisos?: string[];
-};
-
-type ScanResult = {
-  doc: ParsedImportDocument;
-  avisos: string[];
-  diagnosticTexts: string[];
-  diagnosticLineOffsets: number[];
 };
 
 function extractQuestionNumber(line: string): number | undefined {
@@ -280,8 +194,6 @@ function diagnoseNumberedBlocks(texto: string, baseLine = 1): ImportRejection[] 
   for (const block of blocks) {
     const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length < 2) continue;
-    if (lines.some((l) => isSupuestoMarkerLine(l))) continue;
-    if (isSupuestoMarkerLine(lines[0])) continue;
 
     const numero = extractQuestionNumber(lines[0]);
     const head = lines[0]
@@ -346,9 +258,6 @@ function diagnoseOptionBlocks(texto: string, baseLine = 1): ImportRejection[] {
     if (i < lines.length && EXPLAIN_RE.test(lines[i])) i++;
 
     if (!enunciadoParts.length && !bodyLines.length) continue;
-    if (enunciadoParts.some((p) => isSupuestoMarkerLine(p) || SUPUESTO_MARKER_SEARCH.test(p))) {
-      continue;
-    }
 
     const enunciado = enunciadoParts.join(" ").trim();
     const parsed = parseBlockLines(bodyLines);
@@ -360,178 +269,17 @@ function diagnoseOptionBlocks(texto: string, baseLine = 1): ImportRejection[] {
       parsed.opcionesVacias,
       parsed.respuesta,
     );
-    if (motivo && enunciado && !isSupuestoMarkerLine(enunciadoParts[0] ?? enunciado)) {
-      const primeraLinea = enunciadoParts[0] ?? bodyLines[0] ?? "";
+    if (motivo && enunciado) {
       rechazadas.push({
         enunciado: enunciado.slice(0, 90),
         motivo,
         linea: baseLine + blockStartIdx,
-        primeraLinea,
+        primeraLinea: enunciadoParts[0] ?? bodyLines[0] ?? "",
       });
     }
   }
 
   return rechazadas;
-}
-
-function scanImportText(texto: string): ScanResult {
-  const normalized = prepareImportText(texto);
-  if (!normalized) {
-    return {
-      doc: { sueltas: [], supuestos: [] },
-      avisos: [],
-      diagnosticTexts: [],
-      diagnosticLineOffsets: [],
-    };
-  }
-
-  const lines = normalized.split("\n");
-  const hasMarker = lines.some((l) => isSupuestoStart(l) || SUPUESTO_MARKER_SEARCH.test(l));
-  if (!hasMarker) {
-    return {
-      doc: { sueltas: parseQuestionsFromText(normalized), supuestos: [] },
-      avisos: [],
-      diagnosticTexts: [normalized],
-      diagnosticLineOffsets: [1],
-    };
-  }
-
-  const sueltas: ParsedQuestion[] = [];
-  const supuestos: ParsedSupuesto[] = [];
-  const avisos: string[] = [];
-  const diagnosticTexts: string[] = [];
-  const diagnosticLineOffsets: number[] = [];
-  let i = 0;
-
-  function pushDiagnosticChunk(chunkLines: string[], startIndex: number) {
-    const text = chunkLines.join("\n").trim();
-    if (!text) return;
-    const preguntas = parseQuestionsFromText(text);
-    const headers = countQuestionHeaders(text);
-    if (preguntas.length > 0) {
-      sueltas.push(...preguntas);
-    }
-    if (preguntas.length > 0 || headers > 0) {
-      diagnosticTexts.push(text);
-      diagnosticLineOffsets.push(startIndex + 1);
-    }
-  }
-
-  while (i < lines.length) {
-    let line = lines[i];
-    if (!parseSupuestoStartLine(line) && SUPUESTO_MARKER_SEARCH.test(line)) {
-      const idx = line.search(SUPUESTO_MARKER_SEARCH);
-      if (idx > 0) line = lines[i] = line.slice(idx);
-    }
-    const supuestoStart = parseSupuestoStartLine(line);
-    if (supuestoStart) {
-      const titulo = supuestoStart.titulo;
-      i++;
-
-      const textoLines: string[] = [];
-      let closed = false;
-
-      while (i < lines.length) {
-        if (isSupuestoEnd(lines[i])) {
-          closed = true;
-          i++;
-          break;
-        }
-        if (NUMBERED_QUESTION_START_RE.test(lines[i])) {
-          if (!closed) avisos.push("supuesto sin cierre");
-          break;
-        }
-        textoLines.push(lines[i]);
-        i++;
-      }
-
-      const questionStart = i;
-      const questionLines: string[] = [];
-      while (i < lines.length && !isSupuestoStart(lines[i])) {
-        questionLines.push(lines[i]);
-        i++;
-      }
-
-      const questionText = questionLines.join("\n");
-      if (questionText.trim()) {
-        diagnosticTexts.push(questionText);
-        diagnosticLineOffsets.push(questionStart + 1);
-      }
-
-      const preguntas = parseQuestionsFromText(questionText);
-      const textoSupuesto = textoLines.join("\n").trim();
-
-      if (textoSupuesto && preguntas.length > 0) {
-        supuestos.push({ titulo, texto: textoSupuesto, preguntas });
-      } else if (preguntas.length > 0) {
-        sueltas.push(...preguntas);
-      }
-      continue;
-    }
-
-    const freeStart = i;
-    const freeLines: string[] = [];
-    while (i < lines.length && !isSupuestoStart(lines[i])) {
-      freeLines.push(lines[i]);
-      i++;
-    }
-    pushDiagnosticChunk(freeLines, freeStart);
-  }
-
-  return {
-    doc: { sueltas, supuestos },
-    avisos,
-    diagnosticTexts,
-    diagnosticLineOffsets,
-  };
-}
-
-/** Detecta preguntas en el texto que no pasan validación de importación. */
-export function getImportDiagnostics(texto: string): ImportDiagnostics {
-  const prepared = prepareImportText(texto);
-  const markerPresent = hasSupuestoMarker(prepared);
-  const { doc, avisos, diagnosticTexts, diagnosticLineOffsets } = scanImportText(texto);
-  const validas = countParsedQuestions(doc);
-  const hasSupuesto = doc.supuestos.length > 0;
-
-  let numeradas = 0;
-  let rechazadas: ImportRejection[] = [];
-
-  for (let idx = 0; idx < diagnosticTexts.length; idx++) {
-    const chunk = diagnosticTexts[idx];
-    const baseLine = diagnosticLineOffsets[idx] ?? 1;
-    const chunkNumeradas = countQuestionHeaders(chunk);
-    numeradas += chunkNumeradas;
-
-    if (chunkNumeradas > 0) {
-      rechazadas.push(...diagnoseNumberedBlocks(chunk, baseLine));
-    }
-  }
-
-  if (!hasSupuesto && !markerPresent && numeradas === 0 && diagnosticTexts.length === 1) {
-    rechazadas.push(...diagnoseOptionBlocks(diagnosticTexts[0], diagnosticLineOffsets[0] ?? 1));
-  }
-
-  rechazadas = rechazadas.filter((r) => !isSupuestoRelatedRejection(r));
-
-  if (hasSupuesto || markerPresent) {
-    rechazadas = rechazadas.filter((r) => r.numero !== undefined);
-  } else if (validas > 0) {
-    rechazadas = rechazadas.filter((r) => r.numero !== undefined);
-  }
-
-  if (numeradas > 0) {
-    rechazadas = rechazadas.sort(
-      (a, b) => (a.numero ?? 9999) - (b.numero ?? 9999),
-    );
-  }
-
-  return {
-    validas,
-    numeradas,
-    rechazadas,
-    avisos: avisos.length ? avisos : undefined,
-  };
 }
 
 function parseNumberedBlocks(texto: string): ParsedQuestion[] {
@@ -581,7 +329,6 @@ function parseNumberedBlocks(texto: string): ParsedQuestion[] {
   return preguntas;
 }
 
-/** Formato inline: `1. enunciado A) … B) … C) … D) … Respuesta: A` (una línea o varias pegadas). */
 function parseInlineNumberedBlocks(texto: string): ParsedQuestion[] {
   const blocks = texto
     .split(/\n(?=\d+[\.\)]\s+)/)
@@ -678,8 +425,6 @@ function parseOptionBlocks(texto: string): ParsedQuestion[] {
       respuesta < opciones.length
     ) {
       preguntas.push({ enunciado, opciones, respuesta, explicacion });
-    } else if (enunciadoParts.length && opciones.length === 0) {
-      continue;
     }
   }
 
@@ -687,7 +432,7 @@ function parseOptionBlocks(texto: string): ParsedQuestion[] {
 }
 
 function parseQuestionsFromText(texto: string): ParsedQuestion[] {
-  const normalized = normalizeText(texto);
+  const normalized = prepareImportText(texto);
   if (!normalized) return [];
 
   const candidates = [
@@ -700,14 +445,11 @@ function parseQuestionsFromText(texto: string): ParsedQuestion[] {
 }
 
 export function countParsedQuestions(doc: ParsedImportDocument): number {
-  return (
-    doc.sueltas.length + doc.supuestos.reduce((n, s) => n + s.preguntas.length, 0)
-  );
+  return doc.sueltas.length + doc.supuestos.reduce((n, s) => n + s.preguntas.length, 0);
 }
 
-/** Cuenta líneas que parecen inicio de pregunta (`1.` / `P:`). */
 export function countQuestionHeaders(texto: string): number {
-  const normalized = normalizeText(texto);
+  const normalized = prepareImportText(texto);
   if (!normalized) return 0;
 
   let count = 0;
@@ -718,9 +460,8 @@ export function countQuestionHeaders(texto: string): number {
   return count;
 }
 
-/** Texto antes de la primera pregunta numerada (1. / P:). */
 export function splitPreambleAndQuestions(texto: string): { preamble: string; body: string } {
-  const normalized = normalizeText(texto);
+  const normalized = prepareImportText(texto);
   if (!normalized) return { preamble: "", body: "" };
 
   const lines = normalized.split("\n");
@@ -739,50 +480,75 @@ export function splitPreambleAndQuestions(texto: string): { preamble: string; bo
   };
 }
 
-/** Si no hay bloques === SUPUESTO ===, usa el texto previo a la 1. pregunta como supuesto. */
-export function parseImportDocumentWithPreamble(
-  texto: string,
-  opts?: { titulo?: string },
-): ParsedImportDocument {
-  const doc = parseImportDocument(texto);
-  if (doc.supuestos.length) return doc;
-
-  const { preamble, body } = splitPreambleAndQuestions(texto);
-  if (!preamble || !body.trim()) return doc;
-
-  const preguntas = parseQuestionsFromText(body);
-  if (!preguntas.length) return doc;
-
-  return {
-    sueltas: [],
-    supuestos: [{ titulo: opts?.titulo, texto: preamble, preguntas }],
-  };
+export function parseImportDocument(texto: string): ParsedImportDocument {
+  return { sueltas: parseQuestionsFromText(texto), supuestos: [] };
 }
 
-/** Parser de importación según si el banco es supuesto encadenado. */
 export function parseImportForContext(
   texto: string,
   ctx?: ImportContext,
 ): ParsedImportDocument {
   const prepared = prepareImportText(texto);
-  let doc = scanImportText(prepared).doc;
 
-  if (ctx?.encadenado && doc.supuestos.length === 0 && countParsedQuestions(doc) > 0) {
-    doc = parseImportDocumentWithPreamble(prepared, { titulo: ctx.nombre });
+  if (ctx?.encadenado) {
+    const supuestoTexto = ctx.supuestoTexto?.trim();
+    const preguntas = parseQuestionsFromText(prepared);
+
+    if (supuestoTexto && preguntas.length > 0) {
+      return {
+        sueltas: [],
+        supuestos: [{ titulo: ctx.nombre, texto: supuestoTexto, preguntas }],
+      };
+    }
+
+    const { preamble, body } = splitPreambleAndQuestions(prepared);
+    const fromBody = parseQuestionsFromText(body);
+    const qs = fromBody.length > 0 ? fromBody : preguntas;
+
+    if (preamble && qs.length > 0) {
+      return {
+        sueltas: [],
+        supuestos: [{ titulo: ctx.nombre, texto: preamble, preguntas: qs }],
+      };
+    }
   }
 
-  return doc;
+  return { sueltas: parseQuestionsFromText(prepared), supuestos: [] };
 }
 
-export function parseImportDocument(texto: string): ParsedImportDocument {
-  return scanImportText(prepareImportText(texto)).doc;
+export function getImportDiagnostics(
+  texto: string,
+  ctx?: Pick<ImportContext, "encadenado" | "supuestoTexto">,
+): ImportDiagnostics {
+  const prepared = prepareImportText(texto);
+  const doc = parseImportForContext(prepared, ctx);
+  const validas = countParsedQuestions(doc);
+
+  let questionText = prepared;
+  if (ctx?.encadenado && ctx.supuestoTexto?.trim()) {
+    questionText = prepared;
+  } else if (ctx?.encadenado) {
+    questionText = splitPreambleAndQuestions(prepared).body || prepared;
+  }
+
+  const numeradas = countQuestionHeaders(questionText);
+  let rechazadas =
+    numeradas > 0
+      ? diagnoseNumberedBlocks(questionText)
+      : diagnoseOptionBlocks(questionText);
+
+  if (validas > 0) {
+    rechazadas = rechazadas.filter((r) => r.numero !== undefined);
+  }
+
+  if (numeradas > 0) {
+    rechazadas = rechazadas.sort((a, b) => (a.numero ?? 9999) - (b.numero ?? 9999));
+  }
+
+  return { validas, numeradas, rechazadas };
 }
 
-/** Lista plana de preguntas (útil para vista previa rápida). */
 export function parseImportText(texto: string): ParsedQuestion[] {
   const doc = parseImportDocument(texto);
-  return [
-    ...doc.sueltas,
-    ...doc.supuestos.flatMap((s) => s.preguntas),
-  ];
+  return [...doc.sueltas, ...doc.supuestos.flatMap((s) => s.preguntas)];
 }

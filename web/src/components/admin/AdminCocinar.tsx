@@ -5,10 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   countParsedQuestions,
   getImportDiagnostics,
-  hasSupuestoMarker,
   parseImportForContext,
 } from "@/lib/parse-import-text";
-import { PROMPT_SUPUESTO_ENCADENADO_JEX, PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
+import { PROMPT_SUPUESTO_PRACTICO_JEX, PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -45,7 +44,8 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
 
   const [nombre, setNombre] = useState("");
   const [esperadas, setEsperadas] = useState("");
-  const [supuestoEncadenado, setSupuestoEncadenado] = useState(false);
+  const [supuestoPractico, setSupuestoPractico] = useState(false);
+  const [textoCaso, setTextoCaso] = useState("");
   const [texto, setTexto] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -53,38 +53,35 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
   const [promptCopiado, setPromptCopiado] = useState(false);
   const [promptSupuestoCopiado, setPromptSupuestoCopiado] = useState(false);
 
-  useEffect(() => {
-    if (hasSupuestoMarker(texto)) {
-      setSupuestoEncadenado(true);
-      setCtx((c) => (c.tipo === "practico" ? c : { ...c, tipo: "practico" }));
-    }
-  }, [texto]);
+  const importCtx = useMemo(
+    () => ({
+      encadenado: supuestoPractico,
+      nombre: nombre.trim() || undefined,
+      supuestoTexto: supuestoPractico ? textoCaso : undefined,
+    }),
+    [supuestoPractico, nombre, textoCaso],
+  );
 
   const preview = useMemo(
     () =>
       texto.trim()
-        ? parseImportForContext(texto, { encadenado: supuestoEncadenado })
+        ? parseImportForContext(texto, importCtx)
         : { sueltas: [], supuestos: [] },
-    [texto, supuestoEncadenado],
+    [texto, importCtx],
   );
   const previewCount = useMemo(() => countParsedQuestions(preview), [preview]);
   const diagnostics = useMemo(
-    () => (texto.trim() ? getImportDiagnostics(texto) : null),
-    [texto],
+    () => (texto.trim() ? getImportDiagnostics(texto, importCtx) : null),
+    [texto, importCtx],
   );
   const rechazadas = diagnostics?.rechazadas ?? [];
-  const avisos = diagnostics?.avisos ?? [];
   const numeradas = diagnostics?.numeradas ?? 0;
   const esperadasNum = esperadas.trim() ? parseInt(esperadas, 10) : null;
   const cuentaEsperadasMal =
     esperadasNum !== null && !Number.isNaN(esperadasNum) && previewCount !== esperadasNum;
   const supuesto = preview.supuestos[0];
-  const encadenadoSinSupuesto =
-    supuestoEncadenado &&
-    texto.trim() &&
-    previewCount > 0 &&
-    preview.supuestos.length === 0 &&
-    !hasSupuestoMarker(texto);
+  const faltaTextoCaso =
+    supuestoPractico && texto.trim() && previewCount > 0 && !textoCaso.trim();
   const puedeGuardar =
     !busy &&
     schemaOk &&
@@ -93,7 +90,8 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     texto.trim() &&
     previewCount > 0 &&
     !cuentaEsperadasMal &&
-    !encadenadoSinSupuesto;
+    !faltaTextoCaso &&
+    (!supuestoPractico || !!textoCaso.trim());
 
   async function guardarBanco() {
     setBusy(true);
@@ -104,16 +102,18 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...ctx,
-        nombre: nombre.trim() || supuesto?.titulo,
+        nombre: nombre.trim() || undefined,
         texto,
-        encadenado: supuestoEncadenado,
+        textoCaso: supuestoPractico ? textoCaso : undefined,
+        encadenado: supuestoPractico,
       }),
     });
     const data = await res.json();
     setBusy(false);
     if (!res.ok) return setErr(data.error || "Error");
     setTexto("");
-    setSupuestoEncadenado(false);
+    setTextoCaso("");
+    setSupuestoPractico(false);
     setMsg(
       `Banco creado: ${data.banco.nombre} (${data.num} preguntas` +
         (data.supuestos ? `, ${data.supuestos} supuesto${data.supuestos !== 1 ? "s" : ""}` : "") +
@@ -124,7 +124,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
 
   async function copiarPromptSupuesto() {
     try {
-      await navigator.clipboard.writeText(PROMPT_SUPUESTO_ENCADENADO_JEX);
+      await navigator.clipboard.writeText(PROMPT_SUPUESTO_PRACTICO_JEX);
       setPromptSupuestoCopiado(true);
       setTimeout(() => setPromptSupuestoCopiado(false), 2500);
     } catch {
@@ -159,12 +159,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
       <div className="card card-elevated">
         <h2 className="admin-section-title">Pegar test en texto plano</h2>
         <p className="muted small" style={{ marginTop: 0 }}>
-          Pega el bloque generado por tu IA y la web lo guarda como banco. En supuestos
-          encadenados pega el bloque completo tal cual (desde{" "}
-          <code>=== SUPUESTO:</code> hasta la última pregunta).
+          Pega el bloque generado por tu IA. En supuestos prácticos usa{" "}
+          <strong>dos cajas</strong>: caso y preguntas por separado.
         </p>
 
-        {ctx.tipo === "teorico" && !supuestoEncadenado && (
+        {ctx.tipo === "teorico" && !supuestoPractico && (
           <div className="info-box sim-info" style={{ marginTop: "0.75rem" }}>
             <p style={{ margin: 0 }}>
               <strong>Prompt para IA (teórico):</strong> copia el prompt compatible con este
@@ -181,11 +180,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
           </div>
         )}
 
-        {supuestoEncadenado && (
+        {supuestoPractico && (
           <div className="info-box sim-info" style={{ marginTop: "0.75rem" }}>
             <p style={{ margin: 0 }}>
-              <strong>Prompt para IA (supuesto encadenado):</strong> copia, sustituye [N] por el
-              número de preguntas y pega el temario al final.
+              <strong>Prompt para IA (supuesto práctico):</strong> la IA te dará caso + preguntas.
+              Pega cada bloque en su caja.
             </p>
             <button
               type="button"
@@ -198,42 +197,32 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
           </div>
         )}
 
-        <div className="cafe-highlight" style={{ marginTop: "0.75rem" }}>
-          <strong>Supuesto encadenado (formato de tu prompt):</strong>
-          <pre className="format-ejemplo">{`=== SUPUESTO: Título breve del caso
-Texto del supuesto de hecho en prosa,
-con fechas, sujetos y plazos entrelazados.
-===
+        {supuestoPractico && (
+          <div className="cafe-highlight" style={{ marginTop: "0.75rem" }}>
+            <strong>Supuesto práctico — dos cajas:</strong>
+            <pre className="format-ejemplo">{`CAJA 1 — Texto del caso:
+El 30 de abril de 2026 expira el mandato…
 
+CAJA 2 — Preguntas (desde 1.):
 1. ¿Qué procede respecto de…?
 A) …
 B) …
 C) …
 D) …
 Respuesta: B
-E: Art. 52 LEF: …
+E: Art. 17.1 LOTC: …`}</pre>
+            <p className="muted small" style={{ marginTop: "0.5rem" }}>
+              El título del caso va en <strong>Nombre del banco</strong>. Requiere «Activar
+              supuestos» (tarjeta amarilla) la primera vez.
+            </p>
+          </div>
+        )}
 
-2. Respecto del plazo indicado…
-A) …
-B) …
-C) …
-D) …
-Respuesta: D
-E: Art. 29 LEF: …`}</pre>
-          <p className="muted small" style={{ marginTop: "0.5rem" }}>
-            La primera línea debe ser <code>=== SUPUESTO: título</code>, el cierre{" "}
-            <code>===</code> o <code>=== FIN SUPUESTO ===</code> en línea sola, y luego
-            las preguntas <code>1.</code> <code>2.</code>… con <code>Respuesta:</code> y{" "}
-            <code>E:</code> opcional. Requiere la tarjeta amarilla «Activar supuestos»
-            arriba en esta página de administración (solo la primera vez).
-          </p>
-        </div>
-
-        {!supuestosOk && (
+        {!supuestosOk && supuestoPractico && (
           <div className="card card-warning" style={{ marginTop: "0.75rem" }}>
             <p className="muted small" style={{ margin: 0 }}>
-              Para importar supuestos encadenados, sube arriba en esta página y pulsa{" "}
-              <strong>Activar supuestos</strong> en la tarjeta amarilla.
+              Para supuestos prácticos, pulsa <strong>Activar supuestos</strong> en la tarjeta
+              amarilla arriba.
             </p>
           </div>
         )}
@@ -246,7 +235,7 @@ E: Art. 29 LEF: …`}</pre>
               onChange={(e) => {
                 const tipo = e.target.value as Ctx["tipo"];
                 setCtx((c) => ({ ...c, tipo }));
-                if (tipo !== "practico") setSupuestoEncadenado(false);
+                if (tipo !== "practico") setSupuestoPractico(false);
               }}
             >
               <option value="teorico">Teórico</option>
@@ -273,26 +262,25 @@ E: Art. 29 LEF: …`}</pre>
           <label className="checkbox-row" style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
             <input
               type="checkbox"
-              checked={supuestoEncadenado}
-              onChange={(e) => setSupuestoEncadenado(e.target.checked)}
+              checked={supuestoPractico}
+              onChange={(e) => setSupuestoPractico(e.target.checked)}
               style={{ marginTop: "0.2rem" }}
             />
             <span>
-              <strong>Supuesto encadenado</strong>
+              <strong>Supuesto práctico</strong>
               <span className="muted small" style={{ display: "block", marginTop: "0.25rem" }}>
-                Un caso compartido (<code>=== SUPUESTO ===</code>) con varias preguntas
-                prácticas vinculadas. Marca esto antes de pegar el bloque de tu prompt JEX.
+                Caso compartido + preguntas en dos cajas. Sin marcadores ===.
               </span>
             </span>
           </label>
         )}
 
         <label>
-          Nombre del banco (opcional)
+          Nombre del banco {supuestoPractico && "(título del caso)"}
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            placeholder={supuesto?.titulo ?? "EBEP bloque 1"}
+            placeholder={supuestoPractico ? "Renovación del TC" : "EBEP bloque 1"}
           />
         </label>
 
@@ -303,24 +291,33 @@ E: Art. 29 LEF: …`}</pre>
             min={1}
             value={esperadas}
             onChange={(e) => setEsperadas(e.target.value)}
-            placeholder="50"
+            placeholder="17"
           />
         </label>
-        <p className="muted small" style={{ marginTop: "-0.5rem" }}>
-          Si indicas un número, avisa si la vista previa no coincide. No bloquea el guardado por
-          avisos de formato si hay preguntas válidas.
-        </p>
+
+        {supuestoPractico && (
+          <label>
+            Texto del caso
+            <textarea
+              className="textarea-taller"
+              value={textoCaso}
+              onChange={(e) => setTextoCaso(e.target.value)}
+              rows={6}
+              placeholder="Pega aquí el supuesto de hecho en prosa (fechas, sujetos, plazos)…"
+            />
+          </label>
+        )}
 
         <label>
-          {supuestoEncadenado ? "Texto del supuesto encadenado" : "Texto del test"}
+          {supuestoPractico ? "Preguntas del supuesto" : "Texto del test"}
           <textarea
             className="textarea-taller"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            rows={14}
+            rows={supuestoPractico ? 12 : 14}
             placeholder={
-              supuestoEncadenado
-                ? "Pega aquí el bloque completo desde === SUPUESTO: … hasta la última pregunta…"
+              supuestoPractico
+                ? "Pega aquí solo las preguntas numeradas (1. 2. 3.…) con A) B) C) D) y Respuesta:"
                 : "Pega aquí el bloque del test…"
             }
           />
@@ -329,23 +326,19 @@ E: Art. 29 LEF: …`}</pre>
         {texto.trim() && (
           <>
             <p
-              className={
-                previewCount > 0 && !encadenadoSinSupuesto ? "ok" : "error"
-              }
+              className={previewCount > 0 && !faltaTextoCaso ? "ok" : "error"}
               style={{ marginTop: "0.5rem" }}
             >
               {previewCount > 0
                 ? `${previewCount} pregunta${previewCount !== 1 ? "s" : ""} válida${previewCount !== 1 ? "s" : ""}` +
-                  (numeradas > previewCount
-                    ? ` · ${numeradas} numeradas en el texto`
-                    : "") +
+                  (numeradas > previewCount ? ` · ${numeradas} numeradas en el texto` : "") +
                   (rechazadas.length
                     ? ` · ${rechazadas.length} rechazada${rechazadas.length !== 1 ? "s" : ""}`
                     : "") +
                   (supuesto
                     ? ` · supuesto vinculado${supuesto.titulo ? `: «${supuesto.titulo}»` : ""}`
-                    : supuestoEncadenado
-                      ? " · falta el bloque === SUPUESTO ==="
+                    : supuestoPractico && textoCaso.trim()
+                      ? " · supuesto vinculado"
                       : "")
                 : "No se detectan preguntas válidas — revisa el formato (Respuesta: B)"}
             </p>
@@ -360,46 +353,24 @@ E: Art. 29 LEF: …`}</pre>
                 </p>
               </div>
             )}
-            {avisos.length > 0 && (
-              <div className="info-box sim-info" style={{ marginTop: "0.75rem" }}>
-                <p className="small" style={{ margin: 0 }}>
-                  <strong>Avisos de formato</strong>
-                </p>
-                <ul className="muted small" style={{ margin: "0.35rem 0 0", paddingLeft: "1.25rem" }}>
-                  {avisos.map((aviso, idx) => (
-                    <li key={`${idx}-${aviso}`}>{aviso}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
             {rechazadas.length > 0 && (
               <div className="card card-warning" style={{ marginTop: "0.75rem", padding: "0.75rem 1rem" }}>
                 <p className="small" style={{ margin: 0 }}>
                   <strong>
-                    {rechazadas.length} pregunta{rechazadas.length !== 1 ? "s" : ""} numerada
-                    {rechazadas.length !== 1 ? "s" : ""} con formato incompleto
-                  </strong>{" "}
-                  — no se importará{rechazadas.length !== 1 ? "n" : ""}.
-                  {previewCount > 0 && " Puedes guardar igualmente las válidas detectadas."}
+                    {rechazadas.length} pregunta{rechazadas.length !== 1 ? "s" : ""} con formato
+                    incompleto
+                  </strong>
+                  {previewCount > 0 && " — puedes guardar las válidas."}
                 </p>
                 <ul className="muted small" style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
                   {rechazadas.map((r, idx) => (
-                    <li key={`${r.numero ?? idx}-${r.enunciado.slice(0, 20)}`} style={{ marginBottom: "0.35rem" }}>
+                    <li key={`${r.numero ?? idx}-${r.enunciado.slice(0, 20)}`}>
                       {r.numero !== undefined ? (
                         <strong>Pregunta {r.numero}:</strong>
                       ) : (
                         <strong>Sin número:</strong>
                       )}{" "}
                       {r.motivo}
-                      {r.linea !== undefined && (
-                        <span className="muted" style={{ display: "block", marginTop: "0.15rem" }}>
-                          Línea {r.linea}
-                          {r.primeraLinea ? `: ${previewSnippet(r.primeraLinea, 80)}` : ""}
-                        </span>
-                      )}
-                      <span className="muted" style={{ display: "block", marginTop: "0.15rem" }}>
-                        {previewSnippet(r.enunciado, 100)}
-                      </span>
                     </li>
                   ))}
                 </ul>
@@ -407,16 +378,17 @@ E: Art. 29 LEF: …`}</pre>
             )}
             {cuentaEsperadasMal && (
               <p className="error small" style={{ marginTop: "0.5rem" }}>
-                Esperabas {esperadasNum} preguntas pero solo hay {previewCount} válidas. Corrige
-                el texto antes de guardar.
+                Esperabas {esperadasNum} preguntas pero hay {previewCount} válidas.
               </p>
             )}
-            {encadenadoSinSupuesto && (
+            {faltaTextoCaso && (
               <p className="error small" style={{ marginTop: "0.5rem" }}>
-                Has marcado supuesto encadenado pero no se detecta{" "}
-                <code>=== SUPUESTO: título</code> … <code>===</code>. Revisa que la
-                primera línea sea exactamente ese formato y que el cierre{" "}
-                <code>===</code> esté solo en su línea, antes de la pregunta 1.
+                Faltan las preguntas o el texto del caso en su caja correspondiente.
+              </p>
+            )}
+            {supuestoPractico && !textoCaso.trim() && previewCount === 0 && (
+              <p className="error small" style={{ marginTop: "0.5rem" }}>
+                Pega el texto del caso en la primera caja y las preguntas en la segunda.
               </p>
             )}
           </>
