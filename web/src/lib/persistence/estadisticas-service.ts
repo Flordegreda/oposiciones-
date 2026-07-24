@@ -65,6 +65,10 @@ export type DashboardData = {
   rendimientoBancos: RendimientoBanco[];
   preguntasFalladas: PreguntaFallada[];
   testsRecientes: TestReciente[];
+  /** Tests en todo el historial (sin filtro de fechas). */
+  totalHistorial: number;
+  /** Tests tras aplicar el filtro de periodo. */
+  totalPeriodo: number;
 };
 
 const DETALLE_KEY = "__detalle";
@@ -371,6 +375,8 @@ export async function obtenerDashboardData(
     rendimientoBancos: calcularRendimientoPorBanco(filtrados, bancos),
     preguntasFalladas: obtenerPreguntasMasFalladas(filtrados, 10, bancos),
     testsRecientes: obtenerTestsRecientes(filtrados, 50, bancos),
+    totalHistorial: resultados.length,
+    totalPeriodo: filtrados.length,
   };
 }
 

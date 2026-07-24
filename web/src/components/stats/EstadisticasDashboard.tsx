@@ -184,6 +184,13 @@ export function EstadisticasDashboard() {
 
       {loading && !data ? (
         <p className="text-sm text-slate-500">Cargando estadísticas…</p>
+      ) : data && data.totalHistorial === 0 ? (
+        <EmptySinHistorial />
+      ) : data && data.totalPeriodo === 0 ? (
+        <EmptySinPeriodo
+          onAmpliar={() => setFiltro("todo")}
+          filtroActual={filtro}
+        />
       ) : (
         <>
           {/* KPIs */}
@@ -383,6 +390,71 @@ export function EstadisticasDashboard() {
       {detalle && (
         <TestDetalleModal test={detalle} onClose={() => setDetalle(null)} />
       )}
+    </div>
+  );
+}
+
+function EmptySinHistorial() {
+  return (
+    <div className="stats-empty flex flex-col items-center justify-center rounded-2xl border border-slate-200/80 bg-white px-6 py-14 text-center shadow-sm sm:py-16">
+      <p
+        className="stats-empty-emoji mb-4 text-4xl sm:text-5xl"
+        aria-hidden
+      >
+        🎯
+      </p>
+      <p className="stats-empty-title max-w-md text-lg font-semibold text-slate-800 sm:text-xl">
+        ¡Empieza tu primer test para ver tu progreso!
+      </p>
+      <p className="mt-2 max-w-sm text-sm text-slate-500">
+        Cuando completes un banco o un simulacro, aquí verás KPIs, evolución y
+        fallos frecuentes.
+      </p>
+      <Link
+        href="/practicar"
+        className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+      >
+        Ir a Tests
+      </Link>
+    </div>
+  );
+}
+
+function EmptySinPeriodo({
+  onAmpliar,
+  filtroActual,
+}: {
+  onAmpliar: () => void;
+  filtroActual: FiltroTiempo;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/80 bg-white px-6 py-12 text-center shadow-sm sm:py-14">
+      <p className="mb-3 text-3xl" aria-hidden>
+        📊
+      </p>
+      <p className="max-w-md text-base font-semibold text-slate-800 sm:text-lg">
+        No hay tests en este período. Prueba a ampliar el rango de fechas.
+      </p>
+      <p className="mt-2 text-sm text-slate-500">
+        Tienes actividad en el historial, pero ninguna en el filtro actual.
+      </p>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        {filtroActual !== "todo" && (
+          <button
+            type="button"
+            onClick={onAmpliar}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+          >
+            Ver todo el historial
+          </button>
+        )}
+        <Link
+          href="/practicar"
+          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Hacer un test
+        </Link>
+      </div>
     </div>
   );
 }

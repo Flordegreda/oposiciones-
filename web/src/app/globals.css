@@ -1764,6 +1764,35 @@ h1 {
   }
 }
 
+@keyframes stats-empty-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes stats-empty-fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stats-empty-emoji {
+  animation: stats-empty-bounce 1.6s ease-in-out infinite;
+}
+
+.stats-empty-title {
+  animation: stats-empty-fade 0.55s ease-out both;
+}
+
 .result-score {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 3rem;
