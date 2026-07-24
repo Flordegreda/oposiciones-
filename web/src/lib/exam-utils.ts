@@ -107,7 +107,7 @@ export type PreparedExamSession = {
   questions: PublicExamPregunta[];
   /** Por pregunta: índice en pantalla → índice original (para corregir). */
   optionMaps: number[][];
-  /** Textos originales A/B/C/D antes de barajar (resultados e impresión). */
+  /** Textos originales A/B/C/D antes de barajar (corrección e impresión). */
   originalOpciones: string[][];
 };
 
