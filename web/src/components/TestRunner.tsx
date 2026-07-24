@@ -53,7 +53,6 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
         onFinish={() => setSession(null)}
         optionMaps={session.optionMaps}
         originalOpciones={session.originalOpciones}
-        bancoId={bancoId}
       />
     );
   }

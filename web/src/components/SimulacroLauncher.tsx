@@ -133,7 +133,6 @@ export function SimulacroLauncher({ meta }: Props) {
           onFinish={exitSimulacro}
           optionMaps={running.optionMaps}
           originalOpciones={running.originalOpciones}
-          bancoId="simulacro"
         />
       </>
     );

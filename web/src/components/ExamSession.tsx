@@ -11,12 +11,6 @@ import {
 } from "@/lib/exam-utils";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
 import { fetchWithRetry } from "@/lib/retry";
-import { saveResultadoTest } from "@/lib/persistence";
-import {
-  calcularStatsRepaso,
-  marcarRepasoCompletado,
-  realPreguntaId,
-} from "@/lib/persistence/repaso-fallos";
 
 type AnswerMeta = {
   respuesta: number;
@@ -34,12 +28,6 @@ type Props = {
   optionMaps?: number[][];
   /** Opciones originales antes de barajar (resultado e impresión). */
   originalOpciones?: string[][];
-  /** Id de banco o "simulacro" / "repaso_fallos" para persistencia. */
-  bancoId?: string;
-  /** Tipo de sesión guardado en el historial. */
-  tipo?: "normal" | "repaso_fallos";
-  /** Banner informativo (p. ej. modo repaso). */
-  banner?: string;
 };
 
 type Phase = "test" | "result";
@@ -63,15 +51,10 @@ export function ExamSession({
   onFinish,
   optionMaps: optionMapsProp,
   originalOpciones: originalOpcionesProp,
-  bancoId,
-  tipo = "normal",
-  banner,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const timerIdRef = useRef<number | null>(null);
-  const startedAtRef = useRef<number>(Date.now());
-  const savedResultRef = useRef(false);
   const [phase, setPhase] = useState<Phase>("test");
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(() =>
@@ -82,8 +65,6 @@ export function ExamSession({
   const [remaining, setRemaining] = useState<number | null>(timerSeconds);
   const [timerEnded, setTimerEnded] = useState(false);
   const [grading, setGrading] = useState(false);
-
-  const isRepaso = tipo === "repaso_fallos";
 
   const optionMaps = useMemo(
     () =>
@@ -178,91 +159,6 @@ export function ExamSession({
     }
     setPhase("result");
   }, [examMode, active, answers, optionMaps]);
-
-  // Persistencia híbrida: IndexedDB al instante + sync en background
-  useEffect(() => {
-    if (phase !== "result" || savedResultRef.current) return;
-    if (examMode && answerMeta.size === 0) return;
-
-    savedResultRef.current = true;
-    const banco =
-      bancoId ||
-      (isRepaso ? "repaso_fallos" : active[0]?.bancoId) ||
-      "desconocido";
-    const respuestas: Record<string, number | null> = {};
-    const detallePreguntas: {
-      preguntaId: string;
-      enunciado: string;
-      correcta: boolean;
-      respondida: boolean;
-      seleccion: number | null;
-      respuestaCorrecta?: number;
-    }[] = [];
-    let aciertos = 0;
-    let fallos = 0;
-
-    for (let i = 0; i < active.length; i++) {
-      const q = active[i]!;
-      const ans = answers[i];
-      const selected =
-        ans === null ? null : displayOptionToOriginal(optionMaps[i] ?? [], ans);
-      const realId = realPreguntaId(q.id);
-      respuestas[q.id] = selected;
-      const meta = answerMeta.get(q.id);
-      const respondida = selected !== null && meta !== undefined;
-      const correcta = respondida && selected === meta!.respuesta;
-      if (respondida) {
-        if (correcta) aciertos += 1;
-        else fallos += 1;
-      }
-      detallePreguntas.push({
-        preguntaId: realId,
-        enunciado: q.enunciado,
-        correcta: Boolean(correcta),
-        respondida,
-        seleccion: selected,
-        respuestaCorrecta: meta?.respuesta,
-      });
-    }
-
-    const elapsedSec = Math.max(
-      0,
-      Math.round((Date.now() - startedAtRef.current) / 1000),
-    );
-
-    void saveResultadoTest({
-        id: crypto.randomUUID(),
-        banco,
-        test: title,
-        fecha: new Date().toISOString(),
-        totalPreguntas: active.length,
-        aciertos,
-        fallos,
-        tiempoTotal: elapsedSec,
-        respuestas,
-        detallePreguntas,
-        tipo,
-      })
-      .then(async () => {
-        if (isRepaso) {
-          await marcarRepasoCompletado(detallePreguntas.map((d) => d.preguntaId));
-        }
-      })
-      .catch(() => {
-        savedResultRef.current = false;
-      });
-  }, [
-    phase,
-    examMode,
-    answerMeta,
-    active,
-    answers,
-    optionMaps,
-    bancoId,
-    title,
-    tipo,
-    isRepaso,
-  ]);
 
   const stopTimer = useCallback(() => {
     if (timerIdRef.current !== null) {
@@ -390,34 +286,12 @@ export function ExamSession({
     const skipCount = total - answered;
     const pct = answered > 0 ? Math.round((okCount / answered) * 100) : 0;
     const nota = examScore(okCount, failCount);
-    const repasoStats = isRepaso
-      ? calcularStatsRepaso(
-          active.map((q, i) => {
-            const ans = answers[i];
-            const meta = answerMeta.get(q.id);
-            const selected =
-              ans === null
-                ? null
-                : displayOptionToOriginal(optionMaps[i] ?? [], ans);
-            const respondida = selected !== null && meta !== undefined;
-            return {
-              preguntaId: q.id,
-              correcta: Boolean(respondida && selected === meta!.respuesta),
-              respondida,
-            };
-          }),
-        )
-      : null;
 
     return (
       <div className="card result-panel">
-        <h2>
-          Resultado
-          {examMode ? " — modo examen" : ""}
-          {isRepaso ? " — repaso de fallos" : ""}
-        </h2>
+        <h2>Resultado{examMode ? " — modo examen" : ""}</h2>
         {timerEnded && (
-          <p className="muted small">Tiempo agotado. Se han guardado tus respuestas.</p>
+          <p className="muted small">Tiempo agotado.</p>
         )}
         <p
           className="result-score"
@@ -430,23 +304,6 @@ export function ExamSession({
           {nota} / {total}
         </p>
 
-        {repasoStats && (
-          <div className="result-grid" style={{ marginTop: "1rem" }}>
-            <div className="result-stat">
-              <span className="result-stat-label">Acertadas ahora</span>
-              <span className="result-stat-value ok">{repasoStats.acertadasAhora}</span>
-            </div>
-            <div className="result-stat">
-              <span className="result-stat-label">Mejoradas</span>
-              <span className="result-stat-value ok">{repasoStats.mejoradas}</span>
-            </div>
-            <div className="result-stat">
-              <span className="result-stat-label">Siguen fallando</span>
-              <span className="result-stat-value fail">{repasoStats.siguenFallando}</span>
-            </div>
-          </div>
-        )}
-
         {dudosaCount > 0 && !examMode && (
           <div className="result-dudosas">
             <span>
@@ -456,8 +313,7 @@ export function ExamSession({
           </div>
         )}
 
-        {!isRepaso && (
-          <div className="result-grid">
+        <div className="result-grid">
             <div className="result-stat">
               <span className="result-stat-label">Correctas</span>
               <span className="result-stat-value ok">{okCount}</span>
@@ -471,7 +327,6 @@ export function ExamSession({
               <span className="result-stat-value">{skipCount}</span>
             </div>
           </div>
-        )}
 
         <div className="result-breakdown">
           <p className="test-meta">Detalle</p>
@@ -565,23 +420,6 @@ export function ExamSession({
           </button>
         </div>
       </div>
-
-      {banner && (
-        <p
-          className="muted small"
-          style={{
-            margin: "0 0 0.75rem",
-            padding: "0.65rem 0.85rem",
-            borderRadius: "0.75rem",
-            background: "rgba(59, 130, 246, 0.08)",
-            border: "1px solid rgba(59, 130, 246, 0.2)",
-            color: "var(--text, #1e293b)",
-          }}
-          role="status"
-        >
-          {banner}
-        </p>
-      )}
 
       {grading && (
         <p className="muted small" aria-live="polite">
