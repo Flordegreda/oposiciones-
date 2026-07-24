@@ -25,6 +25,8 @@ export type PuntoEvolucion = {
   fecha: string;
   etiqueta: string;
   porcentajeAciertos: number | null;
+  /** Tests realizados ese día (0 si sin actividad). */
+  tests: number;
   sinActividad: boolean;
 };
 
@@ -33,7 +35,23 @@ export type RendimientoBanco = {
   bancoNombre: string;
   porcentaje: number;
   totalTests: number;
+  /** Días desde el último test de este banco (null si desconocido). */
+  diasSinPracticar: number | null;
   color: "verde" | "amarillo" | "rojo";
+};
+
+export type TiempoMedioBanco = {
+  banco: string;
+  bancoNombre: string;
+  tiempoMedioSegundos: number;
+  totalTests: number;
+};
+
+export type RecomendacionStats = {
+  tipo: "repasar" | "mantener" | "racha" | "ninguna";
+  mensaje: string;
+  bancoId?: string;
+  bancoNombre?: string;
 };
 
 export type PreguntaFallada = {
@@ -62,9 +80,12 @@ export type TestReciente = {
 export type DashboardData = {
   resumen: ResumenEstadisticas;
   evolucion: PuntoEvolucion[];
+  mediaPeriodo: number | null;
   rendimientoBancos: RendimientoBanco[];
+  tiempoMedioBancos: TiempoMedioBanco[];
   preguntasFalladas: PreguntaFallada[];
   testsRecientes: TestReciente[];
+  recomendacion: RecomendacionStats;
   /** Tests en todo el historial (sin filtro de fechas). */
   totalHistorial: number;
   /** Tests tras aplicar el filtro de periodo. */
@@ -208,12 +229,13 @@ export function calcularEvolucionDiaria(
   resultados: TestResultRecord[],
   dias: number,
 ): PuntoEvolucion[] {
-  const byDay = new Map<string, { aciertos: number; total: number }>();
+  const byDay = new Map<string, { aciertos: number; total: number; tests: number }>();
   for (const r of resultados) {
     const k = dayKey(r.fecha);
-    const cur = byDay.get(k) ?? { aciertos: 0, total: 0 };
+    const cur = byDay.get(k) ?? { aciertos: 0, total: 0, tests: 0 };
     cur.aciertos += r.aciertos;
     cur.total += r.totalPreguntas;
+    cur.tests += 1;
     byDay.set(k, cur);
   }
 
@@ -231,6 +253,7 @@ export function calcularEvolucionDiaria(
         fecha: key,
         etiqueta: labelDdMm(key),
         porcentajeAciertos: null,
+        tests: 0,
         sinActividad: true,
       });
     } else {
@@ -238,11 +261,18 @@ export function calcularEvolucionDiaria(
         fecha: key,
         etiqueta: labelDdMm(key),
         porcentajeAciertos: (hit.aciertos / hit.total) * 100,
+        tests: hit.tests,
         sinActividad: false,
       });
     }
   }
   return out;
+}
+
+function diasDesde(iso: string, now = Date.now()): number {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return 0;
+  return Math.max(0, Math.floor((now - t) / 86_400_000));
 }
 
 export function calcularRendimientoPorBanco(
@@ -251,7 +281,13 @@ export function calcularRendimientoPorBanco(
 ): RendimientoBanco[] {
   const map = new Map<
     string,
-    { aciertos: number; total: number; tests: number; title: string }
+    {
+      aciertos: number;
+      total: number;
+      tests: number;
+      title: string;
+      ultimoTest: string | null;
+    }
   >();
 
   for (const r of resultados) {
@@ -260,11 +296,13 @@ export function calcularRendimientoPorBanco(
       total: 0,
       tests: 0,
       title: r.test,
+      ultimoTest: null,
     };
     cur.aciertos += r.aciertos;
     cur.total += r.totalPreguntas;
     cur.tests += 1;
     cur.title = r.test;
+    if (!cur.ultimoTest || r.fecha > cur.ultimoTest) cur.ultimoTest = r.fecha;
     map.set(r.banco, cur);
   }
 
@@ -276,10 +314,92 @@ export function calcularRendimientoPorBanco(
         bancoNombre: bancoNombreFrom(banco, v.title, bancos),
         porcentaje,
         totalTests: v.tests,
+        diasSinPracticar: v.ultimoTest ? diasDesde(v.ultimoTest) : null,
         color: colorPorPorcentaje(porcentaje),
       };
     })
     .sort((a, b) => b.porcentaje - a.porcentaje);
+}
+
+export function calcularTiempoMedioPorBanco(
+  resultados: TestResultRecord[],
+  bancos: BancoCacheEntry[] = [],
+): TiempoMedioBanco[] {
+  const map = new Map<
+    string,
+    { suma: number; n: number; title: string }
+  >();
+
+  for (const r of resultados) {
+    if (typeof r.tiempoTotal !== "number" || r.tiempoTotal < 0) continue;
+    const cur = map.get(r.banco) ?? { suma: 0, n: 0, title: r.test };
+    cur.suma += r.tiempoTotal;
+    cur.n += 1;
+    cur.title = r.test;
+    map.set(r.banco, cur);
+  }
+
+  return [...map.entries()]
+    .map(([banco, v]) => ({
+      banco,
+      bancoNombre: bancoNombreFrom(banco, v.title, bancos),
+      tiempoMedioSegundos: Math.round(v.suma / v.n),
+      totalTests: v.n,
+    }))
+    .sort((a, b) => b.tiempoMedioSegundos - a.tiempoMedioSegundos);
+}
+
+/** Recomendación contextual para la cabecera del dashboard. */
+export function generarRecomendacion(
+  rendimientoBancos: RendimientoBanco[],
+  resultados: TestResultRecord[],
+): RecomendacionStats {
+  if (!resultados.length) {
+    return { tipo: "ninguna", mensaje: "" };
+  }
+
+  const ultimoGlobal = resultados.reduce(
+    (max, r) => (r.fecha > max ? r.fecha : max),
+    resultados[0]!.fecha,
+  );
+  const diasSinTest = diasDesde(ultimoGlobal);
+
+  if (diasSinTest >= 2) {
+    return {
+      tipo: "racha",
+      mensaje:
+        "👋 ¡Buen trabajo! No olvides practicar al menos un test al día para mantener la racha.",
+    };
+  }
+
+  if (!rendimientoBancos.length) {
+    return { tipo: "ninguna", mensaje: "" };
+  }
+
+  const todosVerdes = rendimientoBancos.every((b) => b.porcentaje >= 75);
+  if (todosVerdes) {
+    const menosTests = [...rendimientoBancos].sort(
+      (a, b) => a.totalTests - b.totalTests,
+    )[0]!;
+    return {
+      tipo: "mantener",
+      mensaje: `🎉 ¡Vas muy bien! Sigue así con ${menosTests.bancoNombre} para no perder práctica.`,
+      bancoId: menosTests.banco,
+      bancoNombre: menosTests.bancoNombre,
+    };
+  }
+
+  const peor = [...rendimientoBancos].sort((a, b) => {
+    if (a.porcentaje !== b.porcentaje) return a.porcentaje - b.porcentaje;
+    return (b.diasSinPracticar ?? 0) - (a.diasSinPracticar ?? 0);
+  })[0]!;
+  const dias = peor.diasSinPracticar ?? 0;
+  return {
+    tipo: "repasar",
+    mensaje: `🔍 Te recomendamos repasar ${peor.bancoNombre}. Llevas ${dias} día${dias === 1 ? "" : "s"} sin practicarlo.`,
+    bancoId: peor.banco,
+    bancoNombre: peor.bancoNombre,
+  };
 }
 
 export function obtenerPreguntasMasFalladas(
@@ -368,13 +488,20 @@ export async function obtenerDashboardData(
   const filtrados = filtrarPorFecha(resultados, filtro);
   const bancos = await cache.getBancos().catch(() => [] as BancoCacheEntry[]);
   const diasEvo = diasParaEvolucion(filtro);
+  const evolucion = calcularEvolucionDiaria(filtrados, diasEvo);
+  const resumen = calcularResumen(filtrados);
+  const rendimientoBancos = calcularRendimientoPorBanco(filtrados, bancos);
 
   return {
-    resumen: calcularResumen(filtrados),
-    evolucion: calcularEvolucionDiaria(filtrados, diasEvo),
-    rendimientoBancos: calcularRendimientoPorBanco(filtrados, bancos),
+    resumen,
+    evolucion,
+    mediaPeriodo:
+      resumen.testsCompletados > 0 ? resumen.aciertosGlobal : null,
+    rendimientoBancos,
+    tiempoMedioBancos: calcularTiempoMedioPorBanco(filtrados, bancos),
     preguntasFalladas: obtenerPreguntasMasFalladas(filtrados, 10, bancos),
     testsRecientes: obtenerTestsRecientes(filtrados, 50, bancos),
+    recomendacion: generarRecomendacion(rendimientoBancos, filtrados),
     totalHistorial: resultados.length,
     totalPeriodo: filtrados.length,
   };
@@ -386,6 +513,8 @@ export const EstadisticasService = {
   calcularResumen,
   calcularEvolucionDiaria,
   calcularRendimientoPorBanco,
+  calcularTiempoMedioPorBanco,
+  generarRecomendacion,
   obtenerPreguntasMasFalladas,
   obtenerTestsRecientes,
   getResultadosFromCache,

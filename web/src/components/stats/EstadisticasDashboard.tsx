@@ -6,6 +6,7 @@ import { usePersistence } from "@/components/PersistenceProvider";
 import {
   EvolucionDiariaChart,
   RendimientoBancosChart,
+  TiempoMedioBancosChart,
 } from "@/components/stats/StatsCharts";
 import {
   obtenerDashboardData,
@@ -14,6 +15,8 @@ import {
   type TestReciente,
 } from "@/lib/persistence/estadisticas-service";
 import { getLocalCache } from "@/lib/persistence";
+
+const OBJETIVO_DEFAULT = 70;
 
 function formatFecha(iso: string): string {
   try {
@@ -85,6 +88,7 @@ const FILTROS: { id: FiltroTiempo; label: string }[] = [
 export function EstadisticasDashboard() {
   const { phase, syncNow } = usePersistence();
   const [filtro, setFiltro] = useState<FiltroTiempo>("30dias");
+  const [objetivoPct, setObjetivoPct] = useState(OBJETIVO_DEFAULT);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -133,20 +137,36 @@ export function EstadisticasDashboard() {
     <div className="mx-auto max-w-6xl space-y-6 px-1 pb-8 sm:px-0">
       {/* Controles */}
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:items-center sm:gap-2">
-          <span className="font-medium text-slate-700">Periodo</span>
-          <select
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-blue-400"
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value as FiltroTiempo)}
-          >
-            {FILTROS.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <label className="flex flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:items-center sm:gap-2">
+            <span className="font-medium text-slate-700">Periodo</span>
+            <select
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-blue-400"
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value as FiltroTiempo)}
+            >
+              {FILTROS.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:items-center sm:gap-2">
+            <span className="font-medium text-slate-700">Objetivo %</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={objetivoPct}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                if (Number.isFinite(n)) setObjetivoPct(Math.min(100, Math.max(0, n)));
+              }}
+              className="w-20 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-blue-400"
+            />
+          </label>
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
@@ -193,6 +213,10 @@ export function EstadisticasDashboard() {
         />
       ) : (
         <>
+          {data?.recomendacion?.mensaje ? (
+            <RecomendacionBanner recomendacion={data.recomendacion} />
+          ) : null}
+
           {/* KPIs */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <KpiCard
@@ -227,40 +251,57 @@ export function EstadisticasDashboard() {
               Evolución diaria
             </h2>
             <p className="mb-4 text-sm text-slate-500">
-              % de aciertos · puntos vacíos = días sin actividad
+              Tendencia · objetivo {objetivoPct}% · media del periodo · puntos
+              vacíos = sin tests
             </p>
-            <EvolucionDiariaChart data={data?.evolucion ?? []} />
+            <EvolucionDiariaChart
+              data={data?.evolucion ?? []}
+              mediaPeriodo={data?.mediaPeriodo}
+              objetivoPct={objetivoPct}
+            />
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Bancos */}
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-1 text-lg font-semibold text-slate-800">
-                Rendimiento por banco
-              </h2>
-              <p className="mb-4 text-sm text-slate-500">
-                Verde ≥75% · Amarillo 60–74% · Rojo &lt;60%
-              </p>
-              <RendimientoBancosChart data={data?.rendimientoBancos ?? []} />
-              {(data?.rendimientoBancos.length ?? 0) > 0 && (
-                <ul className="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
-                  {(data?.rendimientoBancos ?? []).map((b) => (
-                    <li
-                      key={b.banco}
-                      className="flex items-center justify-between gap-2 text-sm text-slate-600"
-                    >
-                      <span className="truncate font-medium text-slate-700">
-                        {b.bancoNombre}
-                      </span>
-                      <span className="shrink-0 tabular-nums text-slate-500">
-                        {b.totalTests} test{b.totalTests === 1 ? "" : "s"} ·{" "}
-                        {b.porcentaje.toFixed(0)}%
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <div className="space-y-6">
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+                <h2 className="mb-1 text-lg font-semibold text-slate-800">
+                  Rendimiento por banco
+                </h2>
+                <p className="mb-4 text-sm text-slate-500">
+                  Verde ≥75% · Amarillo 60–74% · Rojo &lt;60%
+                </p>
+                <RendimientoBancosChart data={data?.rendimientoBancos ?? []} />
+                {(data?.rendimientoBancos.length ?? 0) > 0 && (
+                  <ul className="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
+                    {(data?.rendimientoBancos ?? []).map((b) => (
+                      <li
+                        key={b.banco}
+                        className="flex items-center justify-between gap-2 text-sm text-slate-600"
+                      >
+                        <span className="truncate font-medium text-slate-700">
+                          {b.bancoNombre}
+                        </span>
+                        <span className="shrink-0 tabular-nums text-slate-500">
+                          {b.totalTests} test{b.totalTests === 1 ? "" : "s"} ·{" "}
+                          {b.porcentaje.toFixed(0)}%
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+                <h2 className="mb-1 text-lg font-semibold text-slate-800">
+                  ⏱️ Tiempo medio por banco
+                </h2>
+                <p className="mb-4 text-sm text-slate-500">
+                  Segundos de media para completar un test de cada banco
+                </p>
+                <TiempoMedioBancosChart data={data?.tiempoMedioBancos ?? []} />
+              </section>
+            </div>
 
             {/* TOP falladas */}
             <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
@@ -389,6 +430,45 @@ export function EstadisticasDashboard() {
 
       {detalle && (
         <TestDetalleModal test={detalle} onClose={() => setDetalle(null)} />
+      )}
+    </div>
+  );
+}
+
+function RecomendacionBanner({
+  recomendacion,
+}: {
+  recomendacion: NonNullable<DashboardData["recomendacion"]>;
+}) {
+  const tone =
+    recomendacion.tipo === "mantener"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      : recomendacion.tipo === "racha"
+        ? "border-amber-200 bg-amber-50 text-amber-950"
+        : "border-blue-200 bg-blue-50 text-blue-950";
+
+  const href =
+    recomendacion.bancoId &&
+    recomendacion.bancoId !== "simulacro" &&
+    recomendacion.bancoId !== "desconocido"
+      ? `/test/${recomendacion.bancoId}`
+      : "/practicar";
+
+  return (
+    <div
+      className={`flex flex-col gap-3 rounded-2xl border px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between ${tone}`}
+      role="status"
+    >
+      <p className="text-sm font-medium leading-relaxed sm:text-[0.95rem]">
+        {recomendacion.mensaje}
+      </p>
+      {(recomendacion.tipo === "repasar" || recomendacion.tipo === "mantener") && (
+        <Link
+          href={href}
+          className="shrink-0 rounded-xl bg-white/90 px-3 py-2 text-center text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-black/5 transition hover:bg-white"
+        >
+          Abrir banco
+        </Link>
       )}
     </div>
   );
