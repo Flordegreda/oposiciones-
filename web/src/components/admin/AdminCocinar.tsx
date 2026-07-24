@@ -17,7 +17,7 @@ type Props = {
   supuestosOk?: boolean;
 };
 
-const SUPUESTO_MARKER_RE = /^={3}\s*SUPUESTO/im;
+const SUPUESTO_MARKER_RE = /^\s*={3,}\s*SUPUESTO\s*:?\s*/im;
 
 function previewSnippet(text: string, max = 220): string {
   const flat = text.replace(/\s+/g, " ").trim();
@@ -69,6 +69,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     [texto],
   );
   const rechazadas = diagnostics?.rechazadas ?? [];
+  const avisos = diagnostics?.avisos ?? [];
   const numeradas = diagnostics?.numeradas ?? 0;
   const esperadasNum = esperadas.trim() ? parseInt(esperadas, 10) : null;
   const cuentaEsperadasMal =
@@ -187,10 +188,10 @@ Respuesta: D
 E: Art. 29 LEF: …`}</pre>
           <p className="muted small" style={{ marginTop: "0.5rem" }}>
             La primera línea debe ser <code>=== SUPUESTO: título</code>, el cierre{" "}
-            <code>===</code> en línea sola, y luego las preguntas <code>1.</code>{" "}
-            <code>2.</code>… con <code>Respuesta:</code> y <code>E:</code> opcional.
-            Requiere la tarjeta amarilla «Activar supuestos» arriba en esta página de
-            administración (solo la primera vez).
+            <code>===</code> o <code>=== FIN SUPUESTO ===</code> en línea sola, y luego
+            las preguntas <code>1.</code> <code>2.</code>… con <code>Respuesta:</code> y{" "}
+            <code>E:</code> opcional. Requiere la tarjeta amarilla «Activar supuestos»
+            arriba en esta página de administración (solo la primera vez).
           </p>
         </div>
 
@@ -325,6 +326,18 @@ E: Art. 29 LEF: …`}</pre>
                 </p>
               </div>
             )}
+            {avisos.length > 0 && (
+              <div className="info-box sim-info" style={{ marginTop: "0.75rem" }}>
+                <p className="small" style={{ margin: 0 }}>
+                  <strong>Avisos de formato</strong>
+                </p>
+                <ul className="muted small" style={{ margin: "0.35rem 0 0", paddingLeft: "1.25rem" }}>
+                  {avisos.map((aviso, idx) => (
+                    <li key={`${idx}-${aviso}`}>{aviso}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {rechazadas.length > 0 && (
               <div className="card card-warning" style={{ marginTop: "0.75rem", padding: "0.75rem 1rem" }}>
                 <p className="small" style={{ margin: 0 }}>
@@ -343,6 +356,12 @@ E: Art. 29 LEF: …`}</pre>
                         <strong>Sin número:</strong>
                       )}{" "}
                       {r.motivo}
+                      {r.linea !== undefined && (
+                        <span className="muted" style={{ display: "block", marginTop: "0.15rem" }}>
+                          Línea {r.linea}
+                          {r.primeraLinea ? `: ${previewSnippet(r.primeraLinea, 80)}` : ""}
+                        </span>
+                      )}
                       <span className="muted" style={{ display: "block", marginTop: "0.15rem" }}>
                         {previewSnippet(r.enunciado, 100)}
                       </span>
