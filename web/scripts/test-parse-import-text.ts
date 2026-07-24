@@ -153,4 +153,15 @@ ${buildNQuestions(5)}`;
     assert.equal(diag.validas, expectedCount);
     assert.equal(diag.rechazadas.length, 0);
   });
+
+  it("(j) never rejects === SUPUESTO marker line as a question", () => {
+    const text = `=== SUPUESTO: Incidencias en la renovación y funcionamiento del Tribunal Constitucional
+Cuerpo del supuesto en prosa.
+===
+${buildNQuestions(3)}`;
+    const diag = getImportDiagnostics(text);
+    assert.equal(diag.validas, 3);
+    assert.equal(diag.rechazadas.length, 0);
+    assert.ok(!diag.rechazadas.some((r) => r.enunciado.includes("SUPUESTO")));
+  });
 });

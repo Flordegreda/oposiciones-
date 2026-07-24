@@ -84,7 +84,20 @@ function isSupuestoEnd(line: string): boolean {
 }
 
 function isSupuestoMarkerLine(line: string): boolean {
-  return isSupuestoStart(line) || isSupuestoEnd(line);
+  const t = lineTrim(line);
+  if (isSupuestoStart(line) || isSupuestoEnd(line)) return true;
+  if (SUPUESTO_MARKER_SEARCH.test(t)) return true;
+  if (/^\s*={3,}\s*$/.test(t)) return true;
+  return false;
+}
+
+function isSupuestoRelatedRejection(r: ImportRejection): boolean {
+  for (const line of [r.primeraLinea, r.enunciado]) {
+    if (!line) continue;
+    if (isSupuestoMarkerLine(line)) return true;
+    if (SUPUESTO_MARKER_SEARCH.test(line)) return true;
+  }
+  return false;
 }
 
 /** Detecta si el texto incluye un bloque === SUPUESTO === (tras normalización). */
@@ -267,6 +280,7 @@ function diagnoseNumberedBlocks(texto: string, baseLine = 1): ImportRejection[] 
   for (const block of blocks) {
     const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length < 2) continue;
+    if (lines.some((l) => isSupuestoMarkerLine(l))) continue;
     if (isSupuestoMarkerLine(lines[0])) continue;
 
     const numero = extractQuestionNumber(lines[0]);
@@ -332,6 +346,9 @@ function diagnoseOptionBlocks(texto: string, baseLine = 1): ImportRejection[] {
     if (i < lines.length && EXPLAIN_RE.test(lines[i])) i++;
 
     if (!enunciadoParts.length && !bodyLines.length) continue;
+    if (enunciadoParts.some((p) => isSupuestoMarkerLine(p) || SUPUESTO_MARKER_SEARCH.test(p))) {
+      continue;
+    }
 
     const enunciado = enunciadoParts.join(" ").trim();
     const parsed = parseBlockLines(bodyLines);
@@ -369,7 +386,8 @@ function scanImportText(texto: string): ScanResult {
   }
 
   const lines = normalized.split("\n");
-  if (!lines.some((l) => isSupuestoStart(l))) {
+  const hasMarker = lines.some((l) => isSupuestoStart(l) || SUPUESTO_MARKER_SEARCH.test(l));
+  if (!hasMarker) {
     return {
       doc: { sueltas: parseQuestionsFromText(normalized), supuestos: [] },
       avisos: [],
@@ -400,7 +418,12 @@ function scanImportText(texto: string): ScanResult {
   }
 
   while (i < lines.length) {
-    const supuestoStart = parseSupuestoStartLine(lines[i]);
+    let line = lines[i];
+    if (!parseSupuestoStartLine(line) && SUPUESTO_MARKER_SEARCH.test(line)) {
+      const idx = line.search(SUPUESTO_MARKER_SEARCH);
+      if (idx > 0) line = lines[i] = line.slice(idx);
+    }
+    const supuestoStart = parseSupuestoStartLine(line);
     if (supuestoStart) {
       const titulo = supuestoStart.titulo;
       i++;
@@ -465,6 +488,8 @@ function scanImportText(texto: string): ScanResult {
 
 /** Detecta preguntas en el texto que no pasan validación de importación. */
 export function getImportDiagnostics(texto: string): ImportDiagnostics {
+  const prepared = prepareImportText(texto);
+  const markerPresent = hasSupuestoMarker(prepared);
   const { doc, avisos, diagnosticTexts, diagnosticLineOffsets } = scanImportText(texto);
   const validas = countParsedQuestions(doc);
   const hasSupuesto = doc.supuestos.length > 0;
@@ -483,13 +508,15 @@ export function getImportDiagnostics(texto: string): ImportDiagnostics {
     }
   }
 
-  // Tests sin numeración (P:/opciones sueltas): solo si no hay supuesto ni preguntas numeradas.
-  if (!hasSupuesto && numeradas === 0 && diagnosticTexts.length === 1) {
+  if (!hasSupuesto && !markerPresent && numeradas === 0 && diagnosticTexts.length === 1) {
     rechazadas.push(...diagnoseOptionBlocks(diagnosticTexts[0], diagnosticLineOffsets[0] ?? 1));
   }
 
-  // No bloquear por rechazos sin número cuando ya hay preguntas válidas importables.
-  if (validas > 0) {
+  rechazadas = rechazadas.filter((r) => !isSupuestoRelatedRejection(r));
+
+  if (hasSupuesto || markerPresent) {
+    rechazadas = rechazadas.filter((r) => r.numero !== undefined);
+  } else if (validas > 0) {
     rechazadas = rechazadas.filter((r) => r.numero !== undefined);
   }
 
