@@ -6,7 +6,6 @@ DROP MATERIALIZED VIEW IF EXISTS public.estadisticas_usuario;
 
 DROP FUNCTION IF EXISTS public.refresh_estadisticas_usuario();
 
-DROP POLICY IF EXISTS resultados_tests_all ON public.resultados_tests;
-DROP TABLE IF EXISTS public.resultados_tests;
+DROP TABLE IF EXISTS public.resultados_tests CASCADE;
 
 NOTIFY pgrst, 'reload schema';
