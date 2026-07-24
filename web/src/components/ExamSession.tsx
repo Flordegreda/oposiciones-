@@ -10,9 +10,8 @@ import {
   originalOptionToDisplay,
 } from "@/lib/exam-utils";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
-import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { fetchWithRetry } from "@/lib/retry";
-import { getSyncService } from "@/lib/persistence";
+import { saveResultadoTest } from "@/lib/persistence";
 import {
   calcularStatsRepaso,
   marcarRepasoCompletado,
@@ -83,7 +82,6 @@ export function ExamSession({
   const [remaining, setRemaining] = useState<number | null>(timerSeconds);
   const [timerEnded, setTimerEnded] = useState(false);
   const [grading, setGrading] = useState(false);
-  const [localSaved, setLocalSaved] = useState(false);
 
   const isRepaso = tipo === "repaso_fallos";
 
@@ -232,8 +230,7 @@ export function ExamSession({
       Math.round((Date.now() - startedAtRef.current) / 1000),
     );
 
-    void getSyncService()
-      .saveResultAndEnqueue({
+    void saveResultadoTest({
         id: crypto.randomUUID(),
         banco,
         test: title,
@@ -250,7 +247,6 @@ export function ExamSession({
         if (isRepaso) {
           await marcarRepasoCompletado(detallePreguntas.map((d) => d.preguntaId));
         }
-        setLocalSaved(true);
       })
       .catch(() => {
         savedResultRef.current = false;
@@ -420,7 +416,6 @@ export function ExamSession({
           {examMode ? " — modo examen" : ""}
           {isRepaso ? " — repaso de fallos" : ""}
         </h2>
-        <SyncStatusIndicator localSaved={localSaved} />
         {timerEnded && (
           <p className="muted small">Tiempo agotado. Se han guardado tus respuestas.</p>
         )}

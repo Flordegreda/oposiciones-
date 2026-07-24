@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePersistence } from "@/components/PersistenceProvider";
 import {
   EvolucionDiariaChart,
   RendimientoBancosChart,
@@ -15,7 +14,6 @@ import {
   type FiltroTiempo,
   type TestReciente,
 } from "@/lib/persistence/estadisticas-service";
-import { getLocalCache } from "@/lib/persistence";
 
 const OBJETIVO_DEFAULT = 70;
 
@@ -88,13 +86,10 @@ const FILTROS: { id: FiltroTiempo; label: string }[] = [
 
 export function EstadisticasDashboard() {
   const router = useRouter();
-  const { phase, syncNow } = usePersistence();
   const [filtro, setFiltro] = useState<FiltroTiempo>("30dias");
   const [objetivoPct, setObjetivoPct] = useState(OBJETIVO_DEFAULT);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [lastSync, setLastSync] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<TestReciente | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,8 +99,6 @@ export function EstadisticasDashboard() {
     try {
       const dash = await obtenerDashboardData(filtro);
       setData(dash);
-      const meta = await getLocalCache().getMeta();
-      setLastSync(meta.lastPullAt || meta.lastPushAt);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar estadísticas");
     } finally {
@@ -116,16 +109,6 @@ export function EstadisticasDashboard() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  async function handleSync() {
-    setSyncing(true);
-    try {
-      await syncNow();
-      await load();
-    } finally {
-      setSyncing(false);
-    }
-  }
 
   const resumen = data?.resumen;
   const aciertosTone = useMemo(() => {
@@ -168,33 +151,6 @@ export function EstadisticasDashboard() {
               className="w-20 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-blue-400"
             />
           </label>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-            <span
-              className={`inline-block h-2 w-2 rounded-full ${
-                phase === "synced"
-                  ? "bg-emerald-500"
-                  : phase === "syncing" || syncing
-                    ? "bg-amber-400"
-                    : "bg-slate-300"
-              }`}
-            />
-            {phase === "syncing" || syncing
-              ? "Sincronizando…"
-              : lastSync
-                ? `Sincronizado · ${formatFecha(lastSync)}`
-                : "Sin sincronizar aún"}
-          </span>
-          <button
-            type="button"
-            onClick={() => void handleSync()}
-            disabled={syncing || phase === "syncing"}
-            className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
-          >
-            {syncing ? "Sincronizando…" : "Sincronizar ahora"}
-          </button>
         </div>
       </div>
 

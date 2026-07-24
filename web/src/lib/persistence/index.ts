@@ -13,8 +13,7 @@ export {
   getLocalCache,
   getOrCreateUsuarioId,
 } from "@/lib/persistence/local-cache-service";
-export { SyncService, getSyncService } from "@/lib/persistence/sync-service";
-export type { SyncPhase } from "@/lib/persistence/sync-service";
+export { saveResultadoTest } from "@/lib/persistence/resultados-service";
 export {
   EstadisticasService,
   obtenerDashboardData,

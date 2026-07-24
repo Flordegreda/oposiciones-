@@ -9,9 +9,16 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const ids = Array.isArray(body.ids)
-      ? [...new Set(body.ids.map((id: unknown) => String(id)).filter(Boolean))]
+    const rawIds = Array.isArray((body as { ids?: unknown }).ids)
+      ? (body as { ids: unknown[] }).ids
       : [];
+    const ids = [
+      ...new Set(
+        rawIds
+          .map((id) => String(id).trim())
+          .filter((id) => id.length > 0),
+      ),
+    ];
 
     if (!ids.length) {
       return NextResponse.json({ error: "Falta ids" }, { status: 400 });
@@ -26,10 +33,20 @@ export async function POST(req: NextRequest) {
       ? "id, banco_id, enunciado, opciones, orden, supuesto_id"
       : "id, banco_id, enunciado, opciones, orden";
 
+    type PreguntaRow = {
+      id: string;
+      banco_id: string;
+      enunciado: string;
+      opciones: unknown;
+      orden: number;
+      supuesto_id?: string | null;
+    };
+
     const { data, error } = await supabase.from("preguntas").select(select).in("id", ids);
     if (error) throw new Error(error.message);
 
-    const byId = new Map((data ?? []).map((p) => [p.id as string, p]));
+    const rows = (data ?? []) as unknown as PreguntaRow[];
+    const byId = new Map<string, PreguntaRow>(rows.map((p) => [p.id, p]));
     const list: PublicExamPregunta[] = [];
 
     for (const id of ids) {
@@ -39,14 +56,12 @@ export async function POST(req: NextRequest) {
         ? (row.opciones as string[])
         : [];
       list.push({
-        id: row.id as string,
-        bancoId: row.banco_id as string,
-        enunciado: row.enunciado as string,
+        id: row.id,
+        bancoId: row.banco_id,
+        enunciado: row.enunciado,
         opciones,
-        orden: (row.orden as number) ?? 0,
-        supuestoId: withSupuesto
-          ? ((row as { supuesto_id?: string | null }).supuesto_id ?? null)
-          : null,
+        orden: row.orden ?? 0,
+        supuestoId: withSupuesto ? (row.supuesto_id ?? null) : null,
       });
     }
 
