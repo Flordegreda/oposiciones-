@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mergeBancosByIds } from "@/lib/merge-bancos";
 import { planBankRenames } from "@/lib/normalize-bank-name";
-import { revalidateContentCache } from "@/lib/revalidate-content";
+import { revalidateAllCaches, revalidateAppPaths } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (updated > 0 || merged.length > 0) {
-      revalidateContentCache();
+      revalidateAllCaches();
+      revalidateAppPaths();
     }
 
     return NextResponse.json({
