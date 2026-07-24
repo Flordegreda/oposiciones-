@@ -62,7 +62,19 @@ function lineTrim(line: string): string {
 }
 
 function isSupuestoStart(line: string): boolean {
-  return SUPUESTO_START_RE.test(lineTrim(line));
+  return parseSupuestoStartLine(line) !== null;
+}
+
+function parseSupuestoStartLine(line: string): { titulo?: string } | null {
+  const trimmed = lineTrim(line);
+  let slice = trimmed;
+  const inlineIdx = trimmed.search(/={3,}\s*SUPUESTO\s*:?\s*/i);
+  if (inlineIdx > 0) slice = trimmed.slice(inlineIdx);
+  const m = slice.match(SUPUESTO_START_RE);
+  if (!m) return null;
+  let titulo = m.groups?.titulo?.trim();
+  if (titulo) titulo = titulo.replace(/\s*={3,}\s*$/, "").trim() || undefined;
+  return { titulo };
 }
 
 function isSupuestoEnd(line: string): boolean {
@@ -333,15 +345,21 @@ function scanImportText(texto: string): ScanResult {
   function pushDiagnosticChunk(chunkLines: string[], startIndex: number) {
     const text = chunkLines.join("\n").trim();
     if (!text) return;
-    diagnosticTexts.push(text);
-    diagnosticLineOffsets.push(startIndex + 1);
-    sueltas.push(...parseQuestionsFromText(text));
+    const preguntas = parseQuestionsFromText(text);
+    const headers = countQuestionHeaders(text);
+    if (preguntas.length > 0) {
+      sueltas.push(...preguntas);
+    }
+    if (preguntas.length > 0 || headers > 0) {
+      diagnosticTexts.push(text);
+      diagnosticLineOffsets.push(startIndex + 1);
+    }
   }
 
   while (i < lines.length) {
-    if (isSupuestoStart(lines[i])) {
-      const startMatch = lineTrim(lines[i]).match(SUPUESTO_START_RE);
-      const titulo = startMatch?.groups?.titulo?.trim() || undefined;
+    const supuestoStart = parseSupuestoStartLine(lines[i]);
+    if (supuestoStart) {
+      const titulo = supuestoStart.titulo;
       i++;
 
       const textoLines: string[] = [];

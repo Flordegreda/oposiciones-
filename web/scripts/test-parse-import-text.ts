@@ -124,4 +124,26 @@ ${buildNQuestions(5)}`;
     assert.equal(diag.rechazadas.length, 0);
     assert.equal(diag.validas, expectedCount);
   });
+
+  it("(g) ignores preamble junk before supuesto marker", () => {
+    const text = `Texto accidental antes del bloque\n${buildSupuestoFixture("===")}`;
+    const doc = parseImportDocument(text);
+    const diag = getImportDiagnostics(text);
+
+    assert.equal(countParsedQuestions(doc), expectedCount);
+    assert.equal(doc.supuestos.length, 1);
+    assert.equal(diag.rechazadas.length, 0);
+  });
+
+  it("(h) detects supuesto when marker is not at line start", () => {
+    const inner = buildSupuestoFixture("===");
+    const firstLine = inner.split("\n")[0];
+    const text = `copiado del chat ${firstLine}\n${inner.split("\n").slice(1).join("\n")}`;
+    const doc = parseImportDocument(text);
+    const diag = getImportDiagnostics(text);
+
+    assert.equal(countParsedQuestions(doc), expectedCount);
+    assert.equal(doc.supuestos.length, 1);
+    assert.equal(diag.rechazadas.length, 0);
+  });
 });
