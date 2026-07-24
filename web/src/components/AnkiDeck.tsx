@@ -3,18 +3,25 @@
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { shuffle } from "@/lib/exam-utils";
+import {
+  beginFichaDeckOrder,
+  clearFichaDeckSession,
+  persistFichaDeckOrder,
+} from "@/lib/ficha-deck-storage";
 import type { FichaCard } from "@/lib/queries/fichas";
 
 const EXIT_HREF = "/fichas";
 
 type Props = {
+  mazoId: string;
   fichas: FichaCard[];
   exitHref?: string;
 };
 
-export function AnkiDeck({ fichas, exitHref = EXIT_HREF }: Props) {
+export function AnkiDeck({ mazoId, fichas, exitHref = EXIT_HREF }: Props) {
   const cards = useMemo(() => fichas, [fichas]);
-  const [order, setOrder] = useState(() => cards.map((_, i) => i));
+  const sessionScope = `ficha:${mazoId}`;
+  const [order, setOrder] = useState(() => beginFichaDeckOrder(sessionScope, cards));
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
@@ -40,10 +47,12 @@ export function AnkiDeck({ fichas, exitHref = EXIT_HREF }: Props) {
   }, [index, total, goTo]);
 
   const reshuffle = useCallback(() => {
-    setOrder(shuffle(cards.map((_, i) => i)));
+    const next = shuffle(cards.map((_, i) => i));
+    setOrder(next);
+    persistFichaDeckOrder(sessionScope, cards, next);
     setIndex(0);
     setFlipped(false);
-  }, [cards]);
+  }, [cards, sessionScope]);
 
   const progress = total ? Math.round(((index + 1) / total) * 100) : 0;
 
@@ -68,7 +77,7 @@ export function AnkiDeck({ fichas, exitHref = EXIT_HREF }: Props) {
     return (
       <div className="card">
         <p className="muted">Este mazo no tiene fichas.</p>
-        <Link href={exitHref} className="btn-primary">
+        <Link href={exitHref} className="btn-primary" onClick={() => clearFichaDeckSession(sessionScope)}>
           Volver a Fichas
         </Link>
       </div>
@@ -150,7 +159,11 @@ export function AnkiDeck({ fichas, exitHref = EXIT_HREF }: Props) {
       </p>
 
       <div className="flashcard-exit-bar">
-        <Link href={exitHref} className="btn-primary flashcard-finish-btn">
+        <Link
+          href={exitHref}
+          className="btn-primary flashcard-finish-btn"
+          onClick={() => clearFichaDeckSession(sessionScope)}
+        >
           Finalizar
         </Link>
       </div>
