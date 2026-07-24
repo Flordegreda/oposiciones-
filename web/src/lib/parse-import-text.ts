@@ -99,6 +99,8 @@ function normalizeText(texto: string): string {
     .replace(/^\uFEFF/, "")
     .replace(/[\u200B-\u200D\uFEFF]/g, "")
     .replace(/[\uFF1D\uFE66\u207C]/g, "=")
+    .replace(/[\uFF08\uFF09]/g, (c) => (c === "\uFF08" ? "(" : ")"))
+    .replace(/\uFF1A/g, ":")
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .replace(/\u00a0/g, " ")
@@ -107,6 +109,47 @@ function normalizeText(texto: string): string {
     // No partir fechas (2024.) ni «artículo 10.» cuando la línea siguiente es D).
     .replace(/[ \t]+(?=\d{1,3}[\.\)]\s+(?![A-D][\.\)]\s))/g, "\n")
     .trim();
+}
+
+const SUPUESTO_MARKER_SEARCH = /={3,}\s*SUPUESTO\s*:?\s*/i;
+
+/** Normaliza y recorta el texto antes de importar (preamble, unicode, basura final). */
+export function prepareImportText(texto: string): string {
+  let text = normalizeText(texto);
+  if (!text) return text;
+
+  const lines = text.split("\n");
+  let startIdx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (SUPUESTO_MARKER_SEARCH.test(lines[i]) || /^\d+[\.\)]\s+/.test(lines[i].trim())) {
+      startIdx = i;
+      const markerAt = lines[i].search(SUPUESTO_MARKER_SEARCH);
+      if (markerAt > 0) lines[i] = lines[i].slice(markerAt);
+      break;
+    }
+  }
+  text = lines.slice(startIdx).join("\n");
+
+  const out = text.split("\n");
+  while (out.length > 0) {
+    const t = out[out.length - 1].trim();
+    if (!t) {
+      out.pop();
+      continue;
+    }
+    if (
+      /^VALIDACIÓN:/i.test(t) ||
+      /^validacion:/i.test(t) ||
+      /^---+/.test(t) ||
+      /^#+\s/.test(t)
+    ) {
+      out.pop();
+      continue;
+    }
+    break;
+  }
+
+  return out.join("\n").trim();
 }
 
 function isIntroLine(line: string): boolean {
@@ -315,7 +358,7 @@ function diagnoseOptionBlocks(texto: string, baseLine = 1): ImportRejection[] {
 }
 
 function scanImportText(texto: string): ScanResult {
-  const normalized = normalizeText(texto);
+  const normalized = prepareImportText(texto);
   if (!normalized) {
     return {
       doc: { sueltas: [], supuestos: [] },
@@ -424,6 +467,7 @@ function scanImportText(texto: string): ScanResult {
 export function getImportDiagnostics(texto: string): ImportDiagnostics {
   const { doc, avisos, diagnosticTexts, diagnosticLineOffsets } = scanImportText(texto);
   const validas = countParsedQuestions(doc);
+  const hasSupuesto = doc.supuestos.length > 0;
 
   let numeradas = 0;
   let rechazadas: ImportRejection[] = [];
@@ -436,9 +480,17 @@ export function getImportDiagnostics(texto: string): ImportDiagnostics {
 
     if (chunkNumeradas > 0) {
       rechazadas.push(...diagnoseNumberedBlocks(chunk, baseLine));
-    } else {
-      rechazadas.push(...diagnoseOptionBlocks(chunk, baseLine));
     }
+  }
+
+  // Tests sin numeración (P:/opciones sueltas): solo si no hay supuesto ni preguntas numeradas.
+  if (!hasSupuesto && numeradas === 0 && diagnosticTexts.length === 1) {
+    rechazadas.push(...diagnoseOptionBlocks(diagnosticTexts[0], diagnosticLineOffsets[0] ?? 1));
+  }
+
+  // No bloquear por rechazos sin número cuando ya hay preguntas válidas importables.
+  if (validas > 0) {
+    rechazadas = rechazadas.filter((r) => r.numero !== undefined);
   }
 
   if (numeradas > 0) {
@@ -685,13 +737,18 @@ export function parseImportForContext(
   texto: string,
   ctx?: ImportContext,
 ): ParsedImportDocument {
-  const doc = parseImportDocument(texto);
-  if (doc.supuestos.length || !ctx?.encadenado) return doc;
+  const prepared = prepareImportText(texto);
+  let doc = scanImportText(prepared).doc;
+
+  if (ctx?.encadenado && doc.supuestos.length === 0 && countParsedQuestions(doc) > 0) {
+    doc = parseImportDocumentWithPreamble(prepared, { titulo: ctx.nombre });
+  }
+
   return doc;
 }
 
 export function parseImportDocument(texto: string): ParsedImportDocument {
-  return scanImportText(texto).doc;
+  return scanImportText(prepareImportText(texto)).doc;
 }
 
 /** Lista plana de preguntas (útil para vista previa rápida). */

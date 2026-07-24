@@ -146,4 +146,11 @@ ${buildNQuestions(5)}`;
     assert.equal(doc.supuestos.length, 1);
     assert.equal(diag.rechazadas.length, 0);
   });
+
+  it("(i) never blocks valid import on junk preamble diagnostics", () => {
+    const text = `comentario del chat o basura\n${buildSupuestoFixture("===")}`;
+    const diag = getImportDiagnostics(text);
+    assert.equal(diag.validas, expectedCount);
+    assert.equal(diag.rechazadas.length, 0);
+  });
 });

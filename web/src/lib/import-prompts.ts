@@ -70,3 +70,34 @@ E: Art. 23.1 Decreto 99/2009.
 
 GENERA AHORA LAS 50 PREGUNTAS A PARTIR DE:
 [PEGA AQUÍ EL DOCUMENTO / TEMARIO / NORMATIVA]`;
+
+export const PROMPT_SUPUESTO_ENCADENADO_JEX = `Eres un preparador de oposiciones de la Junta de Extremadura (JEX), especialidad Jurídica.
+
+GENERA UN SUPUESTO PRÁCTICO ENCADENADO con EXACTAMENTE [N] PREGUNTAS TIPO TEST a partir del material que se indique al final.
+
+FORMATO DE SALIDA — OBLIGATORIO (importador JEX)
+Empieza DIRECTAMENTE con esta línea (signos = ASCII, sin texto previo):
+
+=== SUPUESTO: [Título breve]
+[Párrafo del caso en prosa, con fechas y hechos entrelazados.]
+===
+
+1. [Enunciado en la misma línea que el número]
+A) [texto]
+B) [texto]
+C) [texto]
+D) [texto]
+Respuesta: [A|B|C|D]
+E: [Art. X Norma: justificación breve]
+
+2. …
+(hasta [N])
+
+REGLAS
+- Cierre del supuesto: === en línea sola (también válido: === FIN SUPUESTO ===).
+- Opciones A) B) C) D) con texto. Respuesta: una letra. Explicación como E: …
+- Sin markdown, sin introducción, sin VALIDACIÓN al final, sin comentarios fuera del bloque.
+- Fechas en prosa: «30 de abril de 2026», no «30.» en línea aparte.
+
+GENERA AHORA [N] PREGUNTAS A PARTIR DE:
+[PEGA TEMARIO / NORMATIVA]`;

@@ -8,7 +8,7 @@ import {
   hasSupuestoMarker,
   parseImportForContext,
 } from "@/lib/parse-import-text";
-import { PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
+import { PROMPT_SUPUESTO_ENCADENADO_JEX, PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -51,6 +51,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [promptCopiado, setPromptCopiado] = useState(false);
+  const [promptSupuestoCopiado, setPromptSupuestoCopiado] = useState(false);
 
   useEffect(() => {
     if (hasSupuestoMarker(texto)) {
@@ -79,7 +80,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     esperadasNum !== null && !Number.isNaN(esperadasNum) && previewCount !== esperadasNum;
   const supuesto = preview.supuestos[0];
   const encadenadoSinSupuesto =
-    supuestoEncadenado && texto.trim() && previewCount > 0 && preview.supuestos.length === 0;
+    supuestoEncadenado &&
+    texto.trim() &&
+    previewCount > 0 &&
+    preview.supuestos.length === 0 &&
+    !hasSupuestoMarker(texto);
   const puedeGuardar =
     !busy &&
     schemaOk &&
@@ -87,7 +92,6 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     materias.length > 0 &&
     texto.trim() &&
     previewCount > 0 &&
-    rechazadas.length === 0 &&
     !cuentaEsperadasMal &&
     !encadenadoSinSupuesto;
 
@@ -116,6 +120,16 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
         ")",
     );
     router.refresh();
+  }
+
+  async function copiarPromptSupuesto() {
+    try {
+      await navigator.clipboard.writeText(PROMPT_SUPUESTO_ENCADENADO_JEX);
+      setPromptSupuestoCopiado(true);
+      setTimeout(() => setPromptSupuestoCopiado(false), 2500);
+    } catch {
+      setErr("No se pudo copiar el prompt al portapapeles");
+    }
   }
 
   async function copiarPromptTeorico() {
@@ -163,6 +177,23 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
               onClick={() => void copiarPromptTeorico()}
             >
               {promptCopiado ? "Copiado" : "Copiar prompt teórico JEX"}
+            </button>
+          </div>
+        )}
+
+        {supuestoEncadenado && (
+          <div className="info-box sim-info" style={{ marginTop: "0.75rem" }}>
+            <p style={{ margin: 0 }}>
+              <strong>Prompt para IA (supuesto encadenado):</strong> copia, sustituye [N] por el
+              número de preguntas y pega el temario al final.
+            </p>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              style={{ marginTop: "0.65rem" }}
+              onClick={() => void copiarPromptSupuesto()}
+            >
+              {promptSupuestoCopiado ? "Copiado" : "Copiar prompt supuesto JEX"}
             </button>
           </div>
         )}
@@ -276,8 +307,8 @@ E: Art. 29 LEF: …`}</pre>
           />
         </label>
         <p className="muted small" style={{ marginTop: "-0.5rem" }}>
-          Si indicas 50, no dejará guardar hasta que la vista previa detecte exactamente 50
-          válidas y ninguna rechazada.
+          Si indicas un número, avisa si la vista previa no coincide. No bloquea el guardado por
+          avisos de formato si hay preguntas válidas.
         </p>
 
         <label>
@@ -345,10 +376,11 @@ E: Art. 29 LEF: …`}</pre>
               <div className="card card-warning" style={{ marginTop: "0.75rem", padding: "0.75rem 1rem" }}>
                 <p className="small" style={{ margin: 0 }}>
                   <strong>
-                    {rechazadas.length} pregunta{rechazadas.length !== 1 ? "s" : ""} no se
-                    importará{rechazadas.length !== 1 ? "n" : ""}
+                    {rechazadas.length} pregunta{rechazadas.length !== 1 ? "s" : ""} numerada
+                    {rechazadas.length !== 1 ? "s" : ""} con formato incompleto
                   </strong>{" "}
-                  — corrige el texto o pide a la IA que regenere esas preguntas.
+                  — no se importará{rechazadas.length !== 1 ? "n" : ""}.
+                  {previewCount > 0 && " Puedes guardar igualmente las válidas detectadas."}
                 </p>
                 <ul className="muted small" style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
                   {rechazadas.map((r, idx) => (
