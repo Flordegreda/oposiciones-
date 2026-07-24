@@ -71,9 +71,22 @@ function isSupuestoEnd(line: string): boolean {
   return SUPUESTO_END_RE.test(trimmed);
 }
 
+function isSupuestoMarkerLine(line: string): boolean {
+  return isSupuestoStart(line) || isSupuestoEnd(line);
+}
+
+/** Detecta si el texto incluye un bloque === SUPUESTO === (tras normalización). */
+export function hasSupuestoMarker(texto: string): boolean {
+  const normalized = normalizeText(texto);
+  if (!normalized) return false;
+  return normalized.split("\n").some((line) => isSupuestoStart(line));
+}
+
 function normalizeText(texto: string): string {
   return texto
     .replace(/^\uFEFF/, "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\uFF1D\uFE66\u207C]/g, "=")
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .replace(/\u00a0/g, " ")
@@ -199,6 +212,7 @@ function diagnoseNumberedBlocks(texto: string, baseLine = 1): ImportRejection[] 
   for (const block of blocks) {
     const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length < 2) continue;
+    if (isSupuestoMarkerLine(lines[0])) continue;
 
     const numero = extractQuestionNumber(lines[0]);
     const head = lines[0]
@@ -274,7 +288,7 @@ function diagnoseOptionBlocks(texto: string, baseLine = 1): ImportRejection[] {
       parsed.opcionesVacias,
       parsed.respuesta,
     );
-    if (motivo && enunciado) {
+    if (motivo && enunciado && !isSupuestoMarkerLine(enunciadoParts[0] ?? enunciado)) {
       const primeraLinea = enunciadoParts[0] ?? bodyLines[0] ?? "";
       rechazadas.push({
         enunciado: enunciado.slice(0, 90),

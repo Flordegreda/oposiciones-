@@ -112,4 +112,16 @@ ${buildNQuestions(5)}`;
     const doc = parseImportDocument(text);
     assert.equal(countParsedQuestions(doc), expectedCount);
   });
+
+  it("(f) fullwidth equals markers import without false rejection", () => {
+    const ascii = buildSupuestoFixture("===");
+    const fullwidth = ascii.replace(/={3}/g, "＝＝＝");
+    const doc = parseImportDocument(fullwidth);
+    const diag = getImportDiagnostics(fullwidth);
+
+    assert.equal(countParsedQuestions(doc), expectedCount);
+    assert.equal(doc.supuestos.length, 1);
+    assert.equal(diag.rechazadas.length, 0);
+    assert.equal(diag.validas, expectedCount);
+  });
 });

@@ -2,7 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { countParsedQuestions, getImportDiagnostics, parseImportForContext } from "@/lib/parse-import-text";
+import {
+  countParsedQuestions,
+  getImportDiagnostics,
+  hasSupuestoMarker,
+  parseImportForContext,
+} from "@/lib/parse-import-text";
 import { PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
 
 type Materia = { id: string; nombre: string; bancos?: number };
@@ -16,8 +21,6 @@ type Props = {
   schemaOk?: boolean;
   supuestosOk?: boolean;
 };
-
-const SUPUESTO_MARKER_RE = /^\s*={3,}\s*SUPUESTO\s*:?\s*/im;
 
 function previewSnippet(text: string, max = 220): string {
   const flat = text.replace(/\s+/g, " ").trim();
@@ -50,7 +53,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
   const [promptCopiado, setPromptCopiado] = useState(false);
 
   useEffect(() => {
-    if (SUPUESTO_MARKER_RE.test(texto)) {
+    if (hasSupuestoMarker(texto)) {
       setSupuestoEncadenado(true);
       setCtx((c) => (c.tipo === "practico" ? c : { ...c, tipo: "practico" }));
     }
