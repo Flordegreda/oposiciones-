@@ -7,7 +7,7 @@ import {
   getImportDiagnostics,
   parseImportForContext,
 } from "@/lib/parse-import-text";
-import { PROMPT_SUPUESTO_PRACTICO_JEX, PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
+import { PROMPT_SUPUESTO_ENCADENADO_JEX, PROMPT_TEST_TEORICO_JEX } from "@/lib/import-prompts";
 
 type Materia = { id: string; nombre: string; bancos?: number };
 type Ctx = {
@@ -124,7 +124,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
 
   async function copiarPromptSupuesto() {
     try {
-      await navigator.clipboard.writeText(PROMPT_SUPUESTO_PRACTICO_JEX);
+      await navigator.clipboard.writeText(PROMPT_SUPUESTO_ENCADENADO_JEX);
       setPromptSupuestoCopiado(true);
       setTimeout(() => setPromptSupuestoCopiado(false), 2500);
     } catch {
@@ -183,8 +183,8 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
         {supuestoPractico && (
           <div className="info-box sim-info" style={{ marginTop: "0.75rem" }}>
             <p style={{ margin: 0 }}>
-              <strong>Prompt para IA (supuesto práctico):</strong> la IA te dará caso + preguntas.
-              Pega cada bloque en su caja.
+              <strong>Prompt supuesto encadenado:</strong> cópialo, pégalo en ChatGPT/Claude
+              y añade el artículo o norma al final. Luego reparte la salida en las dos cajas.
             </p>
             <button
               type="button"
@@ -192,7 +192,7 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
               style={{ marginTop: "0.65rem" }}
               onClick={() => void copiarPromptSupuesto()}
             >
-              {promptSupuestoCopiado ? "Copiado" : "Copiar prompt supuesto JEX"}
+              {promptSupuestoCopiado ? "Copiado" : "Copiar prompt supuesto encadenado"}
             </button>
           </div>
         )}
