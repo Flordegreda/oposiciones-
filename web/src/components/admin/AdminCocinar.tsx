@@ -19,6 +19,12 @@ type Props = {
   materias: Materia[];
   schemaOk?: boolean;
   supuestosOk?: boolean;
+  targetBanco?: {
+    id: string;
+    nombre: string;
+    materiaId: string;
+    tipo: "teorico" | "practico";
+  };
 };
 
 function previewSnippet(text: string, max = 220): string {
@@ -27,23 +33,21 @@ function previewSnippet(text: string, max = 220): string {
   return `${flat.slice(0, max).trim()}…`;
 }
 
-export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk = true }: Props) {
+export function AdminCocinar({
+  materias: initial,
+  schemaOk = true,
+  supuestosOk = true,
+  targetBanco,
+}: Props) {
   const router = useRouter();
   const [materias, setMaterias] = useState(initial);
   const [ctx, setCtx] = useState<Ctx>({
-    tipo: "teorico",
-    materiaId: initial[0]?.id ?? "",
+    tipo: targetBanco?.tipo ?? "teorico",
+    materiaId: targetBanco?.materiaId ?? initial[0]?.id ?? "",
   });
-
-  useEffect(() => {
-    setMaterias(initial);
-    if (initial.length && !initial.some((m) => m.id === ctx.materiaId)) {
-      setCtx((c) => ({ ...c, materiaId: initial[0]?.id ?? "" }));
-    }
-  }, [initial, ctx.materiaId]);
-
-  const [nombre, setNombre] = useState("");
+  const [nombre, setNombre] = useState(targetBanco?.nombre ?? "");
   const [esperadas, setEsperadas] = useState("");
+  const [importMode, setImportMode] = useState<"append" | "overwrite" | "create">("append");
   const [supuestoPractico, setSupuestoPractico] = useState(false);
   const [textoCaso, setTextoCaso] = useState("");
   const [texto, setTexto] = useState("");
@@ -52,6 +56,23 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
   const [busy, setBusy] = useState(false);
   const [promptCopiado, setPromptCopiado] = useState(false);
   const [promptSupuestoCopiado, setPromptSupuestoCopiado] = useState(false);
+
+  useEffect(() => {
+    setMaterias(initial);
+    if (initial.length && !initial.some((m) => m.id === ctx.materiaId)) {
+      setCtx((c) => ({ ...c, materiaId: initial[0]?.id ?? "" }));
+    }
+  }, [initial, ctx.materiaId]);
+
+  useEffect(() => {
+    if (!targetBanco) return;
+    setNombre(targetBanco.nombre);
+    setCtx({
+      tipo: targetBanco.tipo,
+      materiaId: targetBanco.materiaId,
+    });
+    setImportMode("append");
+  }, [targetBanco]);
 
   const importCtx = useMemo(
     () => ({
@@ -103,9 +124,11 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
       body: JSON.stringify({
         ...ctx,
         nombre: nombre.trim() || undefined,
+        bancoId: targetBanco?.id,
         texto,
         textoCaso: supuestoPractico ? textoCaso : undefined,
         encadenado: supuestoPractico,
+        mode: importMode,
       }),
     });
     const data = await res.json();
@@ -114,10 +137,16 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
     setTexto("");
     setTextoCaso("");
     setSupuestoPractico(false);
+    const actionLabel =
+      data.action === "appended"
+        ? "actualizado"
+        : data.action === "overwritten"
+          ? "reemplazado"
+          : "creado";
     setMsg(
-      `Banco creado: ${data.banco.nombre} (${data.num} preguntas` +
+      `Banco ${actionLabel}: ${data.banco.nombre} (${data.num} preguntas` +
         (data.supuestos ? `, ${data.supuestos} supuesto${data.supuestos !== 1 ? "s" : ""}` : "") +
-        ")",
+        "). Ya visible en Practicar.",
     );
     router.refresh();
   }
@@ -155,6 +184,15 @@ export function AdminCocinar({ materias: initial, schemaOk = true, supuestosOk =
 
       {msg && <p className="ok">{msg}</p>}
       {err && <p className="error">{err}</p>}
+
+      {targetBanco && (
+        <div className="info-box sim-info">
+          <p style={{ margin: 0 }}>
+            Añadiendo preguntas al banco <strong>{targetBanco.nombre}</strong>. Las nuevas
+            preguntas se guardarán en ese banco (modo añadir).
+          </p>
+        </div>
+      )}
 
       <div className="card card-elevated">
         <h2 className="admin-section-title">Pegar test en texto plano</h2>
@@ -282,6 +320,18 @@ E: Art. 17.1 LOTC: …`}</pre>
             onChange={(e) => setNombre(e.target.value)}
             placeholder={supuestoPractico ? "Renovación del TC" : "EBEP bloque 1"}
           />
+        </label>
+
+        <label>
+          Si el banco ya existe (mismo nombre y materia)
+          <select
+            value={importMode}
+            onChange={(e) => setImportMode(e.target.value as "append" | "overwrite" | "create")}
+          >
+            <option value="append">Añadir preguntas al banco existente</option>
+            <option value="overwrite">Reemplazar todas las preguntas del banco</option>
+            <option value="create">Crear un banco nuevo (aunque el nombre exista)</option>
+          </select>
         </label>
 
         <label>

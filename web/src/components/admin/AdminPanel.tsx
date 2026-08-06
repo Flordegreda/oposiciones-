@@ -93,7 +93,25 @@ export function AdminPanel({
         </div>
       )}
       {tab === "importar" && (
-        <AdminCocinar materias={materias} schemaOk={schemaOk} supuestosOk={supuestosOk} />
+        <AdminCocinar
+          materias={materias}
+          schemaOk={schemaOk}
+          supuestosOk={supuestosOk}
+          targetBanco={
+            params.get("bancoId")
+              ? (() => {
+                  const b = bancos.find((row) => row.id === params.get("bancoId"));
+                  if (!b) return undefined;
+                  return {
+                    id: b.id,
+                    nombre: b.nombre,
+                    materiaId: b.materia_id,
+                    tipo: b.tipo === "practico" ? "practico" : "teorico",
+                  };
+                })()
+              : undefined
+          }
+        />
       )}
       {tab === "fichas" && (
         <AdminFichas

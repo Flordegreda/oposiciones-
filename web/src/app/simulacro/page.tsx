@@ -5,7 +5,7 @@ import { JEX_SUBTITLE } from "@/lib/constants";
 import { getSimulacroMeta } from "@/lib/queries/simulacro";
 import Link from "next/link";
 
-export const revalidate = 600;
+export const dynamic = "force-dynamic";
 
 export default async function SimulacroPage() {
   let meta: Awaited<ReturnType<typeof getSimulacroMeta>> = {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateContentCache } from "@/lib/revalidate-content";
+import { revalidateBancoPaths } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 import { supuestosSchemaReady } from "@/lib/queries/schema";
 
@@ -92,7 +92,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         .is("supuesto_id", null);
     }
 
-    revalidateContentCache();
+    revalidateBancoPaths(bancoId);
     return NextResponse.json({ ok: true, supuestoId });
   } catch (e) {
     return NextResponse.json(
