@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateContentCache } from "@/lib/revalidate-content";
+import { revalidateContentCache, revalidateAppPaths } from "@/lib/revalidate-content";
 import { runImport, type BackupBody, type ImportMode } from "@/lib/import-backup";
 import { preguntasTableExists } from "@/lib/queries/schema";
 
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
     const result = await runImport(body, mode);
     revalidateContentCache();
+    revalidateAppPaths();
     return NextResponse.json(result);
   } catch (e) {
     return NextResponse.json(

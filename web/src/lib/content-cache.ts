@@ -1,8 +1,7 @@
 import { unstable_cache } from "next/cache";
-import { clearMemoryCache, withTtlCache } from "@/lib/ttl-cache";
 
-/** Segundos de caché para listados de tests/temario (10 min). */
-export const CONTENT_CACHE_SECONDS = 600;
+/** Segundos de caché para listados (fallback si falla revalidateTag). */
+export const CONTENT_CACHE_SECONDS = 60;
 
 export const CACHE_TAGS = {
   temario: "temario",
@@ -13,12 +12,9 @@ export const CACHE_TAGS = {
 /** Comprobaciones de tablas/columnas (cambia muy poco). */
 export const SCHEMA_CACHE_SECONDS = 3600;
 
-const MEMORY_PREFIX = "cq:";
-
 /**
- * Caché en dos capas:
- * 1) Memoria (TTL + dedupe) — evita repetir Supabase en la misma instancia
- * 2) Data Cache de Next (`unstable_cache`) — comparte entre invocaciones en Vercel
+ * Data Cache de Next (`unstable_cache`), invalidable con revalidateTag entre instancias.
+ * Sin caché en memoria por instancia: en Vercel provocaba datos obsoletos tras importar.
  */
 export function cachedQuery<T>(
   key: string,
@@ -26,16 +22,13 @@ export function cachedQuery<T>(
   tag: string = CACHE_TAGS.temario,
   revalidateSeconds: number = CONTENT_CACHE_SECONDS,
 ): Promise<T> {
-  const memoryKey = `${MEMORY_PREFIX}${tag}:${key}`;
-  return withTtlCache(memoryKey, revalidateSeconds * 1000, () =>
-    unstable_cache(fn, [key], {
-      revalidate: revalidateSeconds,
-      tags: [tag],
-    })(),
-  );
+  return unstable_cache(fn, [key], {
+    revalidate: revalidateSeconds,
+    tags: [tag],
+  })();
 }
 
-/** Vacía la capa en memoria (llamar al invalidar tags / Limpiar caché). */
+/** Compatibilidad con rutas que ya llamaban a invalidateMemoryContentCache. */
 export function invalidateMemoryContentCache(): void {
-  clearMemoryCache(MEMORY_PREFIX);
+  /* no-op: ya no hay capa en memoria */
 }
