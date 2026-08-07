@@ -92,14 +92,19 @@ export function preguntasRpcReady(): Promise<boolean> {
 
 async function uncachedFichasSchemaReady(): Promise<boolean> {
   const supabase = getSupabase();
-  const { error } = await supabase.from("mazos_fichas").select("id").limit(0);
-  if (!error) return true;
-  const msg = error.message.toLowerCase();
-  return !(
-    msg.includes("could not find the table") ||
-    msg.includes('relation "mazos_fichas" does not exist') ||
-    (msg.includes("mazos_fichas") && msg.includes("does not exist"))
-  );
+  for (const table of ["mazos_fichas", "fichas"] as const) {
+    const { error } = await supabase.from(table).select("id").limit(0);
+    if (!error) continue;
+    const msg = error.message.toLowerCase();
+    if (
+      msg.includes("could not find the table") ||
+      msg.includes(`relation "${table}" does not exist`) ||
+      (msg.includes(table) && msg.includes("does not exist"))
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function fichasSchemaReady(): Promise<boolean> {

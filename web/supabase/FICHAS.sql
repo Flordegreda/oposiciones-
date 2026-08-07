@@ -27,20 +27,13 @@ CREATE INDEX IF NOT EXISTS fichas_mazo_orden_idx ON public.fichas(mazo_id, orden
 ALTER TABLE public.mazos_fichas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fichas ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'mazos_fichas' AND policyname = 'mazos_fichas_read_all'
-  ) THEN
-    CREATE POLICY mazos_fichas_read_all ON public.mazos_fichas FOR SELECT USING (true);
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'fichas' AND policyname = 'fichas_read_all'
-  ) THEN
-    CREATE POLICY fichas_read_all ON public.fichas FOR SELECT USING (true);
-  END IF;
-END $$;
+-- RLS: lectura + escritura (service_role las omite; anon necesita política explícita)
+DROP POLICY IF EXISTS mazos_fichas_read_all ON public.mazos_fichas;
+DROP POLICY IF EXISTS fichas_read_all ON public.fichas;
+DROP POLICY IF EXISTS mazos_fichas_all ON public.mazos_fichas;
+DROP POLICY IF EXISTS fichas_all ON public.fichas;
+
+CREATE POLICY mazos_fichas_all ON public.mazos_fichas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY fichas_all ON public.fichas FOR ALL USING (true) WITH CHECK (true);
 
 NOTIFY pgrst, 'reload schema';
