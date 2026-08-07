@@ -28,12 +28,19 @@ export function revalidateAppPaths() {
   }
 }
 
-export function revalidateAfterFichasChange() {
+export function revalidateAfterFichasChange(mazoId?: string) {
   revalidateContentCache();
   revalidatePath("/fichas", "layout");
   revalidatePath("/fichas", "page");
   revalidatePath("/admin", "layout");
   revalidatePath("/admin", "page");
+  revalidatePath("/admin/fichas", "layout");
+  if (mazoId) {
+    revalidatePath(`/fichas/${mazoId}`, "page");
+    revalidatePath(`/fichas/${mazoId}`, "layout");
+    revalidatePath(`/admin/fichas/${mazoId}`, "page");
+    revalidatePath(`/admin/fichas/${mazoId}`, "layout");
+  }
 }
 
 /** Tras cambios en un banco concreto (import, preguntas, supuesto). */
