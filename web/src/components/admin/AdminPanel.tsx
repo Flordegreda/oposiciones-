@@ -119,6 +119,7 @@ export function AdminPanel({
           mazos={mazosFichas}
           fichasOk={fichasOk}
           schemaOk={schemaOk}
+          initialMazoId={params.get("mazoId") ?? undefined}
         />
       )}
       {tab === "copia" && <AdminBackup schemaOk={schemaOk} />}

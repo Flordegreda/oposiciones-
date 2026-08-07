@@ -6,7 +6,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { AnkiDeck } from "@/components/AnkiDeck";
 import { getMazoConFichas } from "@/lib/queries/fichas";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 
