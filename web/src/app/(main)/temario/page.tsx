@@ -35,6 +35,10 @@ export default async function TemarioPage() {
           <Link href="/fichas">Fichas</Link>
           {" · "}
           <Link href="/estadisticas">Estadísticas</Link>
+          {" · "}
+          <Link href="/imprimir/temario" target="_blank" rel="noopener noreferrer">
+            Imprimir checklist
+          </Link>
         </p>
       </section>
 

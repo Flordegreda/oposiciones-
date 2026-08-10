@@ -167,3 +167,41 @@ export function construirTemarioChecklist(
     fichasHechas,
   };
 }
+
+/** Inventario completo para imprimir (sin progreso, orden alfabético). */
+export function construirTemarioInventario(
+  testSections: MateriaSection[],
+  fichaSections: MazoFichasSection[],
+): TemarioResumenGlobal {
+  const res = construirTemarioChecklist(testSections, fichaSections, null, {});
+  for (const m of res.materias) {
+    m.items.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "test" ? -1 : 1;
+      const ta = a.tipo === "practico" ? 1 : 0;
+      const tb = b.tipo === "practico" ? 1 : 0;
+      if (ta !== tb) return ta - tb;
+      return a.nombre.localeCompare(b.nombre, "es");
+    });
+    m.hechos = 0;
+    m.pctHecho = 0;
+    m.testsHechos = 0;
+    m.fichasHechas = 0;
+  }
+  res.hechos = 0;
+  res.pctHecho = 0;
+  res.testsHechos = 0;
+  res.fichasHechas = 0;
+  return res;
+}
+
+function tipoEtiqueta(item: TemarioChecklistItem): string {
+  if (item.kind === "fichas") return "Fichas";
+  return item.tipo === "practico" ? "Práctico" : "Teórico";
+}
+
+function tipoCodigo(item: TemarioChecklistItem): string {
+  if (item.kind === "fichas") return "F";
+  return item.tipo === "practico" ? "P" : "T";
+}
+
+export { tipoEtiqueta, tipoCodigo };
