@@ -16,6 +16,7 @@ import {
 import type { UserStatsRecord } from "@/lib/persistence/types";
 import {
   construirTemarioChecklist,
+  formatContenidoResumen,
   type MateriaCatalogo,
   type TemarioChecklistItem,
   type TemarioMateriaResumen,
@@ -300,6 +301,11 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
           <p className="text-sm text-slate-500">mazos marcados como estudiados</p>
         </div>
       </div>
+
+      <p className="rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+        <span className="font-semibold text-slate-800">Material total: </span>
+        {formatContenidoResumen(resumen.contenido)}
+      </p>
 
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm">

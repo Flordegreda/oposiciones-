@@ -1,5 +1,6 @@
 import {
   construirTemarioInventario,
+  formatContenidoResumen,
   tipoCodigo,
   tipoEtiqueta,
   type MateriaCatalogo,
@@ -44,10 +45,9 @@ export function TemarioChecklistPrintView({
           <p className="print-sheet-sub">Oposiciones JEX · Jurídica · Junta de Extremadura</p>
           <p className="print-sheet-meta">
             {resumen.materias.length} materia{resumen.materias.length !== 1 ? "s" : ""} ·{" "}
-            {resumen.testsTotal} test{resumen.testsTotal !== 1 ? "s" : ""} ·{" "}
-            {resumen.fichasTotal} mazo{resumen.fichasTotal !== 1 ? "s" : ""} de fichas ·{" "}
-            {resumen.totalItems} ítems · {date}
+            {resumen.totalItems} ítem{resumen.totalItems !== 1 ? "s" : ""} · {date}
           </p>
+          <p className="print-checklist-totales">{formatContenidoResumen(resumen.contenido)}</p>
           <p className="print-checklist-legend">
             <span className="print-checklist-legend-item">
               <strong>T</strong> = Test teórico
@@ -125,11 +125,6 @@ export function TemarioChecklistPrintView({
           </section>
         ))}
 
-        <footer className="print-checklist-footer">
-          <p>
-            Resumen al imprimir: _____ / {resumen.totalItems} ítems completados
-          </p>
-        </footer>
       </article>
     </>
   );
