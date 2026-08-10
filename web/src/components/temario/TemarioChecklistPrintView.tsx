@@ -2,6 +2,7 @@ import {
   construirTemarioInventario,
   tipoCodigo,
   tipoEtiqueta,
+  type MateriaCatalogo,
 } from "@/lib/temario-checklist";
 import type { MateriaSection } from "@/lib/queries/bancos";
 import type { MazoFichasSection } from "@/lib/queries/fichas";
@@ -10,21 +11,26 @@ import { PrintTemarioToolbar } from "@/components/temario/PrintTemarioToolbar";
 type Props = {
   testSections: MateriaSection[];
   fichaSections: MazoFichasSection[];
+  allMaterias: MateriaCatalogo[];
 };
 
-export function TemarioChecklistPrintView({ testSections, fichaSections }: Props) {
-  const resumen = construirTemarioInventario(testSections, fichaSections);
+export function TemarioChecklistPrintView({
+  testSections,
+  fichaSections,
+  allMaterias,
+}: Props) {
+  const resumen = construirTemarioInventario(testSections, fichaSections, allMaterias);
   const date = new Date().toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
 
-  if (resumen.totalItems === 0) {
+  if (resumen.materias.length === 0) {
     return (
       <>
         <PrintTemarioToolbar />
-        <p className="print-sheet-meta">No hay material cargado para imprimir.</p>
+        <p className="print-sheet-meta">No hay materias definidas todavía.</p>
       </>
     );
   }
@@ -90,28 +96,36 @@ export function TemarioChecklistPrintView({ testSections, fichaSections }: Props
                 </tr>
               </thead>
               <tbody>
-                {m.items.map((item) => (
-                  <tr key={`${item.kind}-${item.id}`}>
-                    <td className="print-checklist-col-check">
-                      <span className="print-check-box" aria-hidden="true" />
-                    </td>
-                    <td className="print-checklist-col-tipo">
-                      <span
-                        className={`print-checklist-tipo print-checklist-tipo--${tipoCodigo(item).toLowerCase()}`}
-                        title={tipoEtiqueta(item)}
-                      >
-                        {tipoCodigo(item)}
-                      </span>
-                    </td>
-                    <td className="print-checklist-col-nombre">{item.nombre}</td>
-                    <td className="print-checklist-col-n">
-                      {item.count} {item.kind === "test" ? "preg." : "fich."}
-                    </td>
-                    <td className="print-checklist-col-notas">
-                      <span className="print-checklist-notes-line" />
+                {m.items.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="print-checklist-empty">
+                      Sin tests ni fichas en esta materia
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  m.items.map((item) => (
+                    <tr key={`${item.kind}-${item.id}`}>
+                      <td className="print-checklist-col-check">
+                        <span className="print-check-box" aria-hidden="true" />
+                      </td>
+                      <td className="print-checklist-col-tipo">
+                        <span
+                          className={`print-checklist-tipo print-checklist-tipo--${tipoCodigo(item).toLowerCase()}`}
+                          title={tipoEtiqueta(item)}
+                        >
+                          {tipoCodigo(item)}
+                        </span>
+                      </td>
+                      <td className="print-checklist-col-nombre">{item.nombre}</td>
+                      <td className="print-checklist-col-n">
+                        {item.count} {item.kind === "test" ? "preg." : "fich."}
+                      </td>
+                      <td className="print-checklist-col-notas">
+                        <span className="print-checklist-notes-line" />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </section>

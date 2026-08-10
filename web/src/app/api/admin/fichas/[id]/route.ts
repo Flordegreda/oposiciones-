@@ -14,8 +14,21 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   if (!id) return NextResponse.json({ error: "Falta id" }, { status: 400 });
 
   const supabase = getSupabase();
-  const { error } = await supabase.from("mazos_fichas").delete().eq("id", id);
+  const { data: deleted, error } = await supabase
+    .from("mazos_fichas")
+    .delete()
+    .eq("id", id)
+    .select("id");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!deleted?.length) {
+    return NextResponse.json(
+      {
+        error:
+          "No se pudo eliminar el mazo (permisos de base de datos). Ve a Material → Fichas → «Actualizar esquema fichas».",
+      },
+      { status: 403 },
+    );
+  }
 
   revalidateAfterFichasChange(id);
   return NextResponse.json({ ok: true });

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TemarioChecklist } from "@/components/temario/TemarioChecklist";
 import { JEX_SUBTITLE } from "@/lib/constants";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
+import { getMateriasWithCounts } from "@/lib/queries/bancos";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 
@@ -10,10 +11,14 @@ export const dynamic = "force-dynamic";
 export default async function TemarioPage() {
   let testSections: Awaited<ReturnType<typeof getPracticarData>>["sections"] = [];
   let fichaSections: Awaited<ReturnType<typeof fetchMazosGrouped>> = [];
+  let allMaterias: Awaited<ReturnType<typeof getMateriasWithCounts>> = [];
   let error: string | null = null;
 
   try {
-    ({ sections: testSections } = await getPracticarData());
+    [allMaterias, { sections: testSections }] = await Promise.all([
+      getMateriasWithCounts(),
+      getPracticarData(),
+    ]);
     if (await fichasSchemaReady()) {
       fichaSections = await fetchMazosGrouped();
     }
@@ -50,7 +55,11 @@ export default async function TemarioPage() {
 
       {!error && (
         <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
-          <TemarioChecklist testSections={testSections} fichaSections={fichaSections} />
+          <TemarioChecklist
+            testSections={testSections}
+            fichaSections={fichaSections}
+            allMaterias={allMaterias}
+          />
         </div>
       )}
     </>

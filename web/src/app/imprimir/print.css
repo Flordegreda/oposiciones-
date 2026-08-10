@@ -456,6 +456,13 @@ body::before {
   border-bottom: 1px dotted #bbb;
 }
 
+.print-checklist-empty {
+  padding: 0.5rem 0.75rem;
+  color: #666;
+  font-style: italic;
+  font-size: 9.5pt;
+}
+
 .print-checklist-footer {
   margin-top: 1.5rem;
   padding-top: 0.75rem;

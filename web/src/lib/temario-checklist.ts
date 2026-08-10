@@ -4,6 +4,8 @@ import type { UserStatsRecord } from "@/lib/persistence/types";
 import type { ChecklistMark } from "@/lib/persistence/checklist-service";
 import { mazoChecklistKey } from "@/lib/persistence/checklist-service";
 
+export type MateriaCatalogo = { id: string; nombre: string };
+
 export type TemarioItemKind = "test" | "fichas";
 
 export type TemarioChecklistItem = {
@@ -65,6 +67,7 @@ export function construirTemarioChecklist(
   fichaSections: MazoFichasSection[],
   stats: UserStatsRecord | null,
   marks: Record<string, ChecklistMark>,
+  allMaterias: MateriaCatalogo[] = [],
 ): TemarioResumenGlobal {
   const materiaMap = new Map<
     string,
@@ -76,6 +79,10 @@ export function construirTemarioChecklist(
       materiaMap.set(id, { nombre, items: [] });
     }
     return materiaMap.get(id)!;
+  }
+
+  for (const m of allMaterias) {
+    ensureMateria(m.id, m.nombre);
   }
 
   for (const section of testSections) {
@@ -172,8 +179,9 @@ export function construirTemarioChecklist(
 export function construirTemarioInventario(
   testSections: MateriaSection[],
   fichaSections: MazoFichasSection[],
+  allMaterias: MateriaCatalogo[] = [],
 ): TemarioResumenGlobal {
-  const res = construirTemarioChecklist(testSections, fichaSections, null, {});
+  const res = construirTemarioChecklist(testSections, fichaSections, null, {}, allMaterias);
   for (const m of res.materias) {
     m.items.sort((a, b) => {
       if (a.kind !== b.kind) return a.kind === "test" ? -1 : 1;

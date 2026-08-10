@@ -16,6 +16,7 @@ import {
 import type { UserStatsRecord } from "@/lib/persistence/types";
 import {
   construirTemarioChecklist,
+  type MateriaCatalogo,
   type TemarioChecklistItem,
   type TemarioMateriaResumen,
 } from "@/lib/temario-checklist";
@@ -23,6 +24,7 @@ import {
 type Props = {
   testSections: MateriaSection[];
   fichaSections: MazoFichasSection[];
+  allMaterias: MateriaCatalogo[];
 };
 
 function progressBarColor(pct: number): string {
@@ -156,9 +158,15 @@ function MateriaBlock({
             />
           </div>
           <ul className="pb-1">
-            {items.map((item) => (
-              <ChecklistRow key={`${item.kind}-${item.id}`} item={item} onToggleFichas={onToggleFichas} />
-            ))}
+            {items.length === 0 ? (
+              <li className="border-t border-slate-100 px-4 py-3 text-sm text-slate-500 italic">
+                Sin tests ni fichas en esta materia
+              </li>
+            ) : (
+              items.map((item) => (
+                <ChecklistRow key={`${item.kind}-${item.id}`} item={item} onToggleFichas={onToggleFichas} />
+              ))
+            )}
           </ul>
         </>
       )}
@@ -166,7 +174,7 @@ function MateriaBlock({
   );
 }
 
-export function TemarioChecklist({ testSections, fichaSections }: Props) {
+export function TemarioChecklist({ testSections, fichaSections, allMaterias }: Props) {
   const [stats, setStats] = useState<UserStatsRecord | null>(null);
   const [marksVersion, setMarksVersion] = useState(0);
   const [materiaId, setMateriaId] = useState<string | null>(null);
@@ -191,8 +199,8 @@ export function TemarioChecklist({ testSections, fichaSections }: Props) {
   const marks = useMemo(() => getChecklistMarks(), [marksVersion]);
 
   const resumen = useMemo(
-    () => construirTemarioChecklist(testSections, fichaSections, stats, marks),
-    [testSections, fichaSections, stats, marks],
+    () => construirTemarioChecklist(testSections, fichaSections, stats, marks, allMaterias),
+    [testSections, fichaSections, stats, marks, allMaterias],
   );
 
   const materiasOptions: MateriaOption[] = useMemo(
@@ -224,13 +232,36 @@ export function TemarioChecklist({ testSections, fichaSections }: Props) {
     setOpenIds(new Set(visibleMaterias.map((m) => m.materiaId)));
   }, [visibleMaterias]);
 
-  if (resumen.totalItems === 0) {
+  if (resumen.materias.length === 0) {
     return (
       <div className="card">
-        <p className="muted">No hay material cargado todavía. Importa bancos y fichas en Material.</p>
+        <p className="muted">No hay materias definidas. Créalas en Material.</p>
         <Link href="/admin" className="btn-primary" style={{ marginTop: "1rem" }}>
           Ir a Material
         </Link>
+      </div>
+    );
+  }
+
+  if (resumen.totalItems === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="card">
+          <p className="muted">
+            Hay {resumen.materias.length} materia{resumen.materias.length !== 1 ? "s" : ""} pero
+            ninguna tiene tests ni fichas cargados todavía.
+          </p>
+          <Link href="/admin" className="btn-primary" style={{ marginTop: "1rem" }}>
+            Ir a Material
+          </Link>
+        </div>
+        <ul className="space-y-2">
+          {resumen.materias.map((m) => (
+            <li key={m.materiaId} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+              {m.materiaNombre}
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }

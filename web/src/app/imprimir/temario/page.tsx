@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { TemarioChecklistPrintView } from "@/components/temario/TemarioChecklistPrintView";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
+import { getMateriasWithCounts } from "@/lib/queries/bancos";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 
@@ -9,9 +10,13 @@ export const dynamic = "force-dynamic";
 export default async function PrintTemarioPage() {
   let testSections: Awaited<ReturnType<typeof getPracticarData>>["sections"] = [];
   let fichaSections: Awaited<ReturnType<typeof fetchMazosGrouped>> = [];
+  let allMaterias: Awaited<ReturnType<typeof getMateriasWithCounts>> = [];
 
   try {
-    ({ sections: testSections } = await getPracticarData());
+    [allMaterias, { sections: testSections }] = await Promise.all([
+      getMateriasWithCounts(),
+      getPracticarData(),
+    ]);
     if (await fichasSchemaReady()) {
       fichaSections = await fetchMazosGrouped();
     }
@@ -19,14 +24,13 @@ export default async function PrintTemarioPage() {
     notFound();
   }
 
-  const totalBancos = testSections.reduce((n, s) => n + s.bancos.length, 0);
-  const totalMazos = fichaSections.reduce((n, s) => n + s.mazos.length, 0);
-  if (totalBancos === 0 && totalMazos === 0) notFound();
+  if (allMaterias.length === 0) notFound();
 
   return (
     <TemarioChecklistPrintView
       testSections={testSections}
       fichaSections={fichaSections}
+      allMaterias={allMaterias}
     />
   );
 }
