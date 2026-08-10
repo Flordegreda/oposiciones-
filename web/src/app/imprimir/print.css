@@ -412,10 +412,6 @@ body::before {
   color: #555;
 }
 
-.print-checklist-col-notas {
-  width: 18%;
-}
-
 .print-check-box {
   display: inline-block;
   width: 0.85rem;
@@ -448,12 +444,6 @@ body::before {
 .print-checklist-col-nombre {
   font-weight: 500;
   line-height: 1.25;
-}
-
-.print-checklist-notes-line {
-  display: block;
-  min-height: 0.9rem;
-  border-bottom: 1px dotted #bbb;
 }
 
 .print-checklist-empty {

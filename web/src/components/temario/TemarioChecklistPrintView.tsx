@@ -90,15 +90,12 @@ export function TemarioChecklistPrintView({
                   <th className="print-checklist-col-n" scope="col">
                     Nº
                   </th>
-                  <th className="print-checklist-col-notas" scope="col">
-                    Notas
-                  </th>
                 </tr>
               </thead>
               <tbody>
                 {m.items.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="print-checklist-empty">
+                    <td colSpan={4} className="print-checklist-empty">
                       Sin tests ni fichas en esta materia
                     </td>
                   </tr>
@@ -119,9 +116,6 @@ export function TemarioChecklistPrintView({
                       <td className="print-checklist-col-nombre">{item.nombre}</td>
                       <td className="print-checklist-col-n">
                         {item.count} {item.kind === "test" ? "preg." : "fich."}
-                      </td>
-                      <td className="print-checklist-col-notas">
-                        <span className="print-checklist-notes-line" />
                       </td>
                     </tr>
                   ))
