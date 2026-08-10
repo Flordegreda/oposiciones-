@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PracticarTemario } from "@/components/PracticarTemario";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { JEX_SUBTITLE } from "@/lib/constants";
@@ -20,6 +21,9 @@ export default async function PracticarPage() {
         <p className="hero-eyebrow">Oposición Jurídica</p>
         <h1 className="page-title">Tests</h1>
         <p className="lead lead--compact">{JEX_SUBTITLE}</p>
+        <p className="muted small" style={{ marginTop: "0.35rem" }}>
+          <Link href="/temario">Ver plan de temario →</Link>
+        </p>
       </section>
 
       {error && (
