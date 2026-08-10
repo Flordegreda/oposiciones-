@@ -72,10 +72,11 @@ export async function POST(req: NextRequest) {
     if (eErr) return NextResponse.json({ error: eErr.message }, { status: 500 });
     if (!existing) return NextResponse.json({ error: "Mazo no encontrado" }, { status: 404 });
 
-    await supabase
+    const { error: updErr } = await supabase
       .from("mazos_fichas")
       .update({ nombre, materia_id: materiaId, updated_at: new Date().toISOString() })
       .eq("id", mazoId);
+    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
     if (replace) {
       const { error: delErr } = await supabase.from("fichas").delete().eq("mazo_id", mazoId);
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
   const { error: insErr } = await supabase.from("fichas").insert(rows);
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
-  revalidateAfterFichasChange();
+  revalidateAfterFichasChange(mazoId);
 
   return NextResponse.json({
     mazoId,

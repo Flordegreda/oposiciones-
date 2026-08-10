@@ -6,7 +6,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { AnkiDeck } from "@/components/AnkiDeck";
 import { getMazoConFichas } from "@/lib/queries/fichas";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -54,7 +54,7 @@ export default async function FichaMazoPage({ params }: Props) {
         )}
 
         {data?.mazo && !error && (
-          <AnkiDeck fichas={data.fichas} />
+          <AnkiDeck mazoId={data.mazo.id} fichas={data.fichas} />
         )}
       </main>
       <MobileBottomNav />

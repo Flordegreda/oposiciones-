@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { MazoFichas } from "@/lib/queries/fichas";
@@ -13,6 +13,7 @@ type Props = {
   mazos: MazoFichas[];
   fichasOk: boolean;
   schemaOk: boolean;
+  initialMazoId?: string;
 };
 
 function previewSnippet(text: string, max = 100): string {
@@ -30,18 +31,28 @@ R: No. Principio de legalidad (art. 103.1 CE / art. 9.1 CE): la Administración 
 P: Art. 103.1 CE — ¿a quién sirve la Administración?
 R: Con objetividad los intereses generales y actúa de acuerdo con los principios de eficacia, jerarquía, descentralización, desconcentración y coordinación.`;
 
-export function AdminFichas({ materias, mazos, fichasOk, schemaOk }: Props) {
+export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId }: Props) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [materiaId, setMateriaId] = useState(materias[0]?.id ?? "");
   const [nombre, setNombre] = useState("");
   const [texto, setTexto] = useState("");
-  const [mazoId, setMazoId] = useState("");
+  const [mazoId, setMazoId] = useState(initialMazoId ?? "");
   const [replace, setReplace] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [esperadas, setEsperadas] = useState("");
+
+  useEffect(() => {
+    if (!initialMazoId) return;
+    setMazoId(initialMazoId);
+    const m = mazos.find((x) => x.id === initialMazoId);
+    if (m) {
+      setNombre(m.nombre);
+      setMateriaId(m.materiaId);
+    }
+  }, [initialMazoId, mazos]);
 
   const previewCount = useMemo(() => parseFichasText(texto).length, [texto]);
   const diagnostics = useMemo(
@@ -380,8 +391,11 @@ R: Otra respuesta.
                   </span>
                 </div>
                 <div className="admin-fichas-row-actions">
+                  <Link href={`/admin/fichas/${m.id}`} className="btn-primary btn-sm">
+                    Editar
+                  </Link>
                   <Link href={`/fichas/${m.id}`} className="btn-link btn-sm">
-                    Ver
+                    Practicar
                   </Link>
                   <button
                     type="button"

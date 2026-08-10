@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:parse-import": "npx tsx scripts/test-parse-import-text.ts"
   },
   "dependencies": {
     "@sparticuz/chromium": "^133.0.0",

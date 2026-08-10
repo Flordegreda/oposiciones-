@@ -101,7 +101,7 @@ function findExistingBancoId(
   return byName?.id ?? null;
 }
 
-async function deleteBancoContent(bancoId: string) {
+export async function deleteBancoContent(bancoId: string) {
   const supabase = getSupabase();
   await supabase.from("preguntas").delete().eq("banco_id", bancoId);
   if (await supuestosSchemaReady()) {

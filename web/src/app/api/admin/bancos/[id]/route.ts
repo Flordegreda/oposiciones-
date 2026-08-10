@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateContentCache } from "@/lib/revalidate-content";
+import { revalidateBancoPaths } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string }> };
@@ -12,7 +12,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const { error } = await supabase.from("bancos").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    revalidateContentCache();
+    revalidateBancoPaths(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json(

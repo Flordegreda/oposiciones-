@@ -22,13 +22,34 @@ export function revalidateAllCaches() {
 
 /** Rutas ISR que deben refrescarse tras cambios de contenido. */
 export function revalidateAppPaths() {
-  for (const path of ["/practicar", "/fichas", "/admin", "/simulacro"] as const) {
-    revalidatePath(path);
+  for (const path of ["/practicar", "/fichas", "/admin", "/simulacro", "/"] as const) {
+    revalidatePath(path, "layout");
+    revalidatePath(path, "page");
   }
 }
 
-export function revalidateAfterFichasChange() {
+export function revalidateAfterFichasChange(mazoId?: string) {
   revalidateContentCache();
-  revalidatePath("/fichas");
-  revalidatePath("/admin");
+  revalidatePath("/fichas", "layout");
+  revalidatePath("/fichas", "page");
+  revalidatePath("/admin", "layout");
+  revalidatePath("/admin", "page");
+  revalidatePath("/admin/fichas", "layout");
+  if (mazoId) {
+    revalidatePath(`/fichas/${mazoId}`, "page");
+    revalidatePath(`/fichas/${mazoId}`, "layout");
+    revalidatePath(`/admin/fichas/${mazoId}`, "page");
+    revalidatePath(`/admin/fichas/${mazoId}`, "layout");
+  }
+}
+
+/** Tras cambios en un banco concreto (import, preguntas, supuesto). */
+export function revalidateBancoPaths(bancoId: string) {
+  revalidateContentCache();
+  revalidateAppPaths();
+  revalidatePath(`/test/${bancoId}`, "page");
+  revalidatePath(`/test/${bancoId}`, "layout");
+  revalidatePath(`/admin/bancos/${bancoId}`, "page");
+  revalidatePath(`/admin/bancos/${bancoId}`, "layout");
+  revalidatePath(`/imprimir/banco/${bancoId}`, "page");
 }

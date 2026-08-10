@@ -6,7 +6,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { getBancoForTest } from "@/lib/queries/bancos-cached";
 import { TestRunner } from "@/components/TestRunner";
 
-export const revalidate = 600;
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 

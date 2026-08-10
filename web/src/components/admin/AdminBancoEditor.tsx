@@ -353,6 +353,12 @@ export function AdminBancoEditor({ banco, preguntas: initial, materias }: Props)
           <Link href={`/test/${banco.id}`} className="btn-secondary btn-sm">
             Probar test
           </Link>
+          <Link
+            href={`/admin?tab=importar&bancoId=${banco.id}`}
+            className="btn-secondary btn-sm"
+          >
+            Añadir preguntas
+          </Link>
           <TestPrintButton
             title={nombre || banco.nombre}
             subtitle={`${preguntas.length} preguntas`}

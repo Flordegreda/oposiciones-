@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateContentCache } from "@/lib/revalidate-content";
+import { revalidateBancoPaths } from "@/lib/revalidate-content";
 import { getSupabase } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string }> };
@@ -27,11 +27,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .from("preguntas")
       .update(patch)
       .eq("id", id)
-      .select("id, enunciado, opciones, respuesta, explicacion, orden")
+      .select("id, banco_id, enunciado, opciones, respuesta, explicacion, orden")
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    revalidateContentCache();
+    if (data?.banco_id) revalidateBancoPaths(String(data.banco_id));
     return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json(
@@ -46,10 +46,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const { id } = await params;
     const supabase = getSupabase();
 
+    const { data: row } = await supabase
+      .from("preguntas")
+      .select("banco_id")
+      .eq("id", id)
+      .maybeSingle();
+
     const { error } = await supabase.from("preguntas").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    revalidateContentCache();
+    if (row?.banco_id) revalidateBancoPaths(String(row.banco_id));
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json(

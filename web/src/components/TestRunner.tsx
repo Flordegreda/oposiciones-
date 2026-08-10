@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
-import { prepareExamSessionQuestions } from "@/lib/exam-utils";
+import { beginExamSession, clearExamSession } from "@/lib/exam-session-storage";
 import { ExamSession } from "@/components/ExamSession";
 import { TestPrintButton } from "@/components/TestPrintButton";
 
@@ -18,6 +18,7 @@ type Session = {
   examMode: boolean;
   optionMaps: number[][];
   originalOpciones: string[][];
+  sessionScope: string;
 };
 
 export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
@@ -29,17 +30,20 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
   const [session, setSession] = useState<Session | null>(null);
   const [examMode, setExamMode] = useState(false);
 
+  const sessionScope = `test:${bancoId}`;
+
   const startTest = useCallback(
     (list: PublicExamPregunta[]) => {
-      const prepared = prepareExamSessionQuestions(list);
+      const prepared = beginExamSession(sessionScope, list);
       setSession({
         list: prepared.questions,
         examMode,
         optionMaps: prepared.optionMaps,
         originalOpciones: prepared.originalOpciones,
+        sessionScope,
       });
     },
-    [examMode],
+    [examMode, sessionScope],
   );
 
   if (session) {
@@ -50,7 +54,10 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
         examMode={session.examMode}
         timerSeconds={null}
         backHref="/practicar"
-        onFinish={() => setSession(null)}
+        onFinish={() => {
+          clearExamSession(session.sessionScope);
+          setSession(null);
+        }}
         optionMaps={session.optionMaps}
         originalOpciones={session.originalOpciones}
         bancoId={bancoId}
@@ -71,8 +78,8 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
       <div className="test-start-head">
         <h2 className="test-start-title">¿Cómo quieres practicar?</h2>
         <p className="muted small test-start-lead">
-          Elige cuántas preguntas hacer. Las opciones A/B/C/D se barajan en cada intento.
-          Para estudio con pregunta/respuesta corta, usa{" "}
+          Elige cuántas preguntas hacer. Las preguntas y las opciones A/B/C/D se barajan en
+          cada intento (el orden se mantiene si recargas durante el test). Para estudio con pregunta/respuesta corta, usa{" "}
           <Link href="/fichas">Fichas</Link>.
         </p>
         <div className="test-start-actions">

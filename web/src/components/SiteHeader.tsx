@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { JEX_SUBTITLE, SITE_TITLE } from "@/lib/constants";
+import { JEX_SUBTITLE, SITE_CREDIT, SITE_TITLE } from "@/lib/constants";
 import { usePageHeaderState } from "@/components/page-header-context";
 
 type Props = {
@@ -28,11 +28,11 @@ export function SiteHeader({ backHref, backLabel, pageTitle }: Props) {
           <span className="brand-text">
             <span className="brand-title">{SITE_TITLE}</span>
             <span className="brand-sub brand-sub--desktop">{JEX_SUBTITLE}</span>
+            <span className="brand-credit">{SITE_CREDIT}</span>
           </span>
         </Link>
         <nav className="site-nav site-nav--desktop" aria-label="Principal">
           <Link href="/practicar">Tests</Link>
-          <Link href="/estadisticas">Stats</Link>
           <Link href="/fichas">Fichas</Link>
           <Link href="/simulacro">Simulacro</Link>
           <Link href="/admin">Material</Link>

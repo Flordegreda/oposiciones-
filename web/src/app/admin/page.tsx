@@ -128,8 +128,6 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
         {schemaOk && !resultadosOk && <AdminResultadosSetup />}
 
-
-
         {schemaOk && stats.preguntas === 0 && bancos.length > 0 && (
 
           <div className="card card-warning">
