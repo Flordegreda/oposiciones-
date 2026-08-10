@@ -12,7 +12,7 @@ import {
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { fetchWithRetry } from "@/lib/retry";
-import { getSyncService } from "@/lib/persistence";
+import { getSyncService, type PreguntaResultadoDetalle } from "@/lib/persistence";
 import {
   calcularStatsRepaso,
   marcarRepasoCompletado,
@@ -192,14 +192,7 @@ export function ExamSession({
       (isRepaso ? "repaso_fallos" : active[0]?.bancoId) ||
       "desconocido";
     const respuestas: Record<string, number | null> = {};
-    const detallePreguntas: {
-      preguntaId: string;
-      enunciado: string;
-      correcta: boolean;
-      respondida: boolean;
-      seleccion: number | null;
-      respuestaCorrecta?: number;
-    }[] = [];
+    const detallePreguntas: PreguntaResultadoDetalle[] = [];
     let aciertos = 0;
     let fallos = 0;
 
