@@ -11,6 +11,7 @@ import {
 } from "@/components/stats/StatsCharts";
 import {
   obtenerDashboardData,
+  UMBRAL_BANCO_CRITICO,
   type DashboardData,
   type FiltroTiempo,
   type TestReciente,
@@ -116,6 +117,15 @@ export function EstadisticasDashboard() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const bancosCriticos = useMemo(
+    () =>
+      (data?.fallosPorBanco ?? []).filter(
+        (b) =>
+          b.porcentajeAciertos < UMBRAL_BANCO_CRITICO && b.totalFallidas > 0,
+      ),
+    [data?.fallosPorBanco],
+  );
 
   async function handleSync() {
     setSyncing(true);
@@ -308,30 +318,32 @@ export function EstadisticasDashboard() {
               </section>
             </div>
 
-            {/* TOP falladas */}
+            {/* Fallos agregados por banco */}
             <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="mb-1 text-lg font-semibold text-slate-800">
                     Preguntas más falladas
                   </h2>
-                  <p className="text-sm text-slate-500">TOP 10 del periodo</p>
+                  <p className="text-sm text-slate-500">
+                    Por banco · peores primero · periodo seleccionado
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
-                    disabled={(data?.preguntasFalladas.length ?? 0) === 0}
+                    className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800 shadow-sm transition hover:bg-red-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                    disabled={bancosCriticos.length === 0}
                     onClick={() => {
-                      router.push("/repaso-fallos");
+                      router.push("/repaso-fallos?modo=criticos");
                     }}
                   >
-                    🔄 Repasar estas preguntas
+                    ⚠️ Repasar bancos críticos (&lt;{UMBRAL_BANCO_CRITICO}%)
                   </button>
                   <button
                     type="button"
                     className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-medium text-orange-800 shadow-sm transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-                    disabled={(data?.preguntasFalladas.length ?? 0) === 0}
+                    disabled={(data?.fallosPorBanco.length ?? 0) === 0}
                     onClick={() => {
                       router.push("/repaso-fallos?modo=maraton");
                     }}
@@ -340,60 +352,95 @@ export function EstadisticasDashboard() {
                   </button>
                 </div>
               </div>
-              {(data?.preguntasFalladas.length ?? 0) === 0 ? (
+              {(data?.fallosPorBanco.length ?? 0) === 0 ? (
                 <p className="text-sm text-slate-500">
-                  Aún no hay fallos registrados con detalle. Completa tests nuevos
-                  para alimentar esta lista.
+                  Aún no hay datos por banco con detalle de preguntas. Completa
+                  tests nuevos para alimentar esta tabla.
                 </p>
               ) : (
-                <ul className="space-y-2">
-                  {(data?.preguntasFalladas ?? []).map((p, i) => {
-                    const href =
-                      p.banco &&
-                      p.banco !== "simulacro" &&
-                      p.banco !== "desconocido" &&
-                      p.banco !== "repaso_fallos"
-                        ? `/test/${p.banco}`
-                        : "/practicar";
-                    return (
-                      <li key={p.preguntaId}>
-                        <Link
-                          href={href}
-                          className="block rounded-xl border border-slate-100 bg-slate-50/80 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
-                        >
-                          <div className="mb-1 flex items-start justify-between gap-2">
-                            <span className="text-xs font-semibold text-slate-400">
-                              #{i + 1}
-                            </span>
-                            <div className="flex flex-wrap items-center justify-end gap-1.5">
-                              {p.repasada && (
-                                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                                  ✅ Repasado
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-3 py-2.5 font-medium">Banco</th>
+                        <th className="min-w-[160px] px-3 py-2.5 font-medium">
+                          % aciertos
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">Fallidas</th>
+                        <th className="px-3 py-2.5 font-medium">Respondidas</th>
+                        <th className="px-3 py-2.5 font-medium">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data?.fallosPorBanco ?? []).map((b) => {
+                        const critico = b.porcentajeAciertos < UMBRAL_BANCO_CRITICO;
+                        return (
+                          <tr
+                            key={b.banco}
+                            className="border-t border-slate-100 align-middle"
+                          >
+                            <td className="px-3 py-3 font-medium text-slate-800">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span>{b.bancoNombre}</span>
+                                {critico && (
+                                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                                    Crítico
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 min-w-[88px] flex-1 overflow-hidden rounded-full bg-slate-100">
+                                  <div
+                                    className={`h-full rounded-full ${progressColor(b.porcentajeAciertos)}`}
+                                    style={{
+                                      width: `${Math.min(100, Math.max(0, b.porcentajeAciertos))}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span
+                                  className={`shrink-0 tabular-nums text-xs font-semibold ${
+                                    b.porcentajeAciertos >= 75
+                                      ? "text-emerald-600"
+                                      : b.porcentajeAciertos >= 60
+                                        ? "text-amber-600"
+                                        : "text-red-600"
+                                  }`}
+                                >
+                                  {b.porcentajeAciertos.toFixed(0)}%
                                 </span>
-                              )}
-                              <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                                {p.fallos} fallo{p.fallos === 1 ? "" : "s"}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-sm font-medium text-slate-800">
-                            {truncate(p.texto, 80)}
-                          </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                            <span className="rounded-md bg-slate-200/70 px-1.5 py-0.5 text-slate-600">
-                              {p.bancoNombre}
-                            </span>
-                            <span>
-                              {p.porcentajeFallos.toFixed(0)}% fallos ·{" "}
-                              {p.totalApariciones} aparición
-                              {p.totalApariciones === 1 ? "" : "es"}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 tabular-nums text-red-600">
+                              {b.totalFallidas}
+                            </td>
+                            <td className="px-3 py-3 tabular-nums text-slate-600">
+                              {b.totalRespondidas}
+                            </td>
+                            <td className="px-3 py-3">
+                              <button
+                                type="button"
+                                className="whitespace-nowrap rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                disabled={b.totalFallidas === 0}
+                                onClick={() => {
+                                  const q = new URLSearchParams({
+                                    modo: "banco",
+                                    banco: b.banco,
+                                    nombre: b.bancoNombre,
+                                  });
+                                  router.push(`/repaso-fallos?${q}`);
+                                }}
+                              >
+                                Repasar {b.bancoNombre.length > 18 ? "banco" : b.bancoNombre}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </section>
           </div>

@@ -1,35 +1,44 @@
 "use client";
 
+import { useState, type ReactNode } from "react";
 import { usePersistence } from "@/components/PersistenceProvider";
 
 /** Indicador compacto de estado de sincronización (local ↔ nube). */
 export function SyncStatusIndicator({
   localSaved = false,
+  showSyncButton = false,
 }: {
   /** Tras terminar un test: “guardado local” inmediato. */
   localSaved?: boolean;
+  /** Botón manual para forzar sync antes de cerrar el navegador. */
+  showSyncButton?: boolean;
 }) {
-  const { phase, detail } = usePersistence();
+  const { phase, detail, syncNow } = usePersistence();
+  const [busy, setBusy] = useState(false);
 
-  if (localSaved && phase !== "syncing" && phase !== "synced") {
-    return (
-      <p className="sync-status sync-status--local" role="status">
-        Datos guardados localmente
-      </p>
-    );
+  async function handleSync() {
+    if (busy || phase === "syncing") return;
+    setBusy(true);
+    try {
+      await syncNow();
+    } finally {
+      setBusy(false);
+    }
   }
 
-  if (phase === "syncing") {
-    return (
+  const syncing = busy || phase === "syncing";
+
+  let status: ReactNode = null;
+
+  if (syncing) {
+    status = (
       <p className="sync-status sync-status--syncing" role="status">
         <span className="sync-status-dot" aria-hidden />
         Sincronizando…
       </p>
     );
-  }
-
-  if (phase === "synced") {
-    return (
+  } else if (phase === "synced") {
+    status = (
       <p className="sync-status sync-status--ok" role="status">
         <span className="sync-status-icon" aria-hidden>
           ✓
@@ -38,23 +47,35 @@ export function SyncStatusIndicator({
         {localSaved ? " · guardado en la nube" : ""}
       </p>
     );
-  }
-
-  if (phase === "offline" || phase === "error") {
-    return (
+  } else if (phase === "offline" || phase === "error") {
+    status = (
       <p className="sync-status sync-status--warn" role="status">
         {detail || (phase === "offline" ? "Modo local" : "Error de sync")}
       </p>
     );
-  }
-
-  if (localSaved) {
-    return (
+  } else if (localSaved) {
+    status = (
       <p className="sync-status sync-status--local" role="status">
         Datos guardados localmente
       </p>
     );
   }
 
-  return null;
+  if (!status && !showSyncButton) return null;
+
+  return (
+    <div className="sync-status-row">
+      {status}
+      {showSyncButton && (
+        <button
+          type="button"
+          className="btn-secondary btn-sm sync-status-btn"
+          disabled={syncing}
+          onClick={() => void handleSync()}
+        >
+          {syncing ? "Sincronizando…" : "Sincronizar ahora"}
+        </button>
+      )}
+    </div>
+  );
 }

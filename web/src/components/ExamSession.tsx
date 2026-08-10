@@ -224,6 +224,7 @@ export function ExamSession({
         respondida,
         seleccion: selected,
         respuestaCorrecta: meta?.respuesta,
+        bancoId: q.bancoId,
       });
     }
 
@@ -420,7 +421,7 @@ export function ExamSession({
           {examMode ? " — modo examen" : ""}
           {isRepaso ? " — repaso de fallos" : ""}
         </h2>
-        <SyncStatusIndicator localSaved={localSaved} />
+        <SyncStatusIndicator localSaved={localSaved} showSyncButton />
         {timerEnded && (
           <p className="muted small">Tiempo agotado. Se han guardado tus respuestas.</p>
         )}

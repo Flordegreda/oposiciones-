@@ -1722,6 +1722,23 @@ h1 {
   line-height: 1.2;
 }
 
+.sync-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.35rem 0 0.85rem;
+}
+
+.sync-status-row .sync-status {
+  margin: 0;
+}
+
+.sync-status-btn {
+  flex-shrink: 0;
+}
+
 .sync-status--local {
   background: rgba(30, 77, 123, 0.08);
   color: var(--primary);

@@ -80,6 +80,15 @@ export type TestReciente = {
   detallePreguntas?: PreguntaResultadoDetalle[];
 };
 
+export type FallosAgregadosBanco = {
+  banco: string;
+  bancoNombre: string;
+  porcentajeAciertos: number;
+  totalRespondidas: number;
+  totalFallidas: number;
+  totalAciertos: number;
+};
+
 export type DashboardData = {
   resumen: ResumenEstadisticas;
   evolucion: PuntoEvolucion[];
@@ -87,6 +96,8 @@ export type DashboardData = {
   rendimientoBancos: RendimientoBanco[];
   tiempoMedioBancos: TiempoMedioBanco[];
   preguntasFalladas: PreguntaFallada[];
+  /** Agregado por banco a nivel pregunta (detalle). */
+  fallosPorBanco: FallosAgregadosBanco[];
   testsRecientes: TestReciente[];
   recomendacion: RecomendacionStats;
   /** Tests en todo el historial (sin filtro de fechas). */
@@ -94,6 +105,27 @@ export type DashboardData = {
   /** Tests tras aplicar el filtro de periodo. */
   totalPeriodo: number;
 };
+
+const PSEUDO_BANCOS = new Set(["simulacro", "repaso_fallos", "desconocido"]);
+
+export const UMBRAL_BANCO_CRITICO = 65;
+
+function esBancoReal(banco: string, bancos: BancoCacheEntry[]): boolean {
+  if (PSEUDO_BANCOS.has(banco)) return false;
+  if (bancos.some((b) => b.id === banco)) return true;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(banco);
+}
+
+/** Banco UUID de una pregunta en el detalle (simulacro/repaso incl.). */
+export function bancoDeDetallePregunta(
+  d: PreguntaResultadoDetalle,
+  r: TestResultRecord,
+  bancos: BancoCacheEntry[] = [],
+): string | null {
+  if (d.bancoId && esBancoReal(d.bancoId, bancos)) return d.bancoId;
+  if (esBancoReal(r.banco, bancos)) return r.banco;
+  return null;
+}
 
 const DETALLE_KEY = "__detalle";
 const TIPO_KEY = "__tipo";
@@ -453,6 +485,7 @@ export function obtenerPreguntasMasFalladas(
   resultados: TestResultRecord[],
   limite: number,
   bancos: BancoCacheEntry[] = [],
+  filterBanco?: string,
 ): PreguntaFallada[] {
   const map = new Map<
     string,
@@ -470,16 +503,20 @@ export function obtenerPreguntasMasFalladas(
     if (!detalle?.length) continue;
     for (const d of detalle) {
       if (!d.respondida) continue;
+      const banco = bancoDeDetallePregunta(d, r, bancos);
+      if (!banco) continue;
+      if (filterBanco && banco !== filterBanco) continue;
       const cur = map.get(d.preguntaId) ?? {
         texto: d.enunciado,
         fallos: 0,
         total: 0,
-        banco: r.banco,
+        banco,
         title: r.test,
       };
       cur.total += 1;
       if (!d.correcta) cur.fallos += 1;
       if (d.enunciado) cur.texto = d.enunciado;
+      cur.banco = banco;
       map.set(d.preguntaId, cur);
     }
   }
@@ -497,6 +534,49 @@ export function obtenerPreguntasMasFalladas(
     }))
     .sort((a, b) => b.fallos - a.fallos || b.porcentajeFallos - a.porcentajeFallos)
     .slice(0, limite);
+}
+
+/** Estadísticas agregadas por banco a partir del detalle de preguntas. */
+export function calcularFallosAgregadosPorBanco(
+  resultados: TestResultRecord[],
+  bancos: BancoCacheEntry[] = [],
+): FallosAgregadosBanco[] {
+  const map = new Map<
+    string,
+    { aciertos: number; fallos: number; respondidas: number; title: string }
+  >();
+
+  for (const r of resultados) {
+    const detalle = r.detallePreguntas;
+    if (!detalle?.length) continue;
+    for (const d of detalle) {
+      if (!d.respondida) continue;
+      const banco = bancoDeDetallePregunta(d, r, bancos);
+      if (!banco) continue;
+      const cur = map.get(banco) ?? {
+        aciertos: 0,
+        fallos: 0,
+        respondidas: 0,
+        title: r.test,
+      };
+      cur.respondidas += 1;
+      if (d.correcta) cur.aciertos += 1;
+      else cur.fallos += 1;
+      map.set(banco, cur);
+    }
+  }
+
+  return [...map.entries()]
+    .map(([banco, v]) => ({
+      banco,
+      bancoNombre: bancoNombreFrom(banco, v.title, bancos),
+      porcentajeAciertos:
+        v.respondidas > 0 ? (v.aciertos / v.respondidas) * 100 : 0,
+      totalRespondidas: v.respondidas,
+      totalFallidas: v.fallos,
+      totalAciertos: v.aciertos,
+    }))
+    .sort((a, b) => a.porcentajeAciertos - b.porcentajeAciertos);
 }
 
 export function obtenerTestsRecientes(
@@ -568,6 +648,7 @@ export async function obtenerDashboardData(
     preguntasFalladas: await enriquecerFalladas(
       obtenerPreguntasMasFalladas(filtrados, 10, bancos),
     ),
+    fallosPorBanco: calcularFallosAgregadosPorBanco(filtrados, bancos),
     testsRecientes: obtenerTestsRecientes(filtrados, 50, bancos),
     recomendacion: generarRecomendacion(rendimientoBancos, filtrados),
     totalHistorial: resultados.length,
@@ -584,6 +665,7 @@ export const EstadisticasService = {
   calcularTiempoMedioPorBanco,
   generarRecomendacion,
   obtenerPreguntasMasFalladas,
+  calcularFallosAgregadosPorBanco,
   obtenerTestsRecientes,
   getResultadosFromCache,
   filtrarPorFecha,

@@ -52,6 +52,8 @@ export type PreguntaResultadoDetalle = {
   respondida: boolean;
   seleccion: number | null;
   respuestaCorrecta?: number;
+  /** Banco real de la pregunta (UUID); útil en simulacro/repaso. */
+  bancoId?: string;
 };
 
 export type BancoStatsSlice = {
