@@ -212,18 +212,9 @@ export async function POST(req: NextRequest) {
       existing = await findBancoByName(materiaId, bancoNombre);
     }
 
-    if (mode === "append" && !existing) {
-      return NextResponse.json(
-        {
-          error:
-            "No hay ningún banco con ese nombre en esta materia. Revisa el nombre o elige «Crear un banco nuevo».",
-        },
-        { status: 404 },
-      );
-    }
-
     let banco: { id: string; nombre: string };
     let action: "created" | "appended" | "overwritten";
+    let note: string | undefined;
 
     if (existing && mode === "append") {
       banco = existing;
@@ -261,6 +252,10 @@ export async function POST(req: NextRequest) {
 
       banco = created;
       action = "created";
+      if (mode === "append") {
+        note =
+          "No había un banco con ese nombre en esta materia; se ha creado uno nuevo. Para añadir a uno existente, usa el mismo nombre exacto.";
+      }
       try {
         await insertParsedQuestions(created.id, doc, 0);
       } catch (e) {
@@ -275,6 +270,7 @@ export async function POST(req: NextRequest) {
       num: total,
       supuestos: doc.supuestos.length,
       action,
+      note,
     });
   } catch (e) {
     return NextResponse.json(
