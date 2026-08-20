@@ -96,16 +96,28 @@ export function construirTemarioChecklist(
     }
   }
 
+  function materiaIdPorNombre(nombre: string): string | null {
+    const norm = nombre.trim().toLowerCase();
+    if (!norm) return null;
+    for (const [id, m] of materiaMap) {
+      if (m.nombre.trim().toLowerCase() === norm) return id;
+    }
+    return null;
+  }
+
   for (const section of fichaSections) {
-    const m = ensureMateria(section.materiaId, section.materiaNombre);
+    const materiaId =
+      (materiaMap.has(section.materiaId) ? section.materiaId : null) ??
+      materiaIdPorNombre(section.materiaNombre) ??
+      section.materiaId;
+    const m = ensureMateria(materiaId, section.materiaNombre);
     for (const mz of section.mazos) {
-      if (mz.numFichas <= 0) continue;
       const key = mazoChecklistKey(mz.id);
       m.items.push({
         id: mz.id,
         kind: "fichas",
         nombre: mz.nombre,
-        materiaId: section.materiaId,
+        materiaId,
         count: mz.numFichas,
         hecho: marks[key]?.done ?? false,
         porcentaje: null,
@@ -175,13 +187,7 @@ export function construirTemarioInventario(
 ): TemarioResumenGlobal {
   const res = construirTemarioChecklist(testSections, fichaSections, null, {});
   for (const m of res.materias) {
-    m.items.sort((a, b) => {
-      if (a.kind !== b.kind) return a.kind === "test" ? -1 : 1;
-      const ta = a.tipo === "practico" ? 1 : 0;
-      const tb = b.tipo === "practico" ? 1 : 0;
-      if (ta !== tb) return ta - tb;
-      return a.nombre.localeCompare(b.nombre, "es");
-    });
+    m.items.sort(ordenarItemsInventario);
     m.hechos = 0;
     m.pctHecho = 0;
     m.testsHechos = 0;
@@ -192,6 +198,56 @@ export function construirTemarioInventario(
   res.testsHechos = 0;
   res.fichasHechas = 0;
   return res;
+}
+
+function ordenarItemsInventario(a: TemarioChecklistItem, b: TemarioChecklistItem): number {
+  if (a.kind !== b.kind) return a.kind === "test" ? -1 : 1;
+  const ta = a.tipo === "practico" ? 1 : 0;
+  const tb = b.tipo === "practico" ? 1 : 0;
+  if (ta !== tb) return ta - tb;
+  return a.nombre.localeCompare(b.nombre, "es");
+}
+
+/** Solo ítems pendientes; oculta materias ya completadas. */
+export function filtrarTemarioPendientes(resumen: TemarioResumenGlobal): TemarioResumenGlobal {
+  const materias: TemarioMateriaResumen[] = resumen.materias
+    .map((m) => {
+      const items = m.items.filter((i) => !i.hecho);
+      const tests = items.filter((i) => i.kind === "test");
+      const fichas = items.filter((i) => i.kind === "fichas");
+      return {
+        ...m,
+        items,
+        total: items.length,
+        hechos: 0,
+        pctHecho: 0,
+        testsTotal: tests.length,
+        testsHechos: 0,
+        fichasTotal: fichas.length,
+        fichasHechas: 0,
+      };
+    })
+    .filter((m) => m.total > 0);
+
+  let totalItems = 0;
+  let testsTotal = 0;
+  let fichasTotal = 0;
+  for (const m of materias) {
+    totalItems += m.total;
+    testsTotal += m.testsTotal;
+    fichasTotal += m.fichasTotal;
+  }
+
+  return {
+    materias,
+    totalItems,
+    hechos: 0,
+    pctHecho: 0,
+    testsTotal,
+    testsHechos: 0,
+    fichasTotal,
+    fichasHechas: 0,
+  };
 }
 
 function tipoEtiqueta(item: TemarioChecklistItem): string {

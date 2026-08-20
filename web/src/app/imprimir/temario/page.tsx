@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { TemarioChecklistPrintView } from "@/components/temario/TemarioChecklistPrintView";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
-import { fichasSchemaReady } from "@/lib/queries/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +11,14 @@ export default async function PrintTemarioPage() {
 
   try {
     ({ sections: testSections } = await getPracticarData());
-    if (await fichasSchemaReady()) {
-      fichaSections = await fetchMazosGrouped();
-    }
   } catch {
-    notFound();
+    testSections = [];
+  }
+
+  try {
+    fichaSections = await fetchMazosGrouped();
+  } catch {
+    fichaSections = [];
   }
 
   const totalBancos = testSections.reduce((n, s) => n + s.bancos.length, 0);

@@ -48,9 +48,7 @@ export function FichasBiblioteca({ sections }: Props) {
                       <span className="banco-tile-title">{m.nombre}</span>
                       <span className="banco-tile-meta">
                         <span className="tipo-pill teorico">fichas</span>
-                        {m.numFichas > 0 && (
-                          <span className="banco-tile-count">{m.numFichas} fich.</span>
-                        )}
+                        <span className="banco-tile-count">{m.numFichas} fich.</span>
                       </span>
                     </div>
                   </div>
