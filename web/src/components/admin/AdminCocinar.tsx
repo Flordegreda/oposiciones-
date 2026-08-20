@@ -47,7 +47,9 @@ export function AdminCocinar({
   });
   const [nombre, setNombre] = useState(targetBanco?.nombre ?? "");
   const [esperadas, setEsperadas] = useState("");
-  const [importMode, setImportMode] = useState<"append" | "overwrite" | "create">("append");
+  const [importMode, setImportMode] = useState<"append" | "overwrite" | "create">(
+    targetBanco ? "append" : "create",
+  );
   const [supuestoPractico, setSupuestoPractico] = useState(false);
   const [textoCaso, setTextoCaso] = useState("");
   const [texto, setTexto] = useState("");
@@ -144,7 +146,8 @@ export function AdminCocinar({
           ? "reemplazado"
           : "creado";
     setMsg(
-      `Banco ${actionLabel}: ${data.banco.nombre} (${data.num} preguntas` +
+      (data.note ? `${data.note} ` : "") +
+        `Banco ${actionLabel}: ${data.banco.nombre} (${data.num} preguntas` +
         (data.supuestos ? `, ${data.supuestos} supuesto${data.supuestos !== 1 ? "s" : ""}` : "") +
         "). Ya visible en Practicar.",
     );
@@ -328,10 +331,14 @@ E: Art. 17.1 LOTC: …`}</pre>
             value={importMode}
             onChange={(e) => setImportMode(e.target.value as "append" | "overwrite" | "create")}
           >
-            <option value="append">Añadir preguntas al banco existente</option>
+            <option value="create">Crear un banco nuevo</option>
+            <option value="append">Añadir preguntas al banco existente (mismo nombre)</option>
             <option value="overwrite">Reemplazar todas las preguntas del banco</option>
-            <option value="create">Crear un banco nuevo (aunque el nombre exista)</option>
           </select>
+          <span className="muted small" style={{ display: "block", marginTop: "0.35rem" }}>
+            Si es material nuevo, deja en <strong>Crear un banco nuevo</strong>. «Añadir» solo
+            funciona si ya existe un banco con el mismo nombre en la materia.
+          </span>
         </label>
 
         <label>

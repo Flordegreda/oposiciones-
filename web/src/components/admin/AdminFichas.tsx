@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { MazoFichas } from "@/lib/queries/fichas";
 import { getFichasDiagnostics, parseFichasText } from "@/lib/parse-fichas-text";
+import { AdminFichasApply } from "@/components/admin/AdminFichasApply";
 
 type Materia = { id: string; nombre: string };
 
@@ -140,13 +141,16 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
 
   if (!fichasOk) {
     return (
-      <div className="card card-elevated">
-        <h2>Fichas tipo Anki</h2>
-        <p className="muted small">
-          Activa la función con la tarjeta amarilla <strong>Fichas (Anki)</strong> arriba en
-          esta página (solo la primera vez).
-        </p>
-      </div>
+      <>
+        <div className="card card-warning">
+          <h2>Fichas (Anki) — activar</h2>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Las tablas de fichas aún no están listas. Pulsa el botón para crearlas en
+            Supabase (solo la primera vez).
+          </p>
+          <AdminFichasApply label="Activar fichas" busyLabel="Aplicando…" />
+        </div>
+      </>
     );
   }
 
@@ -410,6 +414,21 @@ R: Otra respuesta.
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="card card-warning" style={{ marginTop: "1rem" }}>
+        <h2 className="admin-section-title" style={{ marginTop: 0 }}>
+          Actualizar permisos de fichas
+        </h2>
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Si no puedes editar o borrar fichas, pulsa aquí para reaplicar el esquema en
+          Supabase (permisos de escritura). No borra tus mazos.
+        </p>
+        <AdminFichasApply
+          label="Actualizar esquema fichas"
+          busyLabel="Actualizando…"
+          compact
+        />
       </div>
     </>
   );

@@ -338,6 +338,18 @@ body::before {
   line-height: 1.5;
 }
 
+.print-checklist-totales {
+  margin: 0.65rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f8f8f8;
+  font-size: 9pt;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #222;
+}
+
 .print-checklist-legend-item {
   margin-right: 0.75rem;
 }
@@ -412,10 +424,6 @@ body::before {
   color: #555;
 }
 
-.print-checklist-col-notas {
-  width: 18%;
-}
-
 .print-check-box {
   display: inline-block;
   width: 0.85rem;
@@ -450,18 +458,11 @@ body::before {
   line-height: 1.25;
 }
 
-.print-checklist-notes-line {
-  display: block;
-  min-height: 0.9rem;
-  border-bottom: 1px dotted #bbb;
-}
-
-.print-checklist-footer {
-  margin-top: 1.5rem;
-  padding-top: 0.75rem;
-  border-top: 2px solid #222;
-  font-size: 10pt;
-  font-weight: 600;
+.print-checklist-empty {
+  padding: 0.5rem 0.75rem;
+  color: #666;
+  font-style: italic;
+  font-size: 9.5pt;
 }
 
 @media print {

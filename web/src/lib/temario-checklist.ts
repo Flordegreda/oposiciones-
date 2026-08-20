@@ -4,6 +4,8 @@ import type { UserStatsRecord } from "@/lib/persistence/types";
 import type { ChecklistMark } from "@/lib/persistence/checklist-service";
 import { mazoChecklistKey } from "@/lib/persistence/checklist-service";
 
+export type MateriaCatalogo = { id: string; nombre: string };
+
 export type TemarioItemKind = "test" | "fichas";
 
 export type TemarioChecklistItem = {
@@ -34,6 +36,15 @@ export type TemarioMateriaResumen = {
   fichasHechas: number;
 };
 
+export type TemarioContenidoTotales = {
+  bancosTeorico: number;
+  bancosPractico: number;
+  mazosFichas: number;
+  preguntasTeorico: number;
+  preguntasPractico: number;
+  totalFichas: number;
+};
+
 export type TemarioResumenGlobal = {
   materias: TemarioMateriaResumen[];
   totalItems: number;
@@ -43,10 +54,65 @@ export type TemarioResumenGlobal = {
   testsHechos: number;
   fichasTotal: number;
   fichasHechas: number;
+  contenido: TemarioContenidoTotales;
 };
 
 function pctFromRatio(num: number, den: number): number {
   return den > 0 ? Math.round((num / den) * 100) : 0;
+}
+
+function calcularContenidoTotales(items: TemarioChecklistItem[]): TemarioContenidoTotales {
+  let bancosTeorico = 0;
+  let bancosPractico = 0;
+  let mazosFichas = 0;
+  let preguntasTeorico = 0;
+  let preguntasPractico = 0;
+  let totalFichas = 0;
+
+  for (const item of items) {
+    if (item.kind === "fichas") {
+      mazosFichas += 1;
+      totalFichas += item.count;
+    } else if (item.tipo === "practico") {
+      bancosPractico += 1;
+      preguntasPractico += item.count;
+    } else {
+      bancosTeorico += 1;
+      preguntasTeorico += item.count;
+    }
+  }
+
+  return {
+    bancosTeorico,
+    bancosPractico,
+    mazosFichas,
+    preguntasTeorico,
+    preguntasPractico,
+    totalFichas,
+  };
+}
+
+const nf = new Intl.NumberFormat("es-ES");
+
+/** Texto compacto: preguntas teórico/práctico, fichas y bancos/mazos. */
+export function formatContenidoResumen(c: TemarioContenidoTotales): string {
+  const parts: string[] = [];
+  if (c.preguntasTeorico > 0 || c.bancosTeorico > 0) {
+    parts.push(
+      `${nf.format(c.preguntasTeorico)} preg. teórico (${c.bancosTeorico} banco${c.bancosTeorico !== 1 ? "s" : ""})`,
+    );
+  }
+  if (c.preguntasPractico > 0 || c.bancosPractico > 0) {
+    parts.push(
+      `${nf.format(c.preguntasPractico)} preg. práctico (${c.bancosPractico} banco${c.bancosPractico !== 1 ? "s" : ""})`,
+    );
+  }
+  if (c.totalFichas > 0 || c.mazosFichas > 0) {
+    parts.push(
+      `${nf.format(c.totalFichas)} fichas (${c.mazosFichas} mazo${c.mazosFichas !== 1 ? "s" : ""})`,
+    );
+  }
+  return parts.length ? parts.join(" · ") : "Sin material cargado";
 }
 
 function testHecho(bancoId: string, stats: UserStatsRecord | null): boolean {
@@ -65,6 +131,7 @@ export function construirTemarioChecklist(
   fichaSections: MazoFichasSection[],
   stats: UserStatsRecord | null,
   marks: Record<string, ChecklistMark>,
+  allMaterias: MateriaCatalogo[] = [],
 ): TemarioResumenGlobal {
   const materiaMap = new Map<
     string,
@@ -76,6 +143,10 @@ export function construirTemarioChecklist(
       materiaMap.set(id, { nombre, items: [] });
     }
     return materiaMap.get(id)!;
+  }
+
+  for (const m of allMaterias) {
+    ensureMateria(m.id, m.nombre);
   }
 
   for (const section of testSections) {
@@ -168,6 +239,9 @@ export function construirTemarioChecklist(
     fichasHechas += m.fichasHechas;
   }
 
+  const allItems = materias.flatMap((m) => m.items);
+  const contenido = calcularContenidoTotales(allItems);
+
   return {
     materias,
     totalItems,
@@ -177,6 +251,7 @@ export function construirTemarioChecklist(
     testsHechos,
     fichasTotal,
     fichasHechas,
+    contenido,
   };
 }
 
@@ -184,8 +259,9 @@ export function construirTemarioChecklist(
 export function construirTemarioInventario(
   testSections: MateriaSection[],
   fichaSections: MazoFichasSection[],
+  allMaterias: MateriaCatalogo[] = [],
 ): TemarioResumenGlobal {
-  const res = construirTemarioChecklist(testSections, fichaSections, null, {});
+  const res = construirTemarioChecklist(testSections, fichaSections, null, {}, allMaterias);
   for (const m of res.materias) {
     m.items.sort(ordenarItemsInventario);
     m.hechos = 0;

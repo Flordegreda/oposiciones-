@@ -76,13 +76,7 @@ async function connectAndRun(
   }
 }
 
-export async function runSqlFile(filename: string, dbPassword?: string) {
-  const sqlPath = path.join(process.cwd(), "supabase", filename);
-  if (!fs.existsSync(sqlPath)) {
-    throw new Error(`No se encontró ${filename}`);
-  }
-
-  const sql = fs.readFileSync(sqlPath, "utf8");
+export async function runSql(sql: string, dbPassword?: string) {
   const password = getDbPassword(dbPassword);
   const errors: string[] = [];
 
@@ -138,4 +132,14 @@ export async function runSqlFile(filename: string, dbPassword?: string) {
   throw new Error(
     `No se pudo conectar a Supabase Postgres. ${errors.slice(0, 3).join(" | ")}`,
   );
+}
+
+export async function runSqlFile(filename: string, dbPassword?: string) {
+  const sqlPath = path.join(process.cwd(), "supabase", filename);
+  if (!fs.existsSync(sqlPath)) {
+    throw new Error(`No se encontró ${filename}`);
+  }
+
+  const sql = fs.readFileSync(sqlPath, "utf8");
+  await runSql(sql, dbPassword);
 }

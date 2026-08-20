@@ -3,6 +3,8 @@ import { revalidateAfterFichasChange } from "@/lib/revalidate-content";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
 
+export const runtime = "nodejs";
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
@@ -53,8 +55,22 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
 
   const supabase = getSupabase();
   const { data: row } = await supabase.from("fichas").select("mazo_id").eq("id", id).maybeSingle();
-  const { error } = await supabase.from("fichas").delete().eq("id", id);
+  const { data: deleted, error } = await supabase
+    .from("fichas")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!deleted?.length) {
+    return NextResponse.json(
+      {
+        error:
+          "No se pudo eliminar la ficha (permisos de base de datos). Ve a Material → Fichas → «Actualizar esquema fichas».",
+      },
+      { status: 403 },
+    );
+  }
 
   revalidateAfterFichasChange(row?.mazo_id as string | undefined);
   return NextResponse.json({ ok: true });

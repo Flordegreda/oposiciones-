@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runSqlFile } from "@/lib/db/postgres";
+import { FICHAS_SCHEMA_SQL } from "@/lib/db/fichas-schema-sql";
+import { runSql, runSqlFile } from "@/lib/db/postgres";
 import { revalidateAllCaches } from "@/lib/revalidate-content";
+import fs from "fs";
+import path from "path";
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const dbPassword = body.dbPassword as string | undefined;
 
-    await runSqlFile("FICHAS.sql", dbPassword);
+    const sqlPath = path.join(process.cwd(), "supabase", "FICHAS.sql");
+    if (fs.existsSync(sqlPath)) {
+      await runSqlFile("FICHAS.sql", dbPassword);
+    } else {
+      await runSql(FICHAS_SCHEMA_SQL, dbPassword);
+    }
+
     revalidateAllCaches();
 
     return NextResponse.json({
       message:
-        "Fichas activadas. Recarga la página e importa mazos en la pestaña Fichas.",
+        "Esquema de fichas actualizado (tablas y permisos de escritura). Recarga la página.",
     });
   } catch (e) {
     return NextResponse.json(
