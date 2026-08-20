@@ -4,7 +4,6 @@ import { JEX_SUBTITLE } from "@/lib/constants";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { getMateriasWithCounts } from "@/lib/queries/bancos";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
-import { fichasSchemaReady } from "@/lib/queries/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -19,12 +18,17 @@ export default async function TemarioPage() {
       getMateriasWithCounts(),
       getPracticarData(),
     ]);
-    if (await fichasSchemaReady()) {
-      fichaSections = await fetchMazosGrouped();
-    }
   } catch (e) {
     error = e instanceof Error ? e.message : "Error al cargar el temario";
   }
+
+  try {
+    fichaSections = await fetchMazosGrouped();
+  } catch {
+    fichaSections = [];
+  }
+
+  const hasMaterial = testSections.length > 0 || fichaSections.length > 0 || allMaterias.length > 0;
 
   return (
     <>
@@ -53,7 +57,7 @@ export default async function TemarioPage() {
         </div>
       )}
 
-      {!error && (
+      {hasMaterial && (
         <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
           <TemarioChecklist
             testSections={testSections}

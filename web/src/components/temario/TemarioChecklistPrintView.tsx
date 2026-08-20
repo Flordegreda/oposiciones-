@@ -67,13 +67,10 @@ export function TemarioChecklistPrintView({
             <h2 className="print-checklist-materia-title">{m.materiaNombre}</h2>
             <p className="print-checklist-materia-meta">
               {m.testsTotal} test{m.testsTotal !== 1 ? "s" : ""}
-              {m.fichasTotal > 0 && (
-                <>
-                  {" "}
-                  · {m.fichasTotal} ficha{m.fichasTotal !== 1 ? "s" : ""}
-                </>
-              )}{" "}
-              · {m.total} ítems
+              {" · "}
+              {m.fichasTotal} ficha{m.fichasTotal !== 1 ? "s" : ""}
+              {" · "}
+              {m.total} ítem{m.total !== 1 ? "s" : ""}
             </p>
             <table className="print-checklist-table">
               <thead>
@@ -124,7 +121,6 @@ export function TemarioChecklistPrintView({
             </table>
           </section>
         ))}
-
       </article>
     </>
   );

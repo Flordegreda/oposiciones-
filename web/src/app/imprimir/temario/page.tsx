@@ -3,7 +3,6 @@ import { TemarioChecklistPrintView } from "@/components/temario/TemarioChecklist
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { getMateriasWithCounts } from "@/lib/queries/bancos";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
-import { fichasSchemaReady } from "@/lib/queries/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +16,19 @@ export default async function PrintTemarioPage() {
       getMateriasWithCounts(),
       getPracticarData(),
     ]);
-    if (await fichasSchemaReady()) {
-      fichaSections = await fetchMazosGrouped();
-    }
   } catch {
-    notFound();
+    testSections = [];
   }
 
-  if (allMaterias.length === 0) notFound();
+  try {
+    fichaSections = await fetchMazosGrouped();
+  } catch {
+    fichaSections = [];
+  }
+
+  if (allMaterias.length === 0 && testSections.length === 0 && fichaSections.length === 0) {
+    notFound();
+  }
 
   return (
     <TemarioChecklistPrintView
