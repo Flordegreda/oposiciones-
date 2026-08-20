@@ -323,6 +323,7 @@ export function filtrarTemarioPendientes(resumen: TemarioResumenGlobal): Temario
     testsHechos: 0,
     fichasTotal,
     fichasHechas: 0,
+    contenido: calcularContenidoTotales(materias.flatMap((m) => m.items)),
   };
 }
 
