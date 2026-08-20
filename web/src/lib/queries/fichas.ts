@@ -59,13 +59,30 @@ async function countFichasByMazo(mazoIds: string[]): Promise<Map<string, number>
   const map = new Map<string, number>();
   if (!mazoIds.length) return map;
 
+  const wanted = new Set(mazoIds);
   const supabase = getSupabase();
-  const { data, error } = await supabase.from("fichas").select("mazo_id").in("mazo_id", mazoIds);
-  if (error || !data) return map;
+  const PAGE = 1000;
 
-  for (const row of data) {
-    const id = row.mazo_id as string;
-    map.set(id, (map.get(id) ?? 0) + 1);
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("fichas")
+      .select("mazo_id")
+      .order("mazo_id")
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error || !data) break;
+
+    for (const row of data) {
+      const id = row.mazo_id as string;
+      if (!wanted.has(id)) continue;
+      map.set(id, (map.get(id) ?? 0) + 1);
+    }
+
+    if (data.length < PAGE) break;
+  }
+
+  for (const id of mazoIds) {
+    if (!map.has(id)) map.set(id, 0);
   }
   return map;
 }
@@ -76,19 +93,25 @@ export async function fetchMazosFichas(opts?: {
   if (!(await fichasSchemaReady())) return [];
 
   const supabase = getSupabase();
-  let q = supabase
-    .from("mazos_fichas")
-    .select("id, nombre, materia_id, active, materias(nombre)")
-    .order("nombre");
+  const rows: MazoRow[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    let q = supabase
+      .from("mazos_fichas")
+      .select("id, nombre, materia_id, active, materias(nombre)")
+      .order("nombre")
+      .order("id")
+      .range(from, from + PAGE - 1);
 
-  if (opts?.activeOnly !== false) {
-    q = q.eq("active", true);
+    if (opts?.activeOnly !== false) {
+      q = q.eq("active", true);
+    }
+
+    const { data, error } = await q;
+    if (error || !data) break;
+    rows.push(...(data as unknown as MazoRow[]));
+    if (data.length < PAGE) break;
   }
-
-  const { data, error } = await q;
-  if (error || !data) return [];
-
-  const rows = data as unknown as MazoRow[];
   const counts = await countFichasByMazo(rows.map((r) => r.id));
   return rows
     .map((r) => toMazo(r, counts.get(r.id) ?? 0))
@@ -128,21 +151,29 @@ export async function getMazoConFichas(mazoId: string): Promise<MazoConFichas | 
   if (mErr || !mazoData) return null;
   const mazoRow = mazoData as unknown as MazoRow;
 
-  const { data: fichasData, error: fErr } = await supabase
-    .from("fichas")
-    .select("id, frente, dorso, orden")
-    .eq("mazo_id", mazoId)
-    .order("orden", { ascending: true })
-    .order("created_at", { ascending: true });
+  const fichas: FichaCard[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data: fichasData, error: fErr } = await supabase
+      .from("fichas")
+      .select("id, frente, dorso, orden")
+      .eq("mazo_id", mazoId)
+      .order("orden", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
 
-  if (fErr) throw fErr;
-
-  const fichas: FichaCard[] = (fichasData ?? []).map((f) => ({
-    id: f.id as string,
-    frente: f.frente as string,
-    dorso: f.dorso as string,
-    orden: (f.orden as number) ?? 0,
-  }));
+    if (fErr) throw fErr;
+    const rows = fichasData ?? [];
+    for (const f of rows) {
+      fichas.push({
+        id: f.id as string,
+        frente: f.frente as string,
+        dorso: f.dorso as string,
+        orden: (f.orden as number) ?? 0,
+      });
+    }
+    if (rows.length < PAGE) break;
+  }
 
   return {
     mazo: toMazo(mazoRow, fichas.length),
