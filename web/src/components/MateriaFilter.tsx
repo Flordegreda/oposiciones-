@@ -17,7 +17,7 @@ type Props = {
 export function MateriaFilter({ materias, value, onChange, label = "Materia" }: Props) {
   const selectId = useId();
 
-  if (materias.length <= 1) return null;
+  if (materias.length === 0) return null;
 
   return (
     <div className="materia-filter-wrap">

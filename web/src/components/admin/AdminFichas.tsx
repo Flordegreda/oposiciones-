@@ -49,6 +49,8 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [esperadas, setEsperadas] = useState("");
+  const [filtroMateriaId, setFiltroMateriaId] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
     if (!initialMazoId) return;
@@ -87,6 +89,34 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
     () => mazos.filter((m) => !materiaId || m.materiaId === materiaId),
     [mazos, materiaId],
   );
+
+  const mazosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return mazos.filter((m) => {
+      if (filtroMateriaId && m.materiaId !== filtroMateriaId) return false;
+      if (!q) return true;
+      return (
+        m.nombre.toLowerCase().includes(q) ||
+        m.materiaNombre.toLowerCase().includes(q)
+      );
+    });
+  }, [mazos, filtroMateriaId, busqueda]);
+
+  const materiasFiltro = useMemo(() => {
+    const byId = new Map<string, { id: string; nombre: string; count: number }>();
+    for (const m of mazos) {
+      const prev = byId.get(m.materiaId);
+      if (prev) prev.count += 1;
+      else byId.set(m.materiaId, { id: m.materiaId, nombre: m.materiaNombre, count: 1 });
+    }
+    for (const mat of materias) {
+      const row = byId.get(mat.id);
+      if (row) row.nombre = mat.nombre;
+    }
+    return [...byId.values()].sort((a, b) =>
+      a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }),
+    );
+  }, [materias, mazos]);
 
   async function importar() {
     if (!materiaId) return setErr("Selecciona una materia");
@@ -193,6 +223,86 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
     <>
       {msg && <p className="ok">{msg}</p>}
       {err && <p className="error">{err}</p>}
+
+      <div className="card card-elevated">
+        <h2 className="admin-section-title">
+          Mazos ({mazosFiltrados.length}
+          {mazosFiltrados.length !== mazos.length ? ` de ${mazos.length}` : ""})
+        </h2>
+        {mazos.length === 0 ? (
+          <p className="muted small">Aún no hay mazos.</p>
+        ) : (
+          <>
+            <div className="form-grid-fields carga-campos" style={{ marginTop: 0 }}>
+              <label>
+                Filtrar por materia
+                <select
+                  value={filtroMateriaId ?? ""}
+                  onChange={(e) => setFiltroMateriaId(e.target.value || null)}
+                >
+                  <option value="">Todas las materias</option>
+                  {materiasFiltro.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre} ({m.count})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Buscar mazo
+                <input
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Ej. contratos"
+                />
+              </label>
+            </div>
+            {mazosFiltrados.length === 0 ? (
+              <p className="muted small">Ningún mazo coincide con el filtro.</p>
+            ) : (
+              <ul className="admin-fichas-list" style={{ marginTop: "1rem" }}>
+                {mazosFiltrados.map((m) => (
+                  <li key={m.id} className="admin-fichas-row">
+                    <div className="admin-fichas-row-main">
+                      <strong>{m.nombre}</strong>
+                      <span className="muted small">
+                        {m.materiaNombre} · {m.numFichas} ficha{m.numFichas !== 1 ? "s" : ""}
+                        {!m.active ? " · oculto" : ""}
+                      </span>
+                    </div>
+                    <div className="admin-fichas-row-actions">
+                      <Link href={`/admin/fichas/${m.id}`} className="btn-primary btn-sm">
+                        Editar
+                      </Link>
+                      <Link href={`/fichas/${m.id}`} className="btn-link btn-sm">
+                        Practicar
+                      </Link>
+                      {m.numFichas > FICHAS_MAX_POR_MAZO && (
+                        <button
+                          type="button"
+                          className="btn-secondary btn-sm"
+                          disabled={busy !== null}
+                          onClick={() => void dividir(m)}
+                        >
+                          {busy === `split-${m.id}` ? "…" : "Dividir"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-danger btn-sm"
+                        disabled={busy !== null}
+                        onClick={() => void eliminar(m)}
+                      >
+                        {busy === m.id ? "…" : "Eliminar"}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="card card-elevated">
         <h2 className="admin-section-title">Pegar fichas en texto plano</h2>
@@ -434,53 +544,6 @@ R: Otra respuesta.
             Pegar ejemplo
           </button>
         </div>
-      </div>
-
-      <div className="card card-elevated">
-        <h2>Mazos ({mazos.length})</h2>
-        {mazos.length === 0 ? (
-          <p className="muted small">Aún no hay mazos.</p>
-        ) : (
-          <ul className="admin-fichas-list">
-            {mazos.map((m) => (
-              <li key={m.id} className="admin-fichas-row">
-                <div className="admin-fichas-row-main">
-                  <strong>{m.nombre}</strong>
-                  <span className="muted small">
-                    {m.materiaNombre} · {m.numFichas} ficha{m.numFichas !== 1 ? "s" : ""}
-                    {!m.active ? " · oculto" : ""}
-                  </span>
-                </div>
-                <div className="admin-fichas-row-actions">
-                  <Link href={`/admin/fichas/${m.id}`} className="btn-primary btn-sm">
-                    Editar
-                  </Link>
-                  <Link href={`/fichas/${m.id}`} className="btn-link btn-sm">
-                    Practicar
-                  </Link>
-                  {m.numFichas > FICHAS_MAX_POR_MAZO && (
-                    <button
-                      type="button"
-                      className="btn-secondary btn-sm"
-                      disabled={busy !== null}
-                      onClick={() => void dividir(m)}
-                    >
-                      {busy === `split-${m.id}` ? "…" : "Dividir"}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="btn-danger btn-sm"
-                    disabled={busy !== null}
-                    onClick={() => void eliminar(m)}
-                  >
-                    {busy === m.id ? "…" : "Eliminar"}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
       <div className="card card-warning" style={{ marginTop: "1rem" }}>
