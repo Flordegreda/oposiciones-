@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:parse-import": "npx tsx scripts/test-parse-import-text.ts"
+    "test:parse-import": "npx tsx scripts/test-parse-import-text.ts",
+    "test:temario-catalogo": "npx tsx --test scripts/test-temario-catalogo.ts"
   },
   "dependencies": {
     "@sparticuz/chromium": "^133.0.0",

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.lineas (
 CREATE TABLE IF NOT EXISTS public.materias (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nombre TEXT NOT NULL,
+  orden INTEGER,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -25,6 +26,9 @@ CREATE TABLE IF NOT EXISTS public.bancos (
 
 CREATE INDEX IF NOT EXISTS bancos_materia_id_idx ON public.bancos(materia_id);
 CREATE INDEX IF NOT EXISTS bancos_linea_id_idx ON public.bancos(linea_id);
+
+ALTER TABLE public.materias ADD COLUMN IF NOT EXISTS orden INTEGER;
+CREATE INDEX IF NOT EXISTS materias_orden_idx ON public.materias(orden);
 
 ALTER TABLE public.lineas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.materias ENABLE ROW LEVEL SECURITY;

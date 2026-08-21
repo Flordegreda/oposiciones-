@@ -6,6 +6,7 @@ import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
 } from "@/lib/supuesto-utils";
+import { compareMateriasByNombre } from "@/lib/temario-catalogo";
 
 export type BancoRow = {
   id: string;
@@ -49,6 +50,8 @@ export type MateriaStatsRow = {
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
+  mazosFichas: number;
+  fichas: number;
 };
 
 export type MaterialStats = {
@@ -65,6 +68,19 @@ export type MaterialStats = {
 };
 
 const emptyTipoStats = (): TipoStats => ({ bancos: 0, preguntas: 0 });
+
+function emptyMateriaStatsRow(id: string, nombre: string): MateriaStatsRow {
+  return {
+    id,
+    nombre,
+    bancos: 0,
+    preguntas: 0,
+    teorico: emptyTipoStats(),
+    practico: emptyTipoStats(),
+    mazosFichas: 0,
+    fichas: 0,
+  };
+}
 
 const PAGE_SIZE = 1000;
 
@@ -259,7 +275,7 @@ function groupByMateria(rows: BancoRow[]): MateriaSection[] {
     map.get(key)!.bancos.push(b);
   }
   return [...map.values()]
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }))
+    .sort((a, b) => compareMateriasByNombre(a.nombre, b.nombre))
     .map((section) => ({
       ...section,
       bancos: sortBancosByNombre(section.bancos),
@@ -344,10 +360,12 @@ function buildMateriasWithCounts(
     tally.set(row.materia_id, (tally.get(row.materia_id) ?? 0) + 1);
   }
 
-  return materias.map((m) => ({
-    ...m,
-    bancos: tally.get(m.id) ?? 0,
-  }));
+  return materias
+    .map((m) => ({
+      ...m,
+      bancos: tally.get(m.id) ?? 0,
+    }))
+    .sort((a, b) => compareMateriasByNombre(a.nombre, b.nombre));
 }
 
 function buildMaterialStats(
@@ -357,14 +375,7 @@ function buildMaterialStats(
 ): MaterialStats {
   const materiaMap = new Map<string, MateriaStatsRow>();
   for (const m of materias) {
-    materiaMap.set(m.id, {
-      id: m.id,
-      nombre: m.nombre,
-      bancos: 0,
-      preguntas: 0,
-      teorico: emptyTipoStats(),
-      practico: emptyTipoStats(),
-    });
+    materiaMap.set(m.id, emptyMateriaStatsRow(m.id, m.nombre));
   }
 
   const totals: MaterialStats = {
@@ -387,14 +398,7 @@ function buildMaterialStats(
 
     let row = materiaMap.get(b.materia_id);
     if (!row) {
-      row = {
-        id: b.materia_id,
-        nombre: "Sin materia",
-        bancos: 0,
-        preguntas: 0,
-        teorico: emptyTipoStats(),
-        practico: emptyTipoStats(),
-      };
+      row = emptyMateriaStatsRow(b.materia_id, "Sin materia");
       materiaMap.set(b.materia_id, row);
     }
 
@@ -405,7 +409,7 @@ function buildMaterialStats(
   }
 
   totals.porMateria = [...materiaMap.values()].sort((a, b) =>
-    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }),
+    compareMateriasByNombre(a.nombre, b.nombre),
   );
 
   return totals;
@@ -459,12 +463,60 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     extras.push(
       (async () => {
         const supabaseCounts = getSupabase();
-        const [mazosRes, fichasRes] = await Promise.all([
-          supabaseCounts.from("mazos_fichas").select("id", { count: "exact", head: true }),
-          supabaseCounts.from("fichas").select("id", { count: "exact", head: true }),
-        ]);
-        stats.mazosFichas = mazosRes.count ?? 0;
-        stats.fichas = fichasRes.count ?? 0;
+        const { data: mazos, error } = await supabaseCounts
+          .from("mazos_fichas")
+          .select("id, materia_id");
+        if (error) throw error;
+
+        const mazoRows = mazos ?? [];
+        const counts = new Map<string, number>();
+        for (const m of mazoRows) counts.set(m.id as string, 0);
+
+        for (let from = 0; ; from += PAGE_SIZE) {
+          const { data, error: cErr } = await supabaseCounts
+            .from("fichas")
+            .select("mazo_id")
+            .order("id")
+            .range(from, from + PAGE_SIZE - 1);
+          if (cErr) throw cErr;
+          if (!data?.length) break;
+          for (const row of data) {
+            const id = row.mazo_id as string;
+            if (!counts.has(id)) continue;
+            counts.set(id, (counts.get(id) ?? 0) + 1);
+          }
+          if (data.length < PAGE_SIZE) break;
+        }
+
+        let totalFichas = 0;
+        const porMateria = new Map<string, { mazos: number; fichas: number }>();
+        for (const m of mazoRows) {
+          const n = counts.get(m.id as string) ?? 0;
+          totalFichas += n;
+          const materiaId = m.materia_id as string;
+          const cur = porMateria.get(materiaId) ?? { mazos: 0, fichas: 0 };
+          cur.mazos += 1;
+          cur.fichas += n;
+          porMateria.set(materiaId, cur);
+        }
+
+        stats.mazosFichas = mazoRows.length;
+        stats.fichas = totalFichas;
+        for (const row of stats.porMateria) {
+          const extra = porMateria.get(row.id);
+          if (!extra) continue;
+          row.mazosFichas = extra.mazos;
+          row.fichas = extra.fichas;
+        }
+        for (const [materiaId, extra] of porMateria) {
+          if (stats.porMateria.some((row) => row.id === materiaId)) continue;
+          stats.porMateria.push({
+            ...emptyMateriaStatsRow(materiaId, "Sin materia"),
+            mazosFichas: extra.mazos,
+            fichas: extra.fichas,
+          });
+        }
+        stats.porMateria.sort((a, b) => compareMateriasByNombre(a.nombre, b.nombre));
       })(),
     );
   }

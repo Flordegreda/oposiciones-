@@ -7,6 +7,7 @@ import { MateriaFilter } from "@/components/MateriaFilter";
 import { TestPrintButton } from "@/components/TestPrintButton";
 import type { BancoRow } from "@/lib/queries/bancos";
 import { materiaNombre, sortBancosByNombre } from "@/lib/queries/bancos";
+import { compareMateriasByNombre } from "@/lib/temario-catalogo";
 
 type Props = { bancos: BancoRow[] };
 
@@ -28,7 +29,7 @@ export function AdminBancos({ bancos: initial }: Props) {
     }
     return [...map.entries()]
       .map(([id, nombre]) => ({ id, nombre }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
+      .sort((a, b) => compareMateriasByNombre(a.nombre, b.nombre));
   }, [bancos]);
 
   const filtered = useMemo(() => {

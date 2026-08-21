@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { compareMateriasByNombre } from "@/lib/temario-catalogo";
 
 export type MateriaOption = {
   id: string;
@@ -52,7 +53,7 @@ export function materiasFromMateriaSections(
 ): MateriaOption[] {
   return sections
     .map((s) => ({ id: s.materiaId, nombre: s.materiaNombre }))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
+    .sort((a, b) => compareMateriasByNombre(a.nombre, b.nombre));
 }
 
 export function materiasFromPreguntas(
@@ -64,5 +65,5 @@ export function materiasFromPreguntas(
   }
   return [...map.entries()]
     .map(([id, nombre]) => ({ id, nombre }))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
+    .sort((a, b) => compareMateriasByNombre(a.nombre, b.nombre));
 }

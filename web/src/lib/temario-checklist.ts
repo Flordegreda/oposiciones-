@@ -3,6 +3,7 @@ import type { MazoFichasSection } from "@/lib/queries/fichas";
 import type { UserStatsRecord } from "@/lib/persistence/types";
 import type { ChecklistMark } from "@/lib/persistence/checklist-service";
 import { mazoChecklistKey } from "@/lib/persistence/checklist-service";
+import { compareMateriasByNombre } from "@/lib/temario-catalogo";
 
 export type MateriaCatalogo = { id: string; nombre: string };
 
@@ -221,7 +222,7 @@ export function construirTemarioChecklist(
         fichasHechas: fichas.filter((i) => i.hecho).length,
       };
     })
-    .sort((a, b) => a.materiaNombre.localeCompare(b.materiaNombre, "es"));
+    .sort((a, b) => compareMateriasByNombre(a.materiaNombre, b.materiaNombre));
 
   let totalItems = 0;
   let hechos = 0;

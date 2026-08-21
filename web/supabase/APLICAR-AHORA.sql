@@ -42,5 +42,8 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.preguntas_counts_by_banco() TO anon, authenticated, service_role;
 
+ALTER TABLE public.materias ADD COLUMN IF NOT EXISTS orden INTEGER;
+CREATE INDEX IF NOT EXISTS materias_orden_idx ON public.materias(orden);
+
 -- Recargar caché de PostgREST
 NOTIFY pgrst, 'reload schema';

@@ -1,5 +1,6 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { supuestosSchemaReady } from "@/lib/queries/schema";
+import { displayMateriaNombre, matchTemarioFolder } from "@/lib/temario-catalogo";
 
 export type ImportMode = "append" | "overwrite";
 
@@ -70,20 +71,38 @@ async function resolveMateriaId(
     if (data) return { id: data.id, created: false };
   }
 
-  const { data: byName } = await supabase
-    .from("materias")
-    .select("id")
-    .eq("nombre", materia.nombre.trim())
-    .maybeSingle();
-  if (byName) return { id: byName.id, created: false };
+  const trimmed = materia.nombre.trim();
+  const { data: all } = await supabase.from("materias").select("id, nombre");
+  const rows = all ?? [];
+  const folder = matchTemarioFolder(trimmed);
+  const canonical =
+    folder && folder.orden !== 33 ? displayMateriaNombre(folder) : trimmed;
 
-  const { data: created, error } = await supabase
-    .from("materias")
-    .insert({ nombre: materia.nombre.trim() })
-    .select("id")
-    .single();
-  if (error || !created) throw new Error(error?.message ?? "Error al crear materia");
-  return { id: created.id, created: true };
+  const exact = rows.find((m) => m.nombre === trimmed || m.nombre === canonical);
+  if (exact) return { id: exact.id, created: false };
+
+  if (folder && folder.orden !== 33) {
+    const byFolder = rows.find((m) => matchTemarioFolder(m.nombre)?.orden === folder.orden);
+    if (byFolder) return { id: byFolder.id, created: false };
+  }
+
+  const createdRes =
+    folder && folder.orden !== 33
+      ? await supabase
+          .from("materias")
+          .insert({ nombre: canonical, orden: folder.orden })
+          .select("id")
+          .single()
+      : await supabase.from("materias").insert({ nombre: canonical }).select("id").single();
+  if (createdRes.error && /orden/i.test(createdRes.error.message) && folder && folder.orden !== 33) {
+    const retry = await supabase.from("materias").insert({ nombre: canonical }).select("id").single();
+    if (retry.error || !retry.data) throw new Error(retry.error?.message ?? "Error al crear materia");
+    return { id: retry.data.id, created: true };
+  }
+  if (createdRes.error || !createdRes.data) {
+    throw new Error(createdRes.error?.message ?? "Error al crear materia");
+  }
+  return { id: createdRes.data.id, created: true };
 }
 
 function findExistingBancoId(
