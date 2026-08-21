@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { AdminRebalanceBancos } from "@/components/admin/AdminRebalanceBancos";
 import { AdminClearCache } from "@/components/admin/AdminClearCache";
-import { AdminRemapTemario } from "@/components/admin/AdminRemapTemario";
 import { AdminCocinar } from "@/components/admin/AdminCocinar";
 import { AdminBancos } from "@/components/admin/AdminBancos";
 import { AdminBackup } from "@/components/admin/AdminBackup";
@@ -54,7 +53,6 @@ export function AdminPanel({
     <>
       {schemaOk && <AdminMaterialStats stats={stats} />}
       {schemaOk && <AdminClearCache />}
-      {schemaOk && <AdminRemapTemario />}
 
       <div className="admin-tabs" role="tablist" aria-label="Administración">
         <button

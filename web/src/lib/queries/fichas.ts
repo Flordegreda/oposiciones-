@@ -3,7 +3,6 @@ import "server-only";
 import { cache } from "react";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
-import { compareMateriasByNombre } from "@/lib/temario-catalogo";
 
 export type FichaCard = {
   id: string;
@@ -180,7 +179,7 @@ export async function fetchMazosGrouped(): Promise<MazoFichasSection[]> {
   }
 
   return [...map.values()].sort((a, b) =>
-    compareMateriasByNombre(a.materiaNombre, b.materiaNombre),
+    a.materiaNombre.localeCompare(b.materiaNombre, "es", { sensitivity: "base" }),
   );
 }
 

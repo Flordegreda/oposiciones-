@@ -120,8 +120,8 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
 
   async function eliminar(row: MateriaStatsRow) {
     const aviso =
-      row.bancos > 0 || (row.fichas ?? 0) > 0
-        ? `¿Eliminar «${row.nombre}»?\n\nSe borrarán ${row.bancos} banco(s), ${row.preguntas} pregunta(s) y ${row.fichas ?? 0} ficha(s).`
+      row.bancos > 0
+        ? `¿Eliminar «${row.nombre}»?\n\nSe borrarán ${row.bancos} banco(s) y ${row.preguntas} pregunta(s).`
         : `¿Eliminar la materia «${row.nombre}»?`;
     if (!confirm(aviso)) return;
 
@@ -168,8 +168,8 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
       <div className="card card-elevated">
         <h2>Materias</h2>
         <p className="muted small">
-          Edita nombres, revisa totales por tipo y exporta o elimina categorías. Usa{" "}
-          <strong>Temario en 19 carpetas</strong> para alinear el orden oficial.
+          Edita nombres, revisa totales por tipo y exporta o elimina categorías. Los resúmenes
+          PDF se gestionan en la pestaña <strong>Resúmenes</strong>.
         </p>
 
         {rows.length === 0 ? (
@@ -183,7 +183,6 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                 <span role="columnheader">Preguntas</span>
                 <span role="columnheader">Teórico</span>
                 <span role="columnheader">Práctico</span>
-                <span role="columnheader">Fichas</span>
                 <span role="columnheader">Acciones</span>
               </div>
               {rows.map((row) => {
@@ -212,13 +211,6 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
                     <span role="cell" className="muted small">
                       {row.practico.preguntas}
                       <span className="admin-materias-sub"> ({row.practico.bancos})</span>
-                    </span>
-                    <span role="cell" className="muted small">
-                      {(row.fichas ?? 0).toLocaleString("es-ES")}
-                      <span className="admin-materias-sub">
-                        {" "}
-                        ({row.mazosFichas ?? 0})
-                      </span>
                     </span>
                     <span className="admin-materias-actions" role="cell">
                       {editing ? (
@@ -281,8 +273,7 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
               })}
             </div>
             <p className="muted small admin-materias-footnote">
-              Teórico / Práctico: preguntas (bancos). Fichas: tarjetas (mazos). Eliminar una
-              materia borra todos sus bancos y mazos.
+              Teórico / Práctico: preguntas (bancos). Eliminar una materia borra todos sus bancos.
             </p>
           </div>
         )}
@@ -296,7 +287,7 @@ export function AdminMaterias({ stats: initial, schemaOk, hideStats }: Props) {
             <input
               value={nuevaMateria}
               onChange={(e) => setNuevaMateria(e.target.value)}
-              placeholder="01 ABOGACIA, 03 ADMINISTRACION LOCAL…"
+              placeholder="EBEP, LRJSP, etc."
               disabled={!schemaOk || busy === "add"}
             />
           </label>
