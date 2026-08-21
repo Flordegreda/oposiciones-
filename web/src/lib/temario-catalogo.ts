@@ -132,8 +132,8 @@ export function matchTemarioFolder(text: string): TemarioFolder | null {
       const needle = foldTemarioText(alias);
       if (needle.length < 2) continue;
       if (needle.length < 3) {
-        if (haystack !== needle && !haystack.startsWith(`${needle} `)) continue;
-      } else if (!containsFolded(haystack, needle)) {
+        if (folded !== needle && !folded.startsWith(`${needle} `)) continue;
+      } else if (!containsFolded(folded, needle)) {
         continue;
       }
       if (!best || needle.length > best.len) {
