@@ -239,6 +239,62 @@ export class SyncService {
     });
   }
 
+  /** Sube todo el historial IndexedDB a la nube, no solo los pendientes. */
+  async pushAllLocal(): Promise<number> {
+    if (this.running) await this.running;
+    const cache = getLocalCache();
+    const all = await cache.getAllResultados();
+    if (!all.length) return 0;
+
+    const BATCH = 80;
+    let upserted = 0;
+    this.running = (async () => {
+      try {
+        for (let i = 0; i < all.length; i += BATCH) {
+          const chunk = all.slice(i, i + BATCH);
+          this.setPhase(
+            "syncing",
+            `Subiendo ${i + 1}–${Math.min(i + BATCH, all.length)} de ${all.length}…`,
+          );
+          const res = await fetchWithRetry(
+            "/api/resultados",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                resultados: chunk.map(localToCloudPayload),
+              }),
+            },
+            { retries: 2, baseDelayMs: 400, maxDelayMs: 6_000 },
+          );
+          if (!res.ok) {
+            await cache.upsertResultados(
+              chunk.map((r) => ({ ...r, syncStatus: "error" as const })),
+            );
+            throw new Error(`Push falló (${res.status})`);
+          }
+          await cache.markResultadosSynced(chunk.map((r) => r.id));
+          upserted += chunk.length;
+        }
+        await cache.setMeta({
+          lastPushAt: new Date().toISOString(),
+          dirty: false,
+        });
+        this.setPhase("synced", `Subidos ${upserted} resultados`);
+      } catch (err) {
+        this.setPhase(
+          typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error",
+          "No se pudo subir el historial",
+        );
+        throw err;
+      }
+    })().finally(() => {
+      this.running = null;
+    });
+    await this.running;
+    return upserted;
+  }
+
   /** Mejor esfuerzo al cerrar pestaña (sendBeacon / fetch keepalive). */
   private flushPendingBeacon(): void {
     void (async () => {

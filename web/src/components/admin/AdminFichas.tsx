@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { MazoFichas } from "@/lib/queries/fichas";
 import { getFichasDiagnostics, parseFichasText } from "@/lib/parse-fichas-text";
+import {
+  describeMazoSplit,
+  FICHAS_MAX_POR_MAZO,
+  mazoNombreParte,
+} from "@/lib/split-fichas-mazo";
 import { AdminFichasApply } from "@/components/admin/AdminFichasApply";
 
 type Materia = { id: string; nombre: string };
@@ -56,6 +61,11 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
   }, [initialMazoId, mazos]);
 
   const previewCount = useMemo(() => parseFichasText(texto).length, [texto]);
+  const splitPreview = useMemo(
+    () => (previewCount > FICHAS_MAX_POR_MAZO ? describeMazoSplit(previewCount) : null),
+    [previewCount],
+  );
+  const selectedMazo = useMemo(() => mazos.find((m) => m.id === mazoId), [mazos, mazoId]);
   const diagnostics = useMemo(
     () => (texto.trim() ? getFichasDiagnostics(texto) : null),
     [texto],
@@ -108,6 +118,31 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Error al importar");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function dividir(m: MazoFichas) {
+    if (
+      !confirm(
+        `¿Dividir «${m.nombre}» (${m.numFichas} fichas) en mazos de máximo ${FICHAS_MAX_POR_MAZO}?`,
+      )
+    ) {
+      return;
+    }
+
+    setBusy(`split-${m.id}`);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/fichas/${m.id}/split`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al dividir");
+      setMsg(data.message || "Mazo dividido");
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error al dividir");
     } finally {
       setBusy(null);
     }
@@ -346,6 +381,28 @@ R: Otra respuesta.
                 </ul>
               </div>
             )}
+            {splitPreview && !mazoId && (
+              <p className="muted small" style={{ marginTop: "0.35rem" }}>
+                Más de {FICHAS_MAX_POR_MAZO} fichas: se crearán{" "}
+                <strong>{splitPreview.numMazos} mazos</strong> ({splitPreview.sizes.join(" + ")}{" "}
+                fichas).
+              </p>
+            )}
+            {splitPreview && mazoId && replace && (
+              <p className="muted small" style={{ marginTop: "0.35rem" }}>
+                Sustituir y dividir: el mazo actual pasará a ser «
+                {mazoNombreParte(nombre.trim() || selectedMazo?.nombre || "Mazo", 1, splitPreview.numMazos)}
+                » y se crearán {splitPreview.numMazos - 1} mazo
+                {splitPreview.numMazos - 1 !== 1 ? "s" : ""} más (
+                {splitPreview.sizes.join(" + ")} fichas).
+              </p>
+            )}
+            {splitPreview && mazoId && !replace && selectedMazo && (
+              <p className="muted small" style={{ marginTop: "0.35rem" }}>
+                Añadir al mazo ({selectedMazo.numFichas} fichas actuales): el exceso sobre{" "}
+                {FICHAS_MAX_POR_MAZO} irá a mazos nuevos automáticamente.
+              </p>
+            )}
             {cuentaEsperadasMal && (
               <p className="error small" style={{ marginTop: "0.5rem" }}>
                 Esperabas {esperadasNum} fichas pero solo hay {previewCount} válidas. Corrige el
@@ -401,6 +458,16 @@ R: Otra respuesta.
                   <Link href={`/fichas/${m.id}`} className="btn-link btn-sm">
                     Practicar
                   </Link>
+                  {m.numFichas > FICHAS_MAX_POR_MAZO && (
+                    <button
+                      type="button"
+                      className="btn-secondary btn-sm"
+                      disabled={busy !== null}
+                      onClick={() => void dividir(m)}
+                    >
+                      {busy === `split-${m.id}` ? "…" : "Dividir"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn-danger btn-sm"

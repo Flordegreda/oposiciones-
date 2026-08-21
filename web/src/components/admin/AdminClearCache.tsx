@@ -36,7 +36,7 @@ export function AdminClearCache() {
       <div className="admin-cache-clear-body">
         <p className="admin-cache-clear-title">¿Va lento o ves datos viejos?</p>
         <p className="muted small admin-cache-clear-hint">
-          Borra la caché del servidor (listados de tests ~10 min, material y
+          Borra la caché del servidor (listados de tests ~1 min, material y
           comprobaciones de tablas). No borra tus preguntas ni bancos.
         </p>
       </div>

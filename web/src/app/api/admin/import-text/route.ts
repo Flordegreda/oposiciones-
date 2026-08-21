@@ -60,13 +60,14 @@ async function resolveSupuestoId(
     .maybeSingle();
 
   if (existing?.id) {
-    await supabase
+    const { error: uErr } = await supabase
       .from("supuestos")
       .update({
         titulo: sup.titulo ?? null,
         texto: sup.texto,
       })
       .eq("id", existing.id);
+    if (uErr) throw new Error(uErr.message);
     return existing.id;
   }
 

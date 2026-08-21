@@ -16,7 +16,7 @@ import {
   type FiltroTiempo,
   type TestReciente,
 } from "@/lib/persistence/estadisticas-service";
-import { getLocalCache } from "@/lib/persistence";
+import { getLocalCache, getSyncService } from "@/lib/persistence";
 
 const OBJETIVO_DEFAULT = 70;
 
@@ -137,6 +137,47 @@ export function EstadisticasDashboard() {
     }
   }
 
+  async function handleExportLocal() {
+    setError(null);
+    try {
+      const resultados = await getLocalCache().getAllResultados();
+      const payload = {
+        format: "jex-resultados",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        resultados,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `jex-resultados-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo exportar el historial");
+    }
+  }
+
+  async function handlePushAll() {
+    setSyncing(true);
+    setError(null);
+    try {
+      const n = await getSyncService().pushAllLocal();
+      await syncNow();
+      await load();
+      if (n === 0) {
+        setError("No hay resultados locales para subir.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo subir el historial");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   const resumen = data?.resumen;
   const aciertosTone = useMemo(() => {
     const v = resumen?.aciertosGlobal ?? 0;
@@ -205,8 +246,28 @@ export function EstadisticasDashboard() {
           >
             {syncing ? "Sincronizando…" : "Sincronizar ahora"}
           </button>
+          <button
+            type="button"
+            onClick={() => void handleExportLocal()}
+            disabled={syncing || phase === "syncing"}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+          >
+            Exportar JSON
+          </button>
+          <button
+            type="button"
+            onClick={() => void handlePushAll()}
+            disabled={syncing || phase === "syncing"}
+            className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 shadow-sm transition hover:bg-blue-100 disabled:opacity-60"
+          >
+            Subir historial local
+          </button>
         </div>
       </div>
+      <p className="-mt-4 text-xs text-slate-500">
+        «Subir historial local» manda a la nube todos los tests guardados en este navegador.
+        «Exportar JSON» sirve para importarlos en la app de escritorio.
+      </p>
 
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">

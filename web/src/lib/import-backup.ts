@@ -122,9 +122,11 @@ function findExistingBancoId(
 
 export async function deleteBancoContent(bancoId: string) {
   const supabase = getSupabase();
-  await supabase.from("preguntas").delete().eq("banco_id", bancoId);
+  const { error: pErr } = await supabase.from("preguntas").delete().eq("banco_id", bancoId);
+  if (pErr) throw new Error(pErr.message);
   if (await supuestosSchemaReady()) {
-    await supabase.from("supuestos").delete().eq("banco_id", bancoId);
+    const { error: sErr } = await supabase.from("supuestos").delete().eq("banco_id", bancoId);
+    if (sErr) throw new Error(sErr.message);
   }
 }
 

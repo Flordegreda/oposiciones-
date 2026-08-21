@@ -28,30 +28,37 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const supabase = getSupabase();
+    const PAGE = 1000;
+    const all: unknown[] = [];
     const usuarioId = req.nextUrl.searchParams.get("usuarioId");
     if (!usuarioId) {
       return NextResponse.json({ error: "Falta usuarioId" }, { status: 400 });
     }
 
     const since = req.nextUrl.searchParams.get("since");
-    const supabase = getSupabase();
-    let query = supabase
-      .from("resultados_tests")
-      .select(
-        "id, usuario_id, banco, test, fecha, total_preguntas, aciertos, fallos, tiempo_total, respuestas, updated_at",
-      )
-      .eq("usuario_id", usuarioId)
-      .order("fecha", { ascending: false })
-      .limit(500);
+    for (let from = 0; ; from += PAGE) {
+      let query = supabase
+        .from("resultados_tests")
+        .select(
+          "id, usuario_id, banco, test, fecha, total_preguntas, aciertos, fallos, tiempo_total, respuestas, updated_at",
+        )
+        .eq("usuario_id", usuarioId)
+        .order("fecha", { ascending: false })
+        .range(from, from + PAGE - 1);
 
-    if (since) {
-      query = query.gt("updated_at", since);
+      if (since) {
+        query = query.gt("updated_at", since);
+      }
+
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      const rows = (data ?? []) as unknown[];
+      all.push(...rows);
+      if (rows.length < PAGE) break;
     }
 
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-
-    return NextResponse.json({ resultados: data ?? [] });
+    return NextResponse.json({ resultados: all });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error al leer resultados" },

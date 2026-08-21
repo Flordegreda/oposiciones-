@@ -1,8 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateAfterFichasChange } from "@/lib/revalidate-content";
-import { parseFichasText } from "@/lib/parse-fichas-text";
+import { parseFichasText, type ParsedFicha } from "@/lib/parse-fichas-text";
+import {
+  baseMazoNombre,
+  mazoNombreParte,
+  splitIntoChunks,
+  splitForAppend,
+} from "@/lib/split-fichas-mazo";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
+
+async function insertFichas(
+  supabase: ReturnType<typeof getSupabase>,
+  mazoId: string,
+  fichas: ParsedFicha[],
+  ordenBase: number,
+) {
+  if (!fichas.length) return;
+
+  const rows = fichas.map((f, i) => ({
+    mazo_id: mazoId,
+    frente: f.frente,
+    dorso: f.dorso,
+    orden: ordenBase + i,
+  }));
+
+  const { error } = await supabase.from("fichas").insert(rows);
+  if (error) throw new Error(error.message);
+}
+
+async function createMazo(
+  supabase: ReturnType<typeof getSupabase>,
+  materiaId: string,
+  nombre: string,
+) {
+  const { data: created, error } = await supabase
+    .from("mazos_fichas")
+    .insert({ materia_id: materiaId, nombre, active: true })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return created.id as string;
+}
 
 export async function GET() {
   if (!(await fichasSchemaReady())) {
@@ -62,64 +101,144 @@ export async function POST(req: NextRequest) {
   if (!materia) return NextResponse.json({ error: "Materia no encontrada" }, { status: 404 });
 
   let mazoId = String(body.mazoId ?? "").trim();
+  const baseNombre = baseMazoNombre(nombre);
+  const mazoIds: string[] = [];
+  const chunkSizes: number[] = [];
 
-  if (mazoId) {
-    const { data: existing, error: eErr } = await supabase
-      .from("mazos_fichas")
-      .select("id")
-      .eq("id", mazoId)
-      .maybeSingle();
-    if (eErr) return NextResponse.json({ error: eErr.message }, { status: 500 });
-    if (!existing) return NextResponse.json({ error: "Mazo no encontrado" }, { status: 404 });
+  try {
+    if (mazoId) {
+      const { data: existing, error: eErr } = await supabase
+        .from("mazos_fichas")
+        .select("id")
+        .eq("id", mazoId)
+        .maybeSingle();
+      if (eErr) return NextResponse.json({ error: eErr.message }, { status: 500 });
+      if (!existing) return NextResponse.json({ error: "Mazo no encontrado" }, { status: 404 });
 
-    const { error: updErr } = await supabase
-      .from("mazos_fichas")
-      .update({ nombre, materia_id: materiaId, updated_at: new Date().toISOString() })
-      .eq("id", mazoId);
-    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+      if (replace) {
+        const { error: delErr } = await supabase.from("fichas").delete().eq("mazo_id", mazoId);
+        if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
 
-    if (replace) {
-      const { error: delErr } = await supabase.from("fichas").delete().eq("mazo_id", mazoId);
-      if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+        const chunks = splitIntoChunks(parsed);
+        const total = chunks.length;
+
+        const { error: updErr } = await supabase
+          .from("mazos_fichas")
+          .update({
+            nombre: mazoNombreParte(baseNombre, 1, total),
+            materia_id: materiaId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", mazoId);
+        if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
+        for (let i = 0; i < chunks.length; i++) {
+          let targetId = mazoId;
+          if (i > 0) {
+            targetId = await createMazo(
+              supabase,
+              materiaId,
+              mazoNombreParte(baseNombre, i + 1, total),
+            );
+          }
+          await insertFichas(supabase, targetId, chunks[i], 0);
+          mazoIds.push(targetId);
+          chunkSizes.push(chunks[i].length);
+        }
+      } else {
+        const { data: maxRow } = await supabase
+          .from("fichas")
+          .select("orden")
+          .eq("mazo_id", mazoId)
+          .order("orden", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const { count: existingCount, error: countErr } = await supabase
+          .from("fichas")
+          .select("id", { count: "exact", head: true })
+          .eq("mazo_id", mazoId);
+        if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
+
+        const current = existingCount ?? 0;
+        const { appendToExisting, newMazos } = splitForAppend(current, parsed);
+        let ordenBase = (maxRow?.orden as number | undefined) ?? 0;
+        if (maxRow) ordenBase += 1;
+
+        if (appendToExisting.length) {
+          await insertFichas(supabase, mazoId, appendToExisting, ordenBase);
+          if (!newMazos.length) {
+            chunkSizes.push(appendToExisting.length);
+          }
+        }
+        mazoIds.push(mazoId);
+
+        if (newMazos.length) {
+          const totalParts = 1 + newMazos.length;
+          if (appendToExisting.length && !baseMazoNombre(nombre).includes("(")) {
+            const { error: renameErr } = await supabase
+              .from("mazos_fichas")
+              .update({
+                nombre: mazoNombreParte(baseNombre, 1, totalParts),
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", mazoId);
+            if (renameErr) return NextResponse.json({ error: renameErr.message }, { status: 500 });
+          }
+
+          for (let i = 0; i < newMazos.length; i++) {
+            const partName =
+              newMazos.length === 1 && !appendToExisting.length
+                ? `${baseNombre} (continuación)`
+                : mazoNombreParte(baseNombre, i + 2, totalParts);
+            const newId = await createMazo(supabase, materiaId, partName);
+            await insertFichas(supabase, newId, newMazos[i], 0);
+            mazoIds.push(newId);
+            chunkSizes.push(newMazos[i].length);
+          }
+        } else if (!appendToExisting.length) {
+          await insertFichas(supabase, mazoId, parsed, ordenBase);
+          chunkSizes.push(parsed.length);
+        }
+      }
+    } else {
+      const chunks = splitIntoChunks(parsed);
+      const total = chunks.length;
+
+      for (let i = 0; i < chunks.length; i++) {
+        const partName = mazoNombreParte(baseNombre, i + 1, total);
+        const newId = await createMazo(supabase, materiaId, partName);
+        await insertFichas(supabase, newId, chunks[i], 0);
+        mazoIds.push(newId);
+        chunkSizes.push(chunks[i].length);
+      }
+      mazoId = mazoIds[0] ?? "";
     }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Error al importar";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  for (const id of mazoIds) {
+    revalidateAfterFichasChange(id);
+  }
+
+  const imported = parsed.length;
+  const numMazos = mazoIds.length;
+  const sizesText = chunkSizes.join(" + ");
+
+  let message: string;
+  if (numMazos > 1) {
+    message = `Importadas ${imported} fichas en ${numMazos} mazos (${sizesText}): «${mazoNombreParte(baseNombre, 1, numMazos)}»…`;
   } else {
-    const { data: created, error: cErr } = await supabase
-      .from("mazos_fichas")
-      .insert({ materia_id: materiaId, nombre, active: true })
-      .select("id")
-      .single();
-    if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
-    mazoId = created.id as string;
+    message = `Mazo «${baseNombre}»: ${imported} ficha${imported !== 1 ? "s" : ""} importada${imported !== 1 ? "s" : ""}.`;
   }
-
-  let ordenBase = 0;
-  if (!replace) {
-    const { data: maxRow } = await supabase
-      .from("fichas")
-      .select("orden")
-      .eq("mazo_id", mazoId)
-      .order("orden", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    ordenBase = (maxRow?.orden as number | undefined) ?? 0;
-    if (maxRow) ordenBase += 1;
-  }
-
-  const rows = parsed.map((f, i) => ({
-    mazo_id: mazoId,
-    frente: f.frente,
-    dorso: f.dorso,
-    orden: ordenBase + i,
-  }));
-
-  const { error: insErr } = await supabase.from("fichas").insert(rows);
-  if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
-
-  revalidateAfterFichasChange(mazoId);
 
   return NextResponse.json({
     mazoId,
-    imported: rows.length,
-    message: `Mazo «${nombre}»: ${rows.length} ficha${rows.length !== 1 ? "s" : ""} importada${rows.length !== 1 ? "s" : ""}.`,
+    mazoIds,
+    imported,
+    mazosCreated: numMazos,
+    message,
   });
 }
