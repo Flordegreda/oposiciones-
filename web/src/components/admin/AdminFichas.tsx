@@ -50,7 +50,6 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
   const [err, setErr] = useState<string | null>(null);
   const [esperadas, setEsperadas] = useState("");
   const [filtroMateriaId, setFiltroMateriaId] = useState<string | null>(null);
-  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
     if (!initialMazoId) return;
@@ -90,17 +89,10 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
     [mazos, materiaId],
   );
 
-  const mazosFiltrados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    return mazos.filter((m) => {
-      if (filtroMateriaId && m.materiaId !== filtroMateriaId) return false;
-      if (!q) return true;
-      return (
-        m.nombre.toLowerCase().includes(q) ||
-        m.materiaNombre.toLowerCase().includes(q)
-      );
-    });
-  }, [mazos, filtroMateriaId, busqueda]);
+  const mazosFiltrados = useMemo(
+    () => mazos.filter((m) => !filtroMateriaId || m.materiaId === filtroMateriaId),
+    [mazos, filtroMateriaId],
+  );
 
   const materiasFiltro = useMemo(() => {
     const byId = new Map<string, { id: string; nombre: string; count: number }>();
@@ -233,30 +225,20 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
           <p className="muted small">Aún no hay mazos.</p>
         ) : (
           <>
-            <div className="form-grid-fields carga-campos" style={{ marginTop: 0 }}>
-              <label>
-                Filtrar por materia
-                <select
-                  value={filtroMateriaId ?? ""}
-                  onChange={(e) => setFiltroMateriaId(e.target.value || null)}
-                >
-                  <option value="">Todas las materias</option>
-                  {materiasFiltro.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nombre} ({m.count})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Buscar mazo
-                <input
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Ej. contratos"
-                />
-              </label>
-            </div>
+            <label>
+              Filtrar por materia
+              <select
+                value={filtroMateriaId ?? ""}
+                onChange={(e) => setFiltroMateriaId(e.target.value || null)}
+              >
+                <option value="">Todas las materias</option>
+                {materiasFiltro.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nombre} ({m.count})
+                  </option>
+                ))}
+              </select>
+            </label>
             {mazosFiltrados.length === 0 ? (
               <p className="muted small">Ningún mazo coincide con el filtro.</p>
             ) : (
