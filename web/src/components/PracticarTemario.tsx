@@ -45,7 +45,7 @@ export function PracticarTemario({ sections }: Props) {
                 materiaId={section.id}
                 title={section.nombre}
                 label="PDF todos"
-                className="materia-print-btn"
+                className="materia-print-btn mobile-hide"
               />
             </div>
             <div className="banco-grid banco-grid--wide">

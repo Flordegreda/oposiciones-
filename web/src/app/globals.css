@@ -1981,8 +1981,12 @@ h1 {
 
 @media (max-width: 768px) {
   :root {
-    --header-h: 3.25rem;
-    --bottom-nav-h: 3.75rem;
+    --header-h: 3.5rem;
+    --bottom-nav-h: 4.25rem;
+  }
+
+  html {
+    font-size: 18px;
   }
 
   .site-nav--desktop,
@@ -2013,9 +2017,10 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.82rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--muted);
+    min-height: var(--bottom-nav-h);
   }
 
   .mobile-bottom-nav__item--active {
@@ -2035,23 +2040,47 @@ h1 {
     display: inline;
   }
 
-  .hero-practicar {
+  .hero-practicar,
+  .hero--compact {
     padding: 1.15rem 1rem;
     margin-bottom: 1.25rem;
+  }
+
+  .page-title,
+  h1 {
+    font-size: clamp(2rem, 7vw, 2.35rem);
+  }
+
+  .lead,
+  .lead--compact {
+    font-size: 1.1rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.85rem;
+  }
+
+  .small,
+  .muted.small {
+    font-size: 0.95rem;
   }
 
   .site-main {
     padding: 1rem 0.85rem 2rem;
   }
 
+  .site-footer {
+    font-size: 0.95rem;
+  }
+
   .card {
-    padding: 1rem;
+    padding: 1.1rem;
     margin-bottom: 1rem;
     border-radius: var(--radius-sm);
   }
 
   .linea-block-title {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     margin-bottom: 1rem;
   }
 
@@ -2061,21 +2090,150 @@ h1 {
   }
 
   .materia-tag {
-    font-size: 0.72rem;
+    font-size: 0.88rem;
   }
 
   .banco-tile {
-    min-height: 3.5rem;
-    padding: 0.85rem 0.9rem;
+    min-height: 4rem;
+    padding: 1rem 1.05rem;
   }
 
   .banco-tile-title {
-    font-size: 0.92rem;
+    font-size: 1.08rem;
+    line-height: 1.35;
   }
 
-  .mobile-bottom-nav__item {
-    font-size: 0.72rem;
-    letter-spacing: -0.01em;
+  .banco-tile-meta,
+  .banco-tile-count {
+    font-size: 0.95rem;
+  }
+
+  .banco-tile-action {
+    font-size: 1.05rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .tipo-pill {
+    font-size: 0.82rem;
+  }
+
+  .test-meta {
+    font-size: 0.95rem;
+  }
+
+  .test-question {
+    font-size: 1.4rem;
+    line-height: 1.55;
+  }
+
+  .option-btn {
+    padding: 1rem 1.05rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+
+  .option-letter {
+    width: 2.1rem;
+    height: 2.1rem;
+    font-size: 0.95rem;
+  }
+
+  .supuesto-panel-title {
+    font-size: 1.05rem;
+  }
+
+  .supuesto-panel-text {
+    font-size: 1.05rem;
+  }
+
+  .explain {
+    font-size: 1rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    font-size: 1.05rem;
+    min-height: 2.85rem;
+    padding: 0.75rem 1.15rem;
+  }
+
+  .flashcard-count {
+    font-size: 1.05rem;
+  }
+
+  .flashcard-label {
+    font-size: 0.82rem;
+  }
+
+  .flashcard-enunciado,
+  .flashcard-answer,
+  .flashcard-explain {
+    font-size: 1.25rem;
+    line-height: 1.6;
+  }
+
+  .flashcard-explain {
+    font-size: 1.1rem;
+  }
+
+  .flashcard-face {
+    padding: 1.25rem 1.3rem;
+  }
+
+  .flashcard-scene,
+  .flashcard-inner {
+    min-height: min(46vh, 400px);
+    max-height: 58vh;
+  }
+
+  .flashcard-grade .btn-primary,
+  .flashcard-grade .btn-secondary {
+    min-height: 3.1rem;
+    font-size: 1.1rem;
+  }
+
+  .flashcard-finish-btn {
+    font-size: 1.05rem;
+    min-height: 3rem;
+  }
+
+  .site-header-title {
+    font-size: 1.05rem;
+  }
+
+  .site-header-back {
+    font-size: 1rem;
+  }
+
+  .brand-title {
+    font-size: 1.05rem;
+  }
+
+  .materia-filter-label {
+    font-size: 0.85rem;
+  }
+
+  .materia-filter-select {
+    font-size: 1.05rem;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .qmap-btn {
+    width: 2.35rem;
+    height: 2.35rem;
+    font-size: 0.88rem;
+  }
+
+  .result-stat-value {
+    font-size: 1.75rem;
+  }
+
+  .result-stat-label {
+    font-size: 0.95rem;
+  }
+
+  .result-breakdown-text {
+    font-size: 1rem;
   }
 }
 

@@ -10,22 +10,15 @@ const items = [
     match: (p: string) => p === "/practicar" || p.startsWith("/test/"),
   },
   {
-    href: "/temario",
-    label: "Plan",
-    match: (p: string) => p.startsWith("/temario"),
-  },
-  {
-    href: "/estadisticas",
-    label: "Stats",
-    match: (p: string) => p.startsWith("/estadisticas"),
+    href: "/simulacro",
+    label: "Simulacro",
+    match: (p: string) => p.startsWith("/simulacro"),
   },
   {
     href: "/fichas",
     label: "Fichas",
     match: (p: string) => p.startsWith("/fichas"),
   },
-  { href: "/simulacro", label: "Simulacro", match: (p: string) => p.startsWith("/simulacro") },
-  { href: "/admin", label: "Material", match: (p: string) => p.startsWith("/admin") },
 ];
 
 export function MobileBottomNav() {
