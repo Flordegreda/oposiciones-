@@ -3047,3 +3047,50 @@ code {
   gap: 0.35rem;
   flex-shrink: 0;
 }
+
+.admin-rename-map {
+  margin-bottom: 1.25rem;
+}
+
+.admin-rename-map-scroll {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.admin-rename-map-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.admin-rename-map-table th,
+.admin-rename-map-table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-rename-map-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.admin-rename-row--ok td:nth-child(4) {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.admin-rename-row--conflicto td:nth-child(4) {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.admin-rename-detalle {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
