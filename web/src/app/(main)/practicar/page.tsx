@@ -1,7 +1,7 @@
-import Link from "next/link";
+import { MobileStudyHero } from "@/components/MobileStudyHero";
 import { PracticarTemario } from "@/components/PracticarTemario";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
-import { JEX_SUBTITLE } from "@/lib/constants";
+import { statsFromPracticarSections } from "@/lib/practicar-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +15,11 @@ export default async function PracticarPage() {
     error = e instanceof Error ? e.message : "Error al cargar bancos";
   }
 
+  const testStats = statsFromPracticarSections(sections);
+
   return (
     <>
-      <section className="hero hero-practicar">
-        <p className="hero-eyebrow">Oposición Jurídica</p>
-        <h1 className="page-title">Tests</h1>
-        <p className="lead lead--compact">{JEX_SUBTITLE}</p>
-        <p className="muted small mobile-hide" style={{ marginTop: "0.35rem" }}>
-          <Link href="/temario">Ver plan de temario →</Link>
-        </p>
-      </section>
+      <MobileStudyHero mode="tests" {...testStats} />
 
       {error && (
         <div className="card card-warning">

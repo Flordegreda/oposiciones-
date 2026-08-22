@@ -1,3 +1,4 @@
+import { MobileStudyHero } from "@/components/MobileStudyHero";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SimulacroLauncher } from "@/components/SimulacroLauncher";
@@ -30,11 +31,12 @@ export default async function SimulacroPage() {
     <div className="site site--mobile-nav site--mobile-exam">
       <SiteHeader />
       <main className="site-main">
-        <section className="hero hero-practicar">
-          <p className="hero-eyebrow">Simulacro</p>
-          <h1 className="page-title">Examen tipo test</h1>
-          <p className="lead lead--compact">{JEX_SUBTITLE}</p>
-        </section>
+        <MobileStudyHero
+          mode="simulacro"
+          teorico={meta.pool.teorico}
+          practico={meta.pool.practico}
+          materias={meta.materias.length}
+        />
 
         {error && (
           <div className="card card-warning">

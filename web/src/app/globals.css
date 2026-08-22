@@ -2653,6 +2653,178 @@ code {
   margin-left: auto;
 }
 
+.mobile-study-hero {
+  padding: 1.15rem 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    135deg,
+    rgba(30, 77, 123, 0.1) 0,
+    rgba(255, 254, 251, 0.92) 55%,
+    var(--accent-soft) 140%
+  );
+  border: 1px solid rgba(30, 77, 123, 0.14);
+  box-shadow: var(--shadow);
+}
+
+.mobile-study-hero .page-title {
+  margin-bottom: 0.35rem;
+}
+
+.mobile-study-hero .lead {
+  margin-bottom: 0;
+}
+
+.mobile-study-hero-body {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.mobile-study-hero-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.mobile-study-hero-total {
+  margin: 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  line-height: 1;
+  color: var(--primary);
+}
+
+.mobile-study-types {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.mobile-study-hero--material .mobile-study-types,
+.mobile-study-hero--tests .mobile-study-types,
+.mobile-study-hero--simulacro .mobile-study-types {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mobile-study-hero--fichas .mobile-study-types {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mobile-study-type {
+  padding: 0.85rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 254, 251, 0.88);
+}
+
+.mobile-study-type--teorico {
+  border-left: 4px solid var(--primary);
+}
+
+.mobile-study-type--practico {
+  border-left: 4px solid var(--accent);
+}
+
+.mobile-study-type--fichas {
+  border-left: 4px solid #2f6f5e;
+}
+
+.mobile-study-type--neutral {
+  border-left: 4px solid var(--muted);
+}
+
+.mobile-study-type-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.mobile-study-type-value {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.mobile-study-shortcuts {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+}
+
+.mobile-study-shortcut {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem 1.05rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.mobile-study-shortcut:active {
+  transform: scale(0.99);
+}
+
+.mobile-study-shortcut-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.mobile-study-shortcut-hint {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+@media (min-width: 769px) {
+  .mobile-study-shortcuts {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-study-hero--material .mobile-study-types,
+  .mobile-study-hero--tests .mobile-study-types,
+  .mobile-study-hero--simulacro .mobile-study-types {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mobile-study-hero--material .mobile-study-types .mobile-study-type:last-child,
+  .mobile-study-hero--tests .mobile-study-types .mobile-study-type:last-child,
+  .mobile-study-hero--simulacro .mobile-study-types .mobile-study-type:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .mobile-study-type-label {
+    font-size: 0.82rem;
+  }
+
+  .mobile-study-type-value {
+    font-size: 1.65rem;
+  }
+
+  .mobile-study-hero-kicker {
+    font-size: 0.88rem;
+  }
+
+  .mobile-study-hero-total {
+    font-size: clamp(2.25rem, 10vw, 3rem);
+  }
+}
+
 .admin-overview {
  display: grid;
  gap: 1.25rem;

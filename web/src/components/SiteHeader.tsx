@@ -21,7 +21,7 @@ export function SiteHeader({ backHref, backLabel, pageTitle }: Props) {
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <Link href="/practicar" className="brand">
+        <Link href="/" className="brand">
           <span className="brand-mark" aria-hidden>
             JEX
           </span>

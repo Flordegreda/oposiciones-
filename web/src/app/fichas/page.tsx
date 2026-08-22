@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FichasBiblioteca } from "@/components/FichasBiblioteca";
+import { MobileStudyHero } from "@/components/MobileStudyHero";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { JEX_SUBTITLE } from "@/lib/constants";
@@ -21,19 +22,22 @@ export default async function FichasPage() {
     error = e instanceof Error ? e.message : "Error al cargar fichas";
   }
 
-  const total = sections.reduce((n, s) => n + s.mazos.length, 0);
+  const totalMazos = sections.reduce((n, s) => n + s.mazos.length, 0);
+  const totalFichas = sections.reduce(
+    (n, s) => n + s.mazos.reduce((m, z) => m + z.numFichas, 0),
+    0,
+  );
 
   return (
     <div className="site site--mobile-nav">
       <SiteHeader />
       <main className="site-main">
-        <section className="hero hero--compact">
-          <p className="hero-eyebrow">Repaso rápido</p>
-          <h1 className="page-title">Fichas</h1>
-          <p className="lead lead--compact">
-            Voltea la tarjeta · Sé / No sé · repasa a tu ritmo
-          </p>
-        </section>
+        <MobileStudyHero
+          mode="fichas"
+          mazos={totalMazos}
+          fichas={totalFichas}
+          materias={sections.length}
+        />
 
         {error && (
           <div className="card card-warning">
@@ -50,7 +54,7 @@ export default async function FichasPage() {
           </div>
         )}
 
-        {!error && fichasOk && total === 0 && (
+        {!error && fichasOk && totalMazos === 0 && (
           <div className="card">
             <p className="muted">Aún no hay mazos de fichas.</p>
             <p className="muted small">
@@ -60,13 +64,13 @@ export default async function FichasPage() {
           </div>
         )}
 
-        {!error && fichasOk && total > 0 && <FichasBiblioteca sections={sections} />}
+        {!error && fichasOk && totalMazos > 0 && <FichasBiblioteca sections={sections} />}
       </main>
       <footer className="site-footer">
         <p>
           {JEX_SUBTITLE}
-          {total > 0
-            ? ` · ${total} mazo${total !== 1 ? "s" : ""} · ${sections.length} materia${sections.length !== 1 ? "s" : ""}`
+          {totalMazos > 0
+            ? ` · ${totalMazos} mazo${totalMazos !== 1 ? "s" : ""} · ${sections.length} materia${sections.length !== 1 ? "s" : ""}`
             : ""}
         </p>
       </footer>
