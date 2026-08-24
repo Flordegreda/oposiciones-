@@ -1597,23 +1597,45 @@ h1 {
   gap: 0.65rem;
 }
 
-.flashcard-grade {
-  justify-content: stretch;
-}
-
-.flashcard-grade .btn-primary,
-.flashcard-grade .btn-secondary {
+.flashcard-nav .btn-primary,
+.flashcard-nav .btn-secondary {
   flex: 1;
   min-height: 2.75rem;
 }
 
-.flashcard-nav .btn-secondary {
-  flex: 1;
+.flashcard-nav .btn-secondary:disabled,
+.flashcard-nav .btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.flashcard-grade {
+  justify-content: stretch;
 }
 
 .flashcard-swipe-hint {
   margin: 0;
   text-align: center;
+}
+
+@media (min-width: 769px) {
+  .flashcard-deck {
+    padding-bottom: 0;
+  }
+
+  .flashcard-exit-bar {
+    position: static;
+    padding: 0.25rem 0 0;
+    background: transparent;
+    border-top: none;
+    backdrop-filter: none;
+  }
+
+  .flashcard-nav .btn-primary,
+  .flashcard-nav .btn-secondary {
+    min-height: 2.9rem;
+    font-size: 1.02rem;
+  }
 }
 
 .options {

@@ -7,6 +7,7 @@ import {
   beginFichaDeckOrder,
   clearFichaDeckSession,
   persistFichaDeckOrder,
+  type FichaDeckState,
 } from "@/lib/ficha-deck-storage";
 import { clearSeguir, rememberSeguir } from "@/lib/study-continue";
 import type { FichaCard } from "@/lib/queries/fichas";
@@ -26,33 +27,24 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
   const title = mazoNombre?.trim() || "Mazo";
   const total = cards.length;
 
-  const [remaining, setRemaining] = useState(
-    () => beginFichaDeckOrder(sessionScope, cards).remaining,
+  const [deck, setDeck] = useState<FichaDeckState>(() =>
+    beginFichaDeckOrder(sessionScope, cards),
   );
   const [flipped, setFlipped] = useState(false);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const skipClickRef = useRef(false);
 
+  const remaining = deck.remaining;
+  const cursor = deck.cursor;
   const known = Math.max(0, total - remaining.length);
-  const current = remaining[0] !== undefined ? cards[remaining[0]] : null;
-
-  useEffect(() => {
-    if (!remaining.length) return;
-    rememberSeguir({
-      kind: "ficha",
-      id: mazoId,
-      title,
-      href: `/fichas/${mazoId}`,
-      hint: `${known} de ${total} · ${remaining.length} pendientes`,
-    });
-    // Solo al abrir el mazo.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const current = remaining[cursor] !== undefined ? cards[remaining[cursor]] : null;
+  const canPrev = cursor > 0;
+  const canNext = cursor < remaining.length - 1;
 
   const persist = useCallback(
-    (next: number[]) => {
-      persistFichaDeckOrder(sessionScope, cards, next);
-      if (next.length === 0) {
+    (next: FichaDeckState) => {
+      persistFichaDeckOrder(sessionScope, cards, next.remaining, next.cursor);
+      if (next.remaining.length === 0) {
         clearFichaDeckSession(sessionScope);
         clearSeguir("ficha", mazoId);
         return;
@@ -62,35 +54,88 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         id: mazoId,
         title,
         href: `/fichas/${mazoId}`,
-        hint: `${total - next.length} de ${total} · ${next.length} pendientes`,
+        hint: `${next.cursor + 1} de ${next.remaining.length} pendientes · ${total - next.remaining.length} sé`,
       });
     },
     [cards, mazoId, sessionScope, title, total],
   );
 
-  const grade = useCallback(
-    (knew: boolean) => {
-      setRemaining((prev) => {
-        if (!prev.length) return prev;
-        const next = knew
-          ? prev.slice(1)
-          : prev.length === 1
-            ? prev
-            : [...prev.slice(1), prev[0]!];
-        persist(next);
-        return next;
-      });
+  useEffect(() => {
+    if (!remaining.length) return;
+    rememberSeguir({
+      kind: "ficha",
+      id: mazoId,
+      title,
+      href: `/fichas/${mazoId}`,
+      hint: `${cursor + 1} de ${remaining.length} pendientes · ${known} sé`,
+    });
+    // Solo al abrir el mazo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyDeck = useCallback(
+    (next: FichaDeckState) => {
+      setDeck(next);
+      persist(next);
       setFlipped(false);
     },
     [persist],
   );
 
+  const go = useCallback(
+    (delta: number) => {
+      const nextCursor = cursor + delta;
+      if (nextCursor < 0 || nextCursor >= remaining.length) return;
+      applyDeck({ remaining, cursor: nextCursor });
+    },
+    [applyDeck, cursor, remaining],
+  );
+
+  const grade = useCallback(
+    (knew: boolean) => {
+      if (!remaining.length) return;
+      let nextRemaining: number[];
+      let nextCursor: number;
+      if (knew) {
+        nextRemaining = remaining.filter((_, i) => i !== cursor);
+        nextCursor = nextRemaining.length === 0 ? 0 : Math.min(cursor, nextRemaining.length - 1);
+      } else if (remaining.length === 1) {
+        nextRemaining = remaining;
+        nextCursor = 0;
+      } else {
+        const currentIdx = remaining[cursor]!;
+        nextRemaining = [...remaining.slice(0, cursor), ...remaining.slice(cursor + 1), currentIdx];
+        nextCursor = cursor >= nextRemaining.length ? 0 : cursor;
+      }
+      applyDeck({ remaining: nextRemaining, cursor: nextCursor });
+    },
+    [applyDeck, cursor, remaining],
+  );
+
   const reshuffle = useCallback(() => {
     const order = shuffle(cards.map((_, i) => i));
-    setRemaining(order);
-    persist(order);
-    setFlipped(false);
-  }, [cards, persist]);
+    applyDeck({ remaining: order, cursor: 0 });
+  }, [applyDeck, cards]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        go(-1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        go(1);
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        setFlipped((f) => !f);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go]);
 
   const progress = total ? Math.round((known / total) * 100) : 0;
 
@@ -102,14 +147,19 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
   function onTouchEnd(e: React.TouchEvent) {
     const start = touchRef.current;
     touchRef.current = null;
-    if (!start || !flipped) return;
+    if (!start) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
     if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy)) return;
     skipClickRef.current = true;
-    if (dx < 0) grade(true);
-    else grade(false);
+    if (flipped) {
+      if (dx < 0) grade(true);
+      else grade(false);
+      return;
+    }
+    if (dx < 0) go(1);
+    else go(-1);
   }
 
   if (!current) {
@@ -141,7 +191,8 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
     <div className="flashcard-deck">
       <div className="flashcard-toolbar">
         <span className="flashcard-count">
-          {known} sé · {remaining.length} pendiente{remaining.length !== 1 ? "s" : ""}
+          {cursor + 1} / {remaining.length}
+          {known > 0 ? ` · ${known} sé` : ""}
         </span>
         <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
           Mezclar
@@ -181,6 +232,25 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         </div>
       </button>
 
+      <div className="flashcard-nav">
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={!canPrev}
+          onClick={() => go(-1)}
+        >
+          ← Retroceder
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={!canNext}
+          onClick={() => go(1)}
+        >
+          Avanzar →
+        </button>
+      </div>
+
       {flipped ? (
         <div className="flashcard-nav flashcard-grade">
           <button type="button" className="btn-secondary" onClick={() => grade(false)}>
@@ -191,16 +261,8 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
           </button>
         </div>
       ) : (
-        <p className="muted small flashcard-swipe-hint" style={{ margin: 0 }}>
-          Voltea la tarjeta y elige. «No sé» la manda al final del mazo.
-        </p>
-      )}
-
-      {flipped && (
         <p className="muted small flashcard-swipe-hint">
-          {remaining.length === 1
-            ? "Última ficha: «Sé» para terminar, «No sé» para repetirla."
-            : "No sé = vuelve al final · Sé = no se repite"}
+          Voltea la tarjeta para marcar Sé / No sé. En el teclado: ← → y espacio.
         </p>
       )}
 
@@ -208,7 +270,7 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         <Link
           href={exitHref}
           className="btn-primary flashcard-finish-btn"
-          onClick={() => persist(remaining)}
+          onClick={() => persist(deck)}
         >
           {known > 0 && remaining.length > 0 ? "Seguir luego" : "Finalizar"}
         </Link>
