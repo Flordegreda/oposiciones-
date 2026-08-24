@@ -41,6 +41,11 @@ type Props = {
   tipo?: "normal" | "repaso_fallos";
   /** Banner informativo (p. ej. modo repaso). */
   banner?: string;
+  initialIndex?: number;
+  initialAnswers?: (number | null)[];
+  /** Salir a medias: no borrar el progreso. */
+  onPause?: () => void;
+  onProgress?: (index: number, answers: (number | null)[]) => void;
 };
 
 type Phase = "test" | "result";
@@ -67,6 +72,10 @@ export function ExamSession({
   bancoId,
   tipo = "normal",
   banner,
+  initialIndex = 0,
+  initialAnswers,
+  onPause,
+  onProgress,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -74,9 +83,21 @@ export function ExamSession({
   const startedAtRef = useRef<number>(Date.now());
   const savedResultRef = useRef(false);
   const [phase, setPhase] = useState<Phase>("test");
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => {
+    if (
+      initialIndex >= 0 &&
+      initialIndex < active.length &&
+      initialAnswers &&
+      initialAnswers.length === active.length
+    ) {
+      return initialIndex;
+    }
+    return 0;
+  });
   const [answers, setAnswers] = useState<(number | null)[]>(() =>
-    emptyAnswers(active.length),
+    initialAnswers && initialAnswers.length === active.length
+      ? initialAnswers
+      : emptyAnswers(active.length),
   );
   const [flags, setFlags] = useState<boolean[]>(() => emptyFlags(active.length));
   const [answerMeta, setAnswerMeta] = useState<Map<string, AnswerMeta>>(() => new Map());
@@ -102,6 +123,11 @@ export function ExamSession({
   useEffect(() => {
     setRemaining(timerSeconds);
   }, [timerSeconds]);
+
+  useEffect(() => {
+    if (phase !== "test") return;
+    onProgress?.(index, answers);
+  }, [phase, index, answers, onProgress]);
 
   const total = active.length;
   const current = active[index];
@@ -276,12 +302,17 @@ export function ExamSession({
         timerSeconds !== null
           ? "¿Abandonar el simulacro? El cronómetro se detendrá."
           : answered > 0
-            ? "¿Salir del test? Perderás el progreso actual."
+            ? "¿Salir del test? Podrás continuar desde Inicio."
             : null;
       if (msg && !window.confirm(msg)) return;
     }
 
     stopTimer();
+    if (phase === "test" && timerSeconds === null && onPause) {
+      onPause();
+      if (pathname !== backHref) router.push(backHref);
+      return;
+    }
     onFinish?.();
     if (pathname !== backHref) router.push(backHref);
   }, [
@@ -289,6 +320,7 @@ export function ExamSession({
     timerSeconds,
     answered,
     stopTimer,
+    onPause,
     onFinish,
     pathname,
     backHref,

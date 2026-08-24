@@ -1,34 +1,45 @@
 import { shuffle } from "@/lib/exam-utils";
 import { questionIdsFingerprint } from "@/lib/exam-session-storage";
 
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 type FichaDeckSnapshot = {
   v: typeof STORAGE_VERSION;
   fingerprint: string;
-  fichaIds: string[];
+  remainingIds: string[];
 };
 
 function storageKey(scope: string): string {
   return `jex-ficha-deck:${scope}`;
 }
 
-export function clearFichaDeckSession(scope: string): void {
-  if (typeof sessionStorage === "undefined") return;
+function storage(): Storage | null {
+  if (typeof window === "undefined") return null;
   try {
-    sessionStorage.removeItem(storageKey(scope));
+    return localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function clearFichaDeckSession(scope: string): void {
+  const store = storage();
+  if (!store) return;
+  try {
+    store.removeItem(storageKey(scope));
   } catch {
     /* quota / private mode */
   }
 }
 
 function loadSnapshot(scope: string): FichaDeckSnapshot | null {
-  if (typeof sessionStorage === "undefined") return null;
+  const store = storage();
+  if (!store) return null;
   try {
-    const raw = sessionStorage.getItem(storageKey(scope));
+    const raw = store.getItem(storageKey(scope));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as FichaDeckSnapshot;
-    if (parsed.v !== STORAGE_VERSION) return null;
+    if (parsed.v !== STORAGE_VERSION || !Array.isArray(parsed.remainingIds)) return null;
     return parsed;
   } catch {
     return null;
@@ -36,49 +47,58 @@ function loadSnapshot(scope: string): FichaDeckSnapshot | null {
 }
 
 function saveSnapshot(scope: string, snap: FichaDeckSnapshot): void {
-  if (typeof sessionStorage === "undefined") return;
+  const store = storage();
+  if (!store) return;
   try {
-    sessionStorage.setItem(storageKey(scope), JSON.stringify(snap));
+    store.setItem(storageKey(scope), JSON.stringify(snap));
   } catch {
     /* quota / private mode */
   }
 }
 
-/** Índices de fichas en orden barajado; restaura de sessionStorage si coincide el mazo. */
+export type FichaDeckState = {
+  remaining: number[];
+};
+
+/** Cola de índices pendientes; restaura si el mazo no ha cambiado. */
 export function beginFichaDeckOrder(
   scope: string,
   cards: { id: string }[],
-): number[] {
-  if (!cards.length) return [];
+): FichaDeckState {
+  if (!cards.length) return { remaining: [] };
 
   const fingerprint = questionIdsFingerprint(cards.map((c) => c.id));
   const indexById = new Map(cards.map((c, i) => [c.id, i]));
 
   const saved = loadSnapshot(scope);
   if (saved?.fingerprint === fingerprint) {
-    const order: number[] = [];
-    for (const id of saved.fichaIds) {
+    const remaining: number[] = [];
+    for (const id of saved.remainingIds) {
       const idx = indexById.get(id);
-      if (idx === undefined) break;
-      order.push(idx);
+      if (idx === undefined) {
+        break;
+      }
+      remaining.push(idx);
     }
-    if (order.length === cards.length) return order;
+    if (remaining.length === saved.remainingIds.length) {
+      return { remaining };
+    }
   }
 
   const shuffledIds = shuffle(cards.map((c) => c.id));
-  saveSnapshot(scope, { v: STORAGE_VERSION, fingerprint, fichaIds: shuffledIds });
-  return shuffledIds.map((id) => indexById.get(id)!);
+  saveSnapshot(scope, { v: STORAGE_VERSION, fingerprint, remainingIds: shuffledIds });
+  return { remaining: shuffledIds.map((id) => indexById.get(id)!) };
 }
 
 export function persistFichaDeckOrder(
   scope: string,
   cards: { id: string }[],
-  order: number[],
+  remaining: number[],
 ): void {
-  if (!cards.length || order.length !== cards.length) return;
+  if (!cards.length) return;
   saveSnapshot(scope, {
     v: STORAGE_VERSION,
     fingerprint: questionIdsFingerprint(cards.map((c) => c.id)),
-    fichaIds: order.map((i) => cards[i]!.id),
+    remainingIds: remaining.map((i) => cards[i]!.id),
   });
 }

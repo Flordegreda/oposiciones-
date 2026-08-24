@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "Oposiciones JEX — Junta de Extremadura",
   description: "Tests de oposición jurídica JEX",
   applicationName: "Oposiciones JEX",
+  appleWebApp: {
+    capable: true,
+    title: "JEX",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {

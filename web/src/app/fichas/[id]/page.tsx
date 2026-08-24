@@ -54,7 +54,7 @@ export default async function FichaMazoPage({ params }: Props) {
         )}
 
         {data?.mazo && !error && (
-          <AnkiDeck mazoId={data.mazo.id} fichas={data.fichas} />
+          <AnkiDeck mazoId={data.mazo.id} mazoNombre={data.mazo.nombre} fichas={data.fichas} />
         )}
       </main>
       <MobileBottomNav />

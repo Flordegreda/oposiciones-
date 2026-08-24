@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
 import { beginExamSession, clearExamSession } from "@/lib/exam-session-storage";
 import { ExamSession } from "@/components/ExamSession";
 import { TestPrintButton } from "@/components/TestPrintButton";
+import { clearSeguir, rememberSeguir } from "@/lib/study-continue";
+import {
+  clearTestProgress,
+  fingerprintForQuestions,
+  loadTestProgress,
+  saveTestProgress,
+  type TestProgressSnapshot,
+} from "@/lib/test-progress-storage";
 
 type Props = {
   bancoId: string;
@@ -19,6 +27,8 @@ type Session = {
   optionMaps: number[][];
   originalOpciones: string[][];
   sessionScope: string;
+  initialIndex: number;
+  initialAnswers: (number | null)[];
 };
 
 export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
@@ -27,24 +37,148 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
     [raw, bancoId],
   );
 
+  const fingerprint = useMemo(
+    () => fingerprintForQuestions(allPreguntas.map((p) => p.id)),
+    [allPreguntas],
+  );
+
   const [session, setSession] = useState<Session | null>(null);
   const [examMode, setExamMode] = useState(false);
+  const [saved, setSaved] = useState<TestProgressSnapshot | null>(null);
+  const [ready, setReady] = useState(false);
 
   const sessionScope = `test:${bancoId}`;
 
-  const startTest = useCallback(
-    (list: PublicExamPregunta[]) => {
-      const prepared = beginExamSession(sessionScope, list);
+  const startFromPrepared = useCallback(
+    (
+      list: PublicExamPregunta[],
+      optionMaps: number[][],
+      originalOpciones: string[][],
+      initialIndex: number,
+      initialAnswers: (number | null)[],
+      mode: boolean,
+    ) => {
       setSession({
-        list: prepared.questions,
-        examMode,
-        optionMaps: prepared.optionMaps,
-        originalOpciones: prepared.originalOpciones,
+        list,
+        examMode: mode,
+        optionMaps,
+        originalOpciones,
         sessionScope,
+        initialIndex,
+        initialAnswers,
       });
     },
-    [examMode, sessionScope],
+    [sessionScope],
   );
+
+  const startFresh = useCallback(
+    (list: PublicExamPregunta[]) => {
+      clearTestProgress(bancoId);
+      clearExamSession(sessionScope);
+      setSaved(null);
+      const prepared = beginExamSession(sessionScope, list);
+      startFromPrepared(
+        prepared.questions,
+        prepared.optionMaps,
+        prepared.originalOpciones,
+        0,
+        list.map(() => null),
+        examMode,
+      );
+    },
+    [bancoId, examMode, sessionScope, startFromPrepared],
+  );
+
+  const startSaved = useCallback(
+    (snap: TestProgressSnapshot) => {
+      const byId = new Map(allPreguntas.map((q) => [q.id, q]));
+      const list: PublicExamPregunta[] = [];
+      for (const id of snap.questionIds) {
+        const q = byId.get(id);
+        if (!q) return;
+        list.push(q);
+      }
+      if (list.length !== allPreguntas.length) return;
+      const questions = list.map((q, i) => {
+        const map = snap.optionMaps[i] ?? q.opciones.map((_, j) => j);
+        const originals = snap.originalOpciones[i] ?? [...q.opciones];
+        return {
+          ...q,
+          opciones: map.map((origIdx) => originals[origIdx] ?? q.opciones[origIdx]),
+        };
+      });
+      startFromPrepared(
+        questions,
+        snap.optionMaps,
+        snap.originalOpciones,
+        snap.index,
+        snap.answers,
+        snap.examMode,
+      );
+    },
+    [allPreguntas, startFromPrepared],
+  );
+
+  useEffect(() => {
+    const snap = loadTestProgress(bancoId);
+    const valid = snap && snap.fingerprint === fingerprint ? snap : null;
+    setSaved(valid);
+    try {
+      if (valid && new URLSearchParams(window.location.search).get("seguir") === "1") {
+        startSaved(valid);
+      }
+    } catch {
+      /* ignore */
+    }
+    setReady(true);
+  }, [bancoId, fingerprint, startSaved]);
+
+  const persistProgress = useCallback(
+    (index: number, answers: (number | null)[]) => {
+      if (!session) return;
+      const answered = answers.filter((a) => a !== null).length;
+      const snap: TestProgressSnapshot = {
+        v: 1,
+        bancoId,
+        title: bancoNombre,
+        fingerprint,
+        questionIds: session.list.map((q) => q.id),
+        optionMaps: session.optionMaps,
+        originalOpciones: session.originalOpciones,
+        index,
+        answers,
+        examMode: session.examMode,
+        updatedAt: Date.now(),
+      };
+      saveTestProgress(snap);
+      rememberSeguir({
+        kind: "test",
+        id: bancoId,
+        title: bancoNombre,
+        href: `/test/${bancoId}?seguir=1`,
+        hint: `${answered} de ${session.list.length} respondidas`,
+      });
+    },
+    [bancoId, bancoNombre, fingerprint, session],
+  );
+
+  const completeSession = useCallback(() => {
+    clearExamSession(sessionScope);
+    clearTestProgress(bancoId);
+    clearSeguir("test", bancoId);
+    setSaved(null);
+    setSession(null);
+  }, [bancoId, sessionScope]);
+
+  if (!ready && !session) {
+    return (
+      <div className="card">
+        <p className="muted" style={{ margin: 0 }}>
+          Cargando…
+        </p>
+      </div>
+    );
+  }
 
   if (session) {
     return (
@@ -54,10 +188,14 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
         examMode={session.examMode}
         timerSeconds={null}
         backHref="/practicar"
-        onFinish={() => {
-          clearExamSession(session.sessionScope);
+        onFinish={completeSession}
+        onPause={() => {
+          setSaved(loadTestProgress(bancoId));
           setSession(null);
         }}
+        onProgress={persistProgress}
+        initialIndex={session.initialIndex}
+        initialAnswers={session.initialAnswers}
         optionMaps={session.optionMaps}
         originalOpciones={session.originalOpciones}
         bancoId={bancoId}
@@ -72,6 +210,10 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
       </div>
     );
   }
+
+  const savedHint = saved
+    ? `Pregunta ${saved.index + 1} de ${saved.answers.length}`
+    : null;
 
   return (
     <div className="card">
@@ -94,15 +236,16 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
         </div>
       </div>
       <div className="test-mode-list">
-        <button
-          type="button"
-          className="test-mode-btn"
-          onClick={() => startTest(allPreguntas)}
-        >
-          <strong>Todo el banco</strong>
+        {saved && (
+          <button type="button" className="test-mode-btn" onClick={() => startSaved(saved)}>
+            <strong>Continuar</strong>
+            <span className="muted small">{savedHint}</span>
+          </button>
+        )}
+        <button type="button" className="test-mode-btn" onClick={() => startFresh(allPreguntas)}>
+          <strong>{saved ? "Empezar de nuevo" : "Todo el banco"}</strong>
           <span className="muted small">
-            {allPreguntas.length} pregunta{allPreguntas.length !== 1 ? "s" : ""} —{" "}
-            {bancoNombre}
+            {allPreguntas.length} pregunta{allPreguntas.length !== 1 ? "s" : ""} — {bancoNombre}
           </span>
         </button>
       </div>

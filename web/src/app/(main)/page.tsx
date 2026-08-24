@@ -1,5 +1,7 @@
+import { MobileContinue } from "@/components/MobileContinue";
 import { MobileStudyHero } from "@/components/MobileStudyHero";
 import { MobileStudyShortcuts } from "@/components/MobileStudyShortcuts";
+import { PwaInstallHint } from "@/components/PwaInstallHint";
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,8 @@ export default async function HomePage() {
       {stats && (
         <>
           <MobileStudyHero mode="material" stats={stats} />
+          <PwaInstallHint />
+          <MobileContinue />
           <MobileStudyShortcuts />
         </>
       )}
