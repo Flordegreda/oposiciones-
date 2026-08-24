@@ -680,6 +680,7 @@ h1 {
 
 .admin-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
 }
@@ -3021,6 +3022,8 @@ code {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  max-height: min(28rem, 50vh);
+  overflow-y: auto;
 }
 
 .admin-fichas-row {

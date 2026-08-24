@@ -49,7 +49,7 @@ export default async function FichasPage() {
           <div className="card">
             <p className="muted">
               Las fichas aún no están activadas. Configúralas en{" "}
-              <Link href="/admin?tab=fichas">Material → Fichas</Link>.
+              <Link href="/admin?tab=fichas">Material → Importar fichas</Link>.
             </p>
           </div>
         )}
@@ -58,7 +58,7 @@ export default async function FichasPage() {
           <div className="card">
             <p className="muted">Aún no hay mazos de fichas.</p>
             <p className="muted small">
-              Impórtalos en <Link href="/admin?tab=fichas">Material → Fichas</Link> con
+              Impórtalos en <Link href="/admin?tab=fichas">Material → Importar fichas</Link> con
               pregunta y respuesta (formato Anki / P: R:).
             </p>
           </div>

@@ -63,7 +63,7 @@ export function AdminPanel({
           className={tab === "importar" ? "active" : ""}
           onClick={() => setTab("importar")}
         >
-          Importar
+          Importar tests
         </button>
         <button
           type="button"
@@ -72,7 +72,7 @@ export function AdminPanel({
           className={tab === "fichas" ? "active" : ""}
           onClick={() => setTab("fichas")}
         >
-          Fichas
+          Importar fichas
         </button>
         <button
           type="button"

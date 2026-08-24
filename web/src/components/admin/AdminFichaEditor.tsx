@@ -260,7 +260,7 @@ export function AdminFichaEditor({ mazo, fichas: initial, materias }: Props) {
         </div>
 
         {fichas.length === 0 ? (
-          <p className="muted">Este mazo no tiene fichas. Importa desde Material → Fichas.</p>
+          <p className="muted">Este mazo no tiene fichas. Importa desde Material → Importar fichas.</p>
         ) : (
           <ul className="admin-pregunta-list">
             {fichas.map((f, i) => {

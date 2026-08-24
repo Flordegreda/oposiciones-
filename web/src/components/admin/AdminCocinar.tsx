@@ -201,7 +201,8 @@ export function AdminCocinar({
         <h2 className="admin-section-title">Pegar test en texto plano</h2>
         <p className="muted small" style={{ marginTop: 0 }}>
           Pega el bloque generado por tu IA. En supuestos prácticos usa{" "}
-          <strong>dos cajas</strong>: caso y preguntas por separado.
+          <strong>dos cajas</strong>: caso y preguntas por separado. Para fichas Anki
+          (pregunta/respuesta), elige <strong>Tipo → Fichas</strong>.
         </p>
 
         {ctx.tipo === "teorico" && !supuestoPractico && (
@@ -274,13 +275,19 @@ E: Art. 17.1 LOTC: …`}</pre>
             <select
               value={ctx.tipo}
               onChange={(e) => {
-                const tipo = e.target.value as Ctx["tipo"];
+                const value = e.target.value;
+                if (value === "fichas") {
+                  router.replace("/admin?tab=fichas", { scroll: false });
+                  return;
+                }
+                const tipo = value as Ctx["tipo"];
                 setCtx((c) => ({ ...c, tipo }));
                 if (tipo !== "practico") setSupuestoPractico(false);
               }}
             >
               <option value="teorico">Teórico</option>
               <option value="practico">Práctico</option>
+              <option value="fichas">Fichas (Anki)</option>
             </select>
           </label>
           <label>

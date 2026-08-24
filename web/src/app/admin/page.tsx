@@ -136,7 +136,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
               Los bancos existen pero tienen <strong>0 preguntas</strong>. Importa de
 
-              nuevo en la pestaña <strong>Importar</strong> o edita cada banco.
+              nuevo en la pestaña <strong>Importar tests</strong> o edita cada banco.
 
             </p>
 

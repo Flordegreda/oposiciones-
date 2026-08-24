@@ -217,77 +217,7 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
       {err && <p className="error">{err}</p>}
 
       <div className="card card-elevated">
-        <h2 className="admin-section-title">
-          Mazos ({mazosFiltrados.length}
-          {mazosFiltrados.length !== mazos.length ? ` de ${mazos.length}` : ""})
-        </h2>
-        {mazos.length === 0 ? (
-          <p className="muted small">Aún no hay mazos.</p>
-        ) : (
-          <>
-            <label>
-              Filtrar por materia
-              <select
-                value={filtroMateriaId ?? ""}
-                onChange={(e) => setFiltroMateriaId(e.target.value || null)}
-              >
-                <option value="">Todas las materias</option>
-                {materiasFiltro.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nombre} ({m.count})
-                  </option>
-                ))}
-              </select>
-            </label>
-            {mazosFiltrados.length === 0 ? (
-              <p className="muted small">Ningún mazo coincide con el filtro.</p>
-            ) : (
-              <ul className="admin-fichas-list" style={{ marginTop: "1rem" }}>
-                {mazosFiltrados.map((m) => (
-                  <li key={m.id} className="admin-fichas-row">
-                    <div className="admin-fichas-row-main">
-                      <strong>{m.nombre}</strong>
-                      <span className="muted small">
-                        {m.materiaNombre} · {m.numFichas} ficha{m.numFichas !== 1 ? "s" : ""}
-                        {!m.active ? " · oculto" : ""}
-                      </span>
-                    </div>
-                    <div className="admin-fichas-row-actions">
-                      <Link href={`/admin/fichas/${m.id}`} className="btn-primary btn-sm">
-                        Editar
-                      </Link>
-                      <Link href={`/fichas/${m.id}`} className="btn-link btn-sm">
-                        Practicar
-                      </Link>
-                      {m.numFichas > FICHAS_MAX_POR_MAZO && (
-                        <button
-                          type="button"
-                          className="btn-secondary btn-sm"
-                          disabled={busy !== null}
-                          onClick={() => void dividir(m)}
-                        >
-                          {busy === `split-${m.id}` ? "…" : "Dividir"}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="btn-danger btn-sm"
-                        disabled={busy !== null}
-                        onClick={() => void eliminar(m)}
-                      >
-                        {busy === m.id ? "…" : "Eliminar"}
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        )}
-      </div>
-
-      <div className="card card-elevated">
-        <h2 className="admin-section-title">Pegar fichas en texto plano</h2>
+        <h2 className="admin-section-title" id="pegar-fichas">Importar fichas</h2>
         <p className="muted small" style={{ marginTop: 0 }}>
           Igual que los tests: pega el bloque generado por tu IA (docenas o cientos de
           fichas) o carga un <code>.txt</code>. Solo pregunta/respuesta — sin A/B/C/D. Se
@@ -526,6 +456,76 @@ R: Otra respuesta.
             Pegar ejemplo
           </button>
         </div>
+      </div>
+
+      <div className="card card-elevated">
+        <h2 className="admin-section-title">
+          Mazos ({mazosFiltrados.length}
+          {mazosFiltrados.length !== mazos.length ? ` de ${mazos.length}` : ""})
+        </h2>
+        {mazos.length === 0 ? (
+          <p className="muted small">Aún no hay mazos.</p>
+        ) : (
+          <>
+            <label>
+              Filtrar por materia
+              <select
+                value={filtroMateriaId ?? ""}
+                onChange={(e) => setFiltroMateriaId(e.target.value || null)}
+              >
+                <option value="">Todas las materias</option>
+                {materiasFiltro.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nombre} ({m.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {mazosFiltrados.length === 0 ? (
+              <p className="muted small">Ningún mazo coincide con el filtro.</p>
+            ) : (
+              <ul className="admin-fichas-list" style={{ marginTop: "1rem" }}>
+                {mazosFiltrados.map((m) => (
+                  <li key={m.id} className="admin-fichas-row">
+                    <div className="admin-fichas-row-main">
+                      <strong>{m.nombre}</strong>
+                      <span className="muted small">
+                        {m.materiaNombre} · {m.numFichas} ficha{m.numFichas !== 1 ? "s" : ""}
+                        {!m.active ? " · oculto" : ""}
+                      </span>
+                    </div>
+                    <div className="admin-fichas-row-actions">
+                      <Link href={`/admin/fichas/${m.id}`} className="btn-primary btn-sm">
+                        Editar
+                      </Link>
+                      <Link href={`/fichas/${m.id}`} className="btn-link btn-sm">
+                        Practicar
+                      </Link>
+                      {m.numFichas > FICHAS_MAX_POR_MAZO && (
+                        <button
+                          type="button"
+                          className="btn-secondary btn-sm"
+                          disabled={busy !== null}
+                          onClick={() => void dividir(m)}
+                        >
+                          {busy === `split-${m.id}` ? "…" : "Dividir"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-danger btn-sm"
+                        disabled={busy !== null}
+                        onClick={() => void eliminar(m)}
+                      >
+                        {busy === m.id ? "…" : "Eliminar"}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </div>
 
       <div className="card card-warning" style={{ marginTop: "1rem" }}>

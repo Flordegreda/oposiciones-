@@ -9,7 +9,7 @@ export function AdminFichasSetup() {
       <p className="muted small">
         Activa las tablas <code>mazos_fichas</code> y <code>fichas</code> para importar
         pregunta/respuesta propias (sin depender de los tests). Gestiona los mazos en la
-        pestaña <strong>Fichas</strong>.
+        pestaña <strong>Importar fichas</strong>.
       </p>
       <AdminFichasApply label="Activar fichas" busyLabel="Aplicando…" />
     </div>
