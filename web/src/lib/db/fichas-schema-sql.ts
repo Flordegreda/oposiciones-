@@ -35,5 +35,17 @@ DROP POLICY IF EXISTS fichas_all ON public.fichas;
 CREATE POLICY mazos_fichas_all ON public.mazos_fichas FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY fichas_all ON public.fichas FOR ALL USING (true) WITH CHECK (true);
 
+CREATE OR REPLACE FUNCTION public.fichas_counts_by_mazo()
+RETURNS TABLE(mazo_id uuid, cnt bigint)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT mazo_id, count(*)::bigint FROM fichas GROUP BY mazo_id;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.fichas_counts_by_mazo() TO anon, authenticated, service_role;
+
 NOTIFY pgrst, 'reload schema';
 `;

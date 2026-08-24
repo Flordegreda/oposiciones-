@@ -15,7 +15,7 @@ import { AdminSchemaSetup } from "@/components/admin/AdminSchemaSetup";
 import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
-import { fetchMazosFichas } from "@/lib/queries/fichas";
+import { fetchMazosFichas, type MazoFichas } from "@/lib/queries/fichas";
 import { resultadosSchemaReady } from "@/lib/queries/schema";
 
 import { JEX_SUBTITLE } from "@/lib/constants";
@@ -36,22 +36,30 @@ export default async function AdminPage({ searchParams }: PageProps) {
   if (tab && LEGACY_MAIN_TABS.has(tab)) redirect("/admin");
 
   let error: string | null = null;
-
   let data: Awaited<ReturnType<typeof getAdminPageData>> | null = null;
+  let resultadosOk = false;
+  let mazosFichas: MazoFichas[] = [];
 
-
+  const needMazos = tab === "fichas";
 
   try {
-
-    data = await getAdminPageData();
-
+    const [adminResult, schemaResultados, mazos] = await Promise.all([
+      getAdminPageData()
+        .then((d) => ({ data: d, error: null as string | null }))
+        .catch((e) => ({
+          data: null as Awaited<ReturnType<typeof getAdminPageData>> | null,
+          error: e instanceof Error ? e.message : "Error",
+        })),
+      resultadosSchemaReady().catch(() => false),
+      needMazos ? fetchMazosFichas({ activeOnly: false }) : Promise.resolve([] as MazoFichas[]),
+    ]);
+    data = adminResult.data;
+    error = adminResult.error;
+    resultadosOk = schemaResultados;
+    mazosFichas = mazos;
   } catch (e) {
-
     error = e instanceof Error ? e.message : "Error";
-
   }
-
-
 
   const bancos = data?.bancos ?? [];
 
@@ -73,8 +81,6 @@ export default async function AdminPage({ searchParams }: PageProps) {
   const supuestosOk = data?.supuestosOk ?? true;
   const preguntasRpcOk = data?.preguntasRpcOk ?? true;
   const fichasOk = data?.fichasOk ?? false;
-  const mazosFichas = fichasOk ? await fetchMazosFichas({ activeOnly: false }) : [];
-  const resultadosOk = await resultadosSchemaReady().catch(() => false);
 
 
 

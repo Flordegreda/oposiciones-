@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { CACHE_TAGS, cachedQuery } from "@/lib/content-cache";
 import { fichasSchemaReady } from "@/lib/queries/schema";
 import { getSupabase } from "@/lib/supabase/server";
 
@@ -63,7 +64,6 @@ function toMazo(row: MazoRow, numFichas: number): MazoFichas {
 }
 
 const PAGE_SIZE = 1000;
-const COUNT_CONCURRENCY = 10;
 
 /** PostgREST corta a 1000 filas; hay que paginar mazos. */
 async function fetchAllMazoRows(): Promise<MazoRow[]> {
@@ -85,43 +85,65 @@ async function fetchAllMazoRows(): Promise<MazoRow[]> {
 }
 
 /**
- * Recuento exacto por mazo (HEAD count).
- * Un `.select()` o `.in()` + range se queda en 1000 filas y deja mazos posteriores a 0.
+ * Recuento por mazo: RPC (1 consulta) o un barrido de `mazo_id`.
+ * Un COUNT por mazo eran ~90 idas a Supabase y dejaba Material colgado.
  */
 async function countFichasByMazo(mazoIds: string[]): Promise<Map<string, number>> {
   const map = new Map<string, number>();
   if (!mazoIds.length) return map;
+  for (const id of mazoIds) map.set(id, 0);
 
   const supabase = getSupabase();
-  for (let i = 0; i < mazoIds.length; i += COUNT_CONCURRENCY) {
-    const chunk = mazoIds.slice(i, i + COUNT_CONCURRENCY);
-    const results = await Promise.all(
-      chunk.map(async (id) => {
-        const { count, error } = await supabase
-          .from("fichas")
-          .select("id", { count: "exact", head: true })
-          .eq("mazo_id", id);
-        if (error) throw error;
-        return [id, count ?? 0] as const;
-      }),
-    );
-    for (const [id, n] of results) map.set(id, n);
+  const { data: rpcData, error: rpcError } = await supabase.rpc("fichas_counts_by_mazo");
+  if (!rpcError && Array.isArray(rpcData)) {
+    for (const row of rpcData as { mazo_id: string; cnt: number | string }[]) {
+      map.set(row.mazo_id, Number(row.cnt) || 0);
+    }
+    return map;
+  }
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("fichas")
+      .select("mazo_id")
+      .order("id")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    if (!data?.length) break;
+    for (const row of data as { mazo_id: string }[]) {
+      map.set(row.mazo_id, (map.get(row.mazo_id) ?? 0) + 1);
+    }
+    if (data.length < PAGE_SIZE) break;
   }
   return map;
 }
 
-const loadMazosAndCounts = cache(async (): Promise<{
+type MazosPayload = {
   rows: MazoRow[];
-  counts: Map<string, number>;
-}> => {
+  counts: Record<string, number>;
+};
+
+async function loadMazosAndCountsUncached(): Promise<MazosPayload> {
   try {
     const rows = await fetchAllMazoRows();
     const counts = await countFichasByMazo(rows.map((r) => r.id));
-    return { rows, counts };
+    return { rows, counts: Object.fromEntries(counts) };
   } catch {
-    return { rows: [], counts: new Map() };
+    return { rows: [], counts: {} };
   }
-});
+}
+
+const loadMazosPayload = cache(async () =>
+  cachedQuery("mazos-fichas-list", loadMazosAndCountsUncached, CACHE_TAGS.temario),
+);
+
+async function loadMazosAndCounts(): Promise<{
+  rows: MazoRow[];
+  counts: Map<string, number>;
+}> {
+  const { rows, counts } = await loadMazosPayload();
+  return { rows, counts: new Map(Object.entries(counts)) };
+}
 
 export async function fetchMazosFichas(opts?: {
   activeOnly?: boolean;
