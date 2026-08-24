@@ -11,6 +11,7 @@ import {
   mazoNombreParte,
 } from "@/lib/split-fichas-mazo";
 import { AdminFichasApply } from "@/components/admin/AdminFichasApply";
+import { AdminRebalanceFichas } from "@/components/admin/AdminRebalanceFichas";
 
 type Materia = { id: string; nombre: string };
 
@@ -215,6 +216,8 @@ export function AdminFichas({ materias, mazos, fichasOk, schemaOk, initialMazoId
     <>
       {msg && <p className="ok">{msg}</p>}
       {err && <p className="error">{err}</p>}
+
+      <AdminRebalanceFichas materias={materias} />
 
       <div className="card card-elevated">
         <h2 className="admin-section-title" id="pegar-fichas">Importar fichas</h2>
