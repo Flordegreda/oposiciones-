@@ -17,6 +17,7 @@ import type { UserStatsRecord } from "@/lib/persistence/types";
 import {
   construirTemarioChecklist,
   formatContenidoResumen,
+  materiasAReforzar,
   type MateriaCatalogo,
   type TemarioChecklistItem,
   type TemarioMateriaResumen,
@@ -82,7 +83,7 @@ function ChecklistRow({
       <Link
         href={item.href}
         className={`min-w-0 flex-1 text-sm font-medium hover:text-blue-700 ${
-          item.hecho ? "text-slate-500 line-through" : "text-slate-800"
+          item.kind === "fichas" && item.hecho ? "text-slate-500 line-through" : "text-slate-800"
         }`}
       >
         {item.nombre}
@@ -90,11 +91,17 @@ function ChecklistRow({
       <span className="shrink-0 text-xs tabular-nums text-slate-500">
         {item.count} {item.kind === "test" ? "preg." : "fich."}
       </span>
-      {item.kind === "test" && item.porcentaje !== null && (
-        <span className={`shrink-0 text-xs font-semibold tabular-nums ${scoreColor(item.porcentaje)}`}>
-          {item.porcentaje}%
-        </span>
-      )}
+      {item.kind === "test" &&
+        (item.porcentaje !== null ? (
+          <span
+            className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ${scoreColor(item.porcentaje)}`}
+            title={`${item.intentos} intento${item.intentos !== 1 ? "s" : ""}`}
+          >
+            {item.intentos}× · {item.porcentaje}%
+          </span>
+        ) : (
+          <span className="shrink-0 text-xs font-medium text-slate-400">Sin hacer</span>
+        ))}
       <Link
         href={item.href}
         className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700"
@@ -146,9 +153,14 @@ function MateriaBlock({
             )}
           </p>
         </div>
-        <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-600">
-          {materia.pctHecho}%
-        </span>
+        <div className="shrink-0 text-right">
+          {materia.mediaTests !== null && (
+            <p className={`text-sm font-bold tabular-nums ${scoreColor(materia.mediaTests)}`}>
+              Media {materia.mediaTests}%
+            </p>
+          )}
+          <p className="text-xs font-semibold tabular-nums text-slate-500">{materia.pctHecho}% hecho</p>
+        </div>
       </button>
       {open && (
         <>
@@ -268,11 +280,12 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
   }
 
   const pendientes = resumen.totalItems - resumen.hechos;
+  const reforzar = materiasAReforzar(resumen.materias);
 
   return (
     <div className="space-y-4">
       {/* Resumen global */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Progreso total</p>
           <p className="mt-1 text-2xl font-bold text-slate-800">{resumen.pctHecho}%</p>
@@ -285,6 +298,17 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
               style={{ width: `${resumen.pctHecho}%` }}
             />
           </div>
+        </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Nota media</p>
+          <p className={`mt-1 text-2xl font-bold ${scoreColor(resumen.mediaTests)}`}>
+            {resumen.mediaTests !== null ? `${resumen.mediaTests}%` : "—"}
+          </p>
+          <p className="text-sm text-slate-500">
+            {resumen.testsHechos === 0
+              ? "haz un test para ver tu media"
+              : `de ${resumen.testsHechos} test${resumen.testsHechos !== 1 ? "s" : ""} hecho${resumen.testsHechos !== 1 ? "s" : ""}`}
+          </p>
         </div>
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Tests</p>
@@ -302,6 +326,38 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
         </div>
       </div>
 
+      {reforzar.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+          <p className="text-sm font-semibold text-amber-950">Céntrate más aquí</p>
+          <p className="mt-0.5 text-xs text-amber-800">
+            Materias con la nota media más baja. Prioriza los tests en rojo (&lt;60%).
+          </p>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {reforzar.map((m) => (
+              <li key={m.materiaId}>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-amber-200/80 bg-white px-3 py-2 text-left text-sm hover:border-amber-400"
+                  onClick={() => {
+                    setSoloPendientes(false);
+                    setMateriaId(m.materiaId);
+                    setOpenIds((prev) => new Set(prev).add(m.materiaId));
+                  }}
+                >
+                  <span className="min-w-0 truncate font-medium text-slate-800">{m.materiaNombre}</span>
+                  <span className={`shrink-0 font-bold tabular-nums ${scoreColor(m.mediaTests)}`}>
+                    {m.mediaTests}%
+                    <span className="ml-1 text-xs font-medium text-slate-500">
+                      · {m.testsHechos} test{m.testsHechos !== 1 ? "s" : ""}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <p className="rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
         <span className="font-semibold text-slate-800">Material total: </span>
         {formatContenidoResumen(resumen.contenido)}
@@ -316,6 +372,14 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
         >
           🖨️ Imprimir checklist
+        </a>
+        <a
+          href="/imprimir/temario/resultados"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+        >
+          📄 Exportar notas PDF
         </a>
         {materiasOptions.length > 1 && (
           <MateriaFilter
@@ -361,8 +425,9 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
       </div>
 
       <p className="text-xs text-slate-500">
-        Los tests se marcan solos al terminar un intento. Las fichas puedes marcarlas manualmente
-        cuando las hayas repasado.
+        Los tests se marcan solos al terminar un intento y muestran intentos × nota media. Las fichas
+        puedes marcarlas manualmente cuando las hayas repasado. Exportar notas PDF usa tus resultados
+        guardados en este dispositivo.
       </p>
     </div>
   );

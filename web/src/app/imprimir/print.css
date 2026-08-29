@@ -424,6 +424,61 @@ body::before {
   color: #555;
 }
 
+.print-checklist-col-intentos,
+.print-checklist-col-nota {
+  width: 3.4rem;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 8.5pt;
+}
+
+.print-checklist-row--baja {
+  background: #fde8e8 !important;
+}
+
+.print-checklist-nota--baja {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.print-checklist-nota--media {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.print-checklist-nota--alta {
+  color: #047857;
+  font-weight: 600;
+}
+
+.print-checklist-nota--sin {
+  color: #888;
+}
+
+.print-notas-focus {
+  margin: 0 0 1.1rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e2b86a;
+  border-radius: 4px;
+  background: #fff8eb;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-notas-focus-title {
+  margin: 0 0 0.15rem;
+  font-size: 11pt;
+  font-weight: 700;
+}
+
+.print-notas-focus-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 9pt;
+  line-height: 1.45;
+}
+
 .print-check-box {
   display: inline-block;
   width: 0.85rem;

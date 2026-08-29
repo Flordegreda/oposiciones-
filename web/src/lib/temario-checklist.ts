@@ -18,6 +18,8 @@ export type TemarioChecklistItem = {
   hecho: boolean;
   /** Solo tests: % aciertos medio (0–100). */
   porcentaje: number | null;
+  /** Solo tests: intentos guardados. */
+  intentos: number;
   href: string;
   /** Fichas: marca manual en localStorage. */
   manual: boolean;
@@ -34,6 +36,8 @@ export type TemarioMateriaResumen = {
   testsHechos: number;
   fichasTotal: number;
   fichasHechas: number;
+  /** Media de aciertos de los tests hechos en esta materia (0–100). */
+  mediaTests: number | null;
 };
 
 export type TemarioContenidoTotales = {
@@ -55,6 +59,8 @@ export type TemarioResumenGlobal = {
   fichasTotal: number;
   fichasHechas: number;
   contenido: TemarioContenidoTotales;
+  /** Media global de aciertos (tests hechos). */
+  mediaTests: number | null;
 };
 
 function pctFromRatio(num: number, den: number): number {
@@ -126,6 +132,18 @@ function testPorcentaje(bancoId: string, stats: UserStatsRecord | null): number 
   return Math.round(slice.porcentajeAciertos * 100);
 }
 
+function testIntentos(bancoId: string, stats: UserStatsRecord | null): number {
+  return stats?.byBanco[bancoId]?.totalTests ?? 0;
+}
+
+function mediaDeNotas(items: TemarioChecklistItem[]): number | null {
+  const notas = items
+    .filter((i) => i.kind === "test" && i.porcentaje !== null)
+    .map((i) => i.porcentaje as number);
+  if (!notas.length) return null;
+  return Math.round(notas.reduce((s, n) => s + n, 0) / notas.length);
+}
+
 export function construirTemarioChecklist(
   testSections: MateriaSection[],
   fichaSections: MazoFichasSection[],
@@ -161,6 +179,7 @@ export function construirTemarioChecklist(
         count: b.numPreguntas ?? 0,
         hecho: testHecho(b.id, stats),
         porcentaje: testPorcentaje(b.id, stats),
+        intentos: testIntentos(b.id, stats),
         href: `/test/${b.id}`,
         manual: false,
       });
@@ -192,6 +211,7 @@ export function construirTemarioChecklist(
         count: mz.numFichas,
         hecho: marks[key]?.done ?? false,
         porcentaje: null,
+        intentos: 0,
         href: `/fichas/${mz.id}`,
         manual: true,
       });
@@ -200,11 +220,7 @@ export function construirTemarioChecklist(
 
   const materias: TemarioMateriaResumen[] = [...materiaMap.entries()]
     .map(([materiaId, { nombre, items }]) => {
-      items.sort((a, b) => {
-        if (a.hecho !== b.hecho) return a.hecho ? 1 : -1;
-        if (a.kind !== b.kind) return a.kind === "test" ? -1 : 1;
-        return a.nombre.localeCompare(b.nombre, "es");
-      });
+      items.sort(ordenarItemsEstudio);
       const tests = items.filter((i) => i.kind === "test");
       const fichas = items.filter((i) => i.kind === "fichas");
       const hechos = items.filter((i) => i.hecho).length;
@@ -219,6 +235,7 @@ export function construirTemarioChecklist(
         testsHechos: tests.filter((i) => i.hecho).length,
         fichasTotal: fichas.length,
         fichasHechas: fichas.filter((i) => i.hecho).length,
+        mediaTests: mediaDeNotas(items),
       };
     })
     .sort((a, b) => a.materiaNombre.localeCompare(b.materiaNombre, "es"));
@@ -252,6 +269,7 @@ export function construirTemarioChecklist(
     fichasTotal,
     fichasHechas,
     contenido,
+    mediaTests: mediaDeNotas(materias.flatMap((m) => m.items)),
   };
 }
 
@@ -268,12 +286,26 @@ export function construirTemarioInventario(
     m.pctHecho = 0;
     m.testsHechos = 0;
     m.fichasHechas = 0;
+    m.mediaTests = null;
   }
   res.hechos = 0;
   res.pctHecho = 0;
   res.testsHechos = 0;
   res.fichasHechas = 0;
+  res.mediaTests = null;
   return res;
+}
+
+/** Pendientes primero; tests hechos de peor a mejor nota. */
+function ordenarItemsEstudio(a: TemarioChecklistItem, b: TemarioChecklistItem): number {
+  if (a.hecho !== b.hecho) return a.hecho ? 1 : -1;
+  if (a.kind !== b.kind) return a.kind === "test" ? -1 : 1;
+  if (a.kind === "test" && a.hecho && b.hecho) {
+    const pa = a.porcentaje ?? 0;
+    const pb = b.porcentaje ?? 0;
+    if (pa !== pb) return pa - pb;
+  }
+  return a.nombre.localeCompare(b.nombre, "es");
 }
 
 function ordenarItemsInventario(a: TemarioChecklistItem, b: TemarioChecklistItem): number {
@@ -301,6 +333,7 @@ export function filtrarTemarioPendientes(resumen: TemarioResumenGlobal): Temario
         testsHechos: 0,
         fichasTotal: fichas.length,
         fichasHechas: 0,
+        mediaTests: m.mediaTests,
       };
     })
     .filter((m) => m.total > 0);
@@ -324,7 +357,28 @@ export function filtrarTemarioPendientes(resumen: TemarioResumenGlobal): Temario
     fichasTotal,
     fichasHechas: 0,
     contenido: calcularContenidoTotales(materias.flatMap((m) => m.items)),
+    mediaTests: resumen.mediaTests,
   };
+}
+
+export type NotaBanda = "alta" | "media" | "baja" | "sin";
+
+export function notaBanda(pct: number | null): NotaBanda {
+  if (pct === null) return "sin";
+  if (pct >= 75) return "alta";
+  if (pct >= 60) return "media";
+  return "baja";
+}
+
+/** Materias con tests hechos, de peor media a mejor (para saber dónde centrarse). */
+export function materiasAReforzar(
+  materias: TemarioMateriaResumen[],
+  max = 6,
+): TemarioMateriaResumen[] {
+  return materias
+    .filter((m) => m.mediaTests !== null && m.testsHechos > 0)
+    .sort((a, b) => (a.mediaTests ?? 0) - (b.mediaTests ?? 0))
+    .slice(0, max);
 }
 
 function tipoEtiqueta(item: TemarioChecklistItem): string {
