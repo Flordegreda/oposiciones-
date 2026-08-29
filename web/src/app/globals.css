@@ -1875,6 +1875,14 @@ h1 {
   color: var(--primary);
 }
 
+.result-score-base {
+  margin-left: 0.15em;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: 0.55;
+}
+
 .qmap-btn.answered-any {
   background: rgba(30, 77, 123, 0.12);
   border-color: var(--primary);

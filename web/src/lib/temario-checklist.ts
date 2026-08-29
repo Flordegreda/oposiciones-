@@ -1,6 +1,7 @@
 import type { MateriaSection } from "@/lib/queries/bancos";
 import type { MazoFichasSection } from "@/lib/queries/fichas";
-import type { UserStatsRecord } from "@/lib/persistence/types";
+import { examNotaSobre10 } from "@/lib/exam-utils";
+import type { TestResultRecord } from "@/lib/persistence/types";
 import type { ChecklistMark } from "@/lib/persistence/checklist-service";
 import { mazoChecklistKey } from "@/lib/persistence/checklist-service";
 
@@ -16,8 +17,10 @@ export type TemarioChecklistItem = {
   tipo?: string;
   count: number;
   hecho: boolean;
-  /** Solo tests: % aciertos medio (0–100). */
+  /** Solo tests: % aciertos bruto (0–100), sin penalización. */
   porcentaje: number | null;
+  /** Solo tests: nota penalizada media en base 10. */
+  notaSobre10: number | null;
   /** Solo tests: intentos guardados. */
   intentos: number;
   href: string;
@@ -36,8 +39,10 @@ export type TemarioMateriaResumen = {
   testsHechos: number;
   fichasTotal: number;
   fichasHechas: number;
-  /** Media de aciertos de los tests hechos en esta materia (0–100). */
+  /** Media de notas penalizadas sobre 10 de los tests hechos en esta materia. */
   mediaTests: number | null;
+  /** Media de % de acierto bruto de los tests hechos. */
+  mediaPct: number | null;
 };
 
 export type TemarioContenidoTotales = {
@@ -59,8 +64,10 @@ export type TemarioResumenGlobal = {
   fichasTotal: number;
   fichasHechas: number;
   contenido: TemarioContenidoTotales;
-  /** Media global de aciertos (tests hechos). */
+  /** Media global de notas penalizadas sobre 10 (tests hechos). */
   mediaTests: number | null;
+  /** Media global de % de acierto bruto. */
+  mediaPct: number | null;
 };
 
 function pctFromRatio(num: number, den: number): number {
@@ -121,36 +128,73 @@ export function formatContenidoResumen(c: TemarioContenidoTotales): string {
   return parts.length ? parts.join(" · ") : "Sin material cargado";
 }
 
-function testHecho(bancoId: string, stats: UserStatsRecord | null): boolean {
-  const slice = stats?.byBanco[bancoId];
-  return (slice?.totalTests ?? 0) > 0;
+type BancoScore = {
+  intentos: number;
+  porcentaje: number;
+  notaSobre10: number;
+};
+
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
 }
 
-function testPorcentaje(bancoId: string, stats: UserStatsRecord | null): number | null {
-  const slice = stats?.byBanco[bancoId];
-  if (!slice || slice.totalTests === 0) return null;
-  return Math.round(slice.porcentajeAciertos * 100);
-}
+/** Un valor por banco: media de las notas /10 de cada intento. */
+function scoresPorBanco(resultados: TestResultRecord[]): Map<string, BancoScore> {
+  const groups = new Map<string, TestResultRecord[]>();
+  for (const r of resultados) {
+    if (!r.banco) continue;
+    const list = groups.get(r.banco) ?? [];
+    list.push(r);
+    groups.set(r.banco, list);
+  }
 
-function testIntentos(bancoId: string, stats: UserStatsRecord | null): number {
-  return stats?.byBanco[bancoId]?.totalTests ?? 0;
+  const out = new Map<string, BancoScore>();
+  for (const [id, list] of groups) {
+    const notas: number[] = [];
+    let aciertos = 0;
+    let preguntas = 0;
+    for (const r of list) {
+      const n = r.totalPreguntas ?? 0;
+      if (n <= 0) continue;
+      const nota = examNotaSobre10(r.aciertos, r.fallos, n);
+      if (nota !== null) notas.push(nota);
+      aciertos += r.aciertos;
+      preguntas += n;
+    }
+    if (!notas.length && preguntas <= 0) continue;
+    out.set(id, {
+      intentos: list.length,
+      porcentaje: preguntas > 0 ? Math.round((aciertos / preguntas) * 100) : 0,
+      notaSobre10: notas.length ? round1(notas.reduce((s, n) => s + n, 0) / notas.length) : 0,
+    });
+  }
+  return out;
 }
 
 function mediaDeNotas(items: TemarioChecklistItem[]): number | null {
   const notas = items
+    .filter((i) => i.kind === "test" && i.notaSobre10 !== null)
+    .map((i) => i.notaSobre10 as number);
+  if (!notas.length) return null;
+  return round1(notas.reduce((s, n) => s + n, 0) / notas.length);
+}
+
+function mediaDePct(items: TemarioChecklistItem[]): number | null {
+  const pcts = items
     .filter((i) => i.kind === "test" && i.porcentaje !== null)
     .map((i) => i.porcentaje as number);
-  if (!notas.length) return null;
-  return Math.round(notas.reduce((s, n) => s + n, 0) / notas.length);
+  if (!pcts.length) return null;
+  return Math.round(pcts.reduce((s, n) => s + n, 0) / pcts.length);
 }
 
 export function construirTemarioChecklist(
   testSections: MateriaSection[],
   fichaSections: MazoFichasSection[],
-  stats: UserStatsRecord | null,
+  resultados: TestResultRecord[],
   marks: Record<string, ChecklistMark>,
   allMaterias: MateriaCatalogo[] = [],
 ): TemarioResumenGlobal {
+  const byBanco = scoresPorBanco(resultados);
   const materiaMap = new Map<
     string,
     { nombre: string; items: TemarioChecklistItem[] }
@@ -177,9 +221,10 @@ export function construirTemarioChecklist(
         materiaId: section.id,
         tipo: b.tipo,
         count: b.numPreguntas ?? 0,
-        hecho: testHecho(b.id, stats),
-        porcentaje: testPorcentaje(b.id, stats),
-        intentos: testIntentos(b.id, stats),
+        hecho: (byBanco.get(b.id)?.intentos ?? 0) > 0,
+        porcentaje: byBanco.get(b.id)?.porcentaje ?? null,
+        notaSobre10: byBanco.get(b.id)?.notaSobre10 ?? null,
+        intentos: byBanco.get(b.id)?.intentos ?? 0,
         href: `/test/${b.id}`,
         manual: false,
       });
@@ -211,6 +256,7 @@ export function construirTemarioChecklist(
         count: mz.numFichas,
         hecho: marks[key]?.done ?? false,
         porcentaje: null,
+        notaSobre10: null,
         intentos: 0,
         href: `/fichas/${mz.id}`,
         manual: true,
@@ -236,6 +282,7 @@ export function construirTemarioChecklist(
         fichasTotal: fichas.length,
         fichasHechas: fichas.filter((i) => i.hecho).length,
         mediaTests: mediaDeNotas(items),
+        mediaPct: mediaDePct(items),
       };
     })
     .sort((a, b) => a.materiaNombre.localeCompare(b.materiaNombre, "es"));
@@ -270,6 +317,7 @@ export function construirTemarioChecklist(
     fichasHechas,
     contenido,
     mediaTests: mediaDeNotas(materias.flatMap((m) => m.items)),
+    mediaPct: mediaDePct(materias.flatMap((m) => m.items)),
   };
 }
 
@@ -279,7 +327,7 @@ export function construirTemarioInventario(
   fichaSections: MazoFichasSection[],
   allMaterias: MateriaCatalogo[] = [],
 ): TemarioResumenGlobal {
-  const res = construirTemarioChecklist(testSections, fichaSections, null, {}, allMaterias);
+  const res = construirTemarioChecklist(testSections, fichaSections, [], {}, allMaterias);
   for (const m of res.materias) {
     m.items.sort(ordenarItemsInventario);
     m.hechos = 0;
@@ -287,12 +335,14 @@ export function construirTemarioInventario(
     m.testsHechos = 0;
     m.fichasHechas = 0;
     m.mediaTests = null;
+    m.mediaPct = null;
   }
   res.hechos = 0;
   res.pctHecho = 0;
   res.testsHechos = 0;
   res.fichasHechas = 0;
   res.mediaTests = null;
+  res.mediaPct = null;
   return res;
 }
 
@@ -301,8 +351,8 @@ function ordenarItemsEstudio(a: TemarioChecklistItem, b: TemarioChecklistItem): 
   if (a.hecho !== b.hecho) return a.hecho ? 1 : -1;
   if (a.kind !== b.kind) return a.kind === "test" ? -1 : 1;
   if (a.kind === "test" && a.hecho && b.hecho) {
-    const pa = a.porcentaje ?? 0;
-    const pb = b.porcentaje ?? 0;
+    const pa = a.notaSobre10 ?? a.porcentaje ?? 0;
+    const pb = b.notaSobre10 ?? b.porcentaje ?? 0;
     if (pa !== pb) return pa - pb;
   }
   return a.nombre.localeCompare(b.nombre, "es");
@@ -334,6 +384,7 @@ export function filtrarTemarioPendientes(resumen: TemarioResumenGlobal): Temario
         fichasTotal: fichas.length,
         fichasHechas: 0,
         mediaTests: m.mediaTests,
+        mediaPct: m.mediaPct,
       };
     })
     .filter((m) => m.total > 0);
@@ -358,15 +409,16 @@ export function filtrarTemarioPendientes(resumen: TemarioResumenGlobal): Temario
     fichasHechas: 0,
     contenido: calcularContenidoTotales(materias.flatMap((m) => m.items)),
     mediaTests: resumen.mediaTests,
+    mediaPct: resumen.mediaPct,
   };
 }
 
 export type NotaBanda = "alta" | "media" | "baja" | "sin";
 
-export function notaBanda(pct: number | null): NotaBanda {
-  if (pct === null) return "sin";
-  if (pct >= 75) return "alta";
-  if (pct >= 60) return "media";
+export function notaBanda(notaSobre10: number | null): NotaBanda {
+  if (notaSobre10 === null) return "sin";
+  if (notaSobre10 >= 7.5) return "alta";
+  if (notaSobre10 >= 6) return "media";
   return "baja";
 }
 

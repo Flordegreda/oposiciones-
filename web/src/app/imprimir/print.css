@@ -424,9 +424,16 @@ body::before {
   color: #555;
 }
 
-.print-checklist-col-intentos,
-.print-checklist-col-nota {
+.print-checklist-col-intentos {
   width: 3.4rem;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 8.5pt;
+}
+
+.print-checklist-col-nota {
+  width: 5.2rem;
   white-space: nowrap;
   text-align: right;
   font-variant-numeric: tabular-nums;

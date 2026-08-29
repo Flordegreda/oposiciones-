@@ -8,7 +8,8 @@ import {
   getLocalCache,
   getOrCreateUsuarioId,
 } from "@/lib/persistence/local-cache-service";
-import type { UserStatsRecord } from "@/lib/persistence/types";
+import type { TestResultRecord } from "@/lib/persistence/types";
+import { formatNotaSobre10 } from "@/lib/exam-utils";
 import {
   construirTemarioChecklist,
   formatContenidoResumen,
@@ -26,8 +27,10 @@ type Props = {
   allMaterias: MateriaCatalogo[];
 };
 
-function formatNota(pct: number | null): string {
-  return pct === null ? "—" : `${pct}%`;
+function formatNota(itemNota: number | null, pct: number | null): string {
+  if (itemNota === null) return "—";
+  const bruto = pct === null ? "" : ` · ${pct}%`;
+  return `${formatNotaSobre10(itemNota)}${bruto}`;
 }
 
 export function TemarioResultadosPrintView({
@@ -35,20 +38,22 @@ export function TemarioResultadosPrintView({
   fichaSections,
   allMaterias,
 }: Props) {
-  const [stats, setStats] = useState<UserStatsRecord | null>(null);
+  const [resultados, setResultados] = useState<TestResultRecord[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const uid = getOrCreateUsuarioId();
-      let s = await getLocalCache().getStats(uid);
-      if (!s) {
-        s = await getLocalCache().recomputeStats(uid);
-      }
-      if (!cancelled) {
-        setStats(s);
-        setReady(true);
+      try {
+        const rows = await getLocalCache().getAllResultados();
+        if (!cancelled) {
+          setResultados(rows.filter((r) => r.usuarioId === uid));
+        }
+      } catch {
+        if (!cancelled) setResultados([]);
+      } finally {
+        if (!cancelled) setReady(true);
       }
     })();
     return () => {
@@ -59,8 +64,8 @@ export function TemarioResultadosPrintView({
   const marks = useMemo(() => (ready ? getChecklistMarks() : {}), [ready]);
 
   const resumen = useMemo(
-    () => construirTemarioChecklist(testSections, fichaSections, stats, marks, allMaterias),
-    [testSections, fichaSections, stats, marks, allMaterias],
+    () => construirTemarioChecklist(testSections, fichaSections, resultados, marks, allMaterias),
+    [testSections, fichaSections, resultados, marks, allMaterias],
   );
 
   const date = new Date().toLocaleDateString("es-ES", {
@@ -71,7 +76,7 @@ export function TemarioResultadosPrintView({
 
   const reforzar = materiasAReforzar(resumen.materias, 8);
   const testsConNota = resumen.materias.flatMap((m) =>
-    m.items.filter((i) => i.kind === "test" && i.porcentaje !== null),
+    m.items.filter((i) => i.kind === "test" && i.notaSobre10 !== null),
   );
 
   if (!ready) {
@@ -101,7 +106,13 @@ export function TemarioResultadosPrintView({
           <p className="print-sheet-sub">Oposiciones JEX · Jurídica · Junta de Extremadura</p>
           <p className="print-sheet-meta">
             {resumen.testsHechos}/{resumen.testsTotal} tests hechos
-            {resumen.mediaTests !== null && <> · Media global {resumen.mediaTests}%</>}
+            {resumen.mediaTests !== null && (
+              <>
+                {" "}
+                · Media {formatNotaSobre10(resumen.mediaTests)}/10
+                {resumen.mediaPct !== null && <> ({resumen.mediaPct}% acierto)</>}
+              </>
+            )}
             {" · "}
             {date}
           </p>
@@ -116,7 +127,8 @@ export function TemarioResultadosPrintView({
             <span className="print-checklist-legend-item">
               <strong>F</strong> = Fichas
             </span>
-            · Rojo &lt;60% · Ámbar 60–74% · Verde ≥75%
+            · Nota = aciertos − incorrectas/4, en blanco 0, pasada a /10 · Rojo &lt;6 · Ámbar 6–7,4
+            · Verde ≥7,5
           </p>
         </header>
 
@@ -132,7 +144,8 @@ export function TemarioResultadosPrintView({
                 <li key={m.materiaId}>
                   <strong>{m.materiaNombre}</strong>
                   {" · "}
-                  media {m.mediaTests}%
+                  media {formatNotaSobre10(m.mediaTests)}/10
+                  {m.mediaPct !== null && <> ({m.mediaPct}%)</>}
                   {" · "}
                   {m.testsHechos}/{m.testsTotal} tests
                 </li>
@@ -153,7 +166,13 @@ export function TemarioResultadosPrintView({
             <h2 className="print-checklist-materia-title">{m.materiaNombre}</h2>
             <p className="print-checklist-materia-meta">
               {m.testsHechos}/{m.testsTotal} tests hechos
-              {m.mediaTests !== null && <> · media {m.mediaTests}%</>}
+              {m.mediaTests !== null && (
+                <>
+                  {" "}
+                  · media {formatNotaSobre10(m.mediaTests)}/10
+                  {m.mediaPct !== null && <> ({m.mediaPct}%)</>}
+                </>
+              )}
               {m.fichasTotal > 0 && (
                 <>
                   {" · "}
@@ -190,7 +209,7 @@ export function TemarioResultadosPrintView({
                   </tr>
                 ) : (
                   m.items.map((item) => {
-                    const banda = notaBanda(item.porcentaje);
+                    const banda = notaBanda(item.notaSobre10);
                     return (
                       <tr
                         key={`${item.kind}-${item.id}`}
@@ -218,7 +237,11 @@ export function TemarioResultadosPrintView({
                               : "—"}
                         </td>
                         <td className={`print-checklist-col-nota print-checklist-nota--${banda}`}>
-                          {item.kind === "test" ? formatNota(item.porcentaje) : item.hecho ? "Hecho" : "—"}
+                          {item.kind === "test"
+                            ? formatNota(item.notaSobre10, item.porcentaje)
+                            : item.hecho
+                              ? "Hecho"
+                              : "—"}
                         </td>
                       </tr>
                     );

@@ -13,7 +13,8 @@ import {
   getLocalCache,
   getOrCreateUsuarioId,
 } from "@/lib/persistence/local-cache-service";
-import type { UserStatsRecord } from "@/lib/persistence/types";
+import type { TestResultRecord } from "@/lib/persistence/types";
+import { formatNotaSobre10 } from "@/lib/exam-utils";
 import {
   construirTemarioChecklist,
   formatContenidoResumen,
@@ -35,10 +36,10 @@ function progressBarColor(pct: number): string {
   return "bg-red-500";
 }
 
-function scoreColor(pct: number | null): string {
-  if (pct === null) return "text-slate-400";
-  if (pct >= 75) return "text-emerald-600";
-  if (pct >= 60) return "text-amber-600";
+function notaColor(nota: number | null): string {
+  if (nota === null) return "text-slate-400";
+  if (nota >= 7.5) return "text-emerald-600";
+  if (nota >= 6) return "text-amber-600";
   return "text-red-600";
 }
 
@@ -92,12 +93,17 @@ function ChecklistRow({
         {item.count} {item.kind === "test" ? "preg." : "fich."}
       </span>
       {item.kind === "test" &&
-        (item.porcentaje !== null ? (
+        (item.notaSobre10 !== null ? (
           <span
-            className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ${scoreColor(item.porcentaje)}`}
-            title={`${item.intentos} intento${item.intentos !== 1 ? "s" : ""}`}
+            className="shrink-0 text-right"
+            title={`${item.intentos} intento${item.intentos !== 1 ? "s" : ""} · acierto bruto ${item.porcentaje}%`}
           >
-            {item.intentos}× · {item.porcentaje}%
+            <span className={`block text-sm font-bold tabular-nums ${notaColor(item.notaSobre10)}`}>
+              {item.intentos}× · {formatNotaSobre10(item.notaSobre10)}
+            </span>
+            <span className="block text-[11px] tabular-nums text-slate-400">
+              {item.porcentaje}% acierto
+            </span>
           </span>
         ) : (
           <span className="shrink-0 text-xs font-medium text-slate-400">Sin hacer</span>
@@ -155,8 +161,12 @@ function MateriaBlock({
         </div>
         <div className="shrink-0 text-right">
           {materia.mediaTests !== null && (
-            <p className={`text-sm font-bold tabular-nums ${scoreColor(materia.mediaTests)}`}>
-              Media {materia.mediaTests}%
+            <p className={`text-sm font-bold tabular-nums ${notaColor(materia.mediaTests)}`}>
+              Media {formatNotaSobre10(materia.mediaTests)}
+              <span className="text-xs font-semibold text-slate-400">/10</span>
+              {materia.mediaPct !== null && (
+                <span className="ml-1 text-xs font-medium text-slate-400">{materia.mediaPct}%</span>
+              )}
             </p>
           )}
           <p className="text-xs font-semibold tabular-nums text-slate-500">{materia.pctHecho}% hecho</p>
@@ -188,7 +198,7 @@ function MateriaBlock({
 }
 
 export function TemarioChecklist({ testSections, fichaSections, allMaterias }: Props) {
-  const [stats, setStats] = useState<UserStatsRecord | null>(null);
+  const [resultados, setResultados] = useState<TestResultRecord[]>([]);
   const [marksVersion, setMarksVersion] = useState(0);
   const [materiaId, setMateriaId] = useState<string | null>(null);
   const [soloPendientes, setSoloPendientes] = useState(false);
@@ -198,11 +208,14 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
     let cancelled = false;
     void (async () => {
       const uid = getOrCreateUsuarioId();
-      let s = await getLocalCache().getStats(uid);
-      if (!s) {
-        s = await getLocalCache().recomputeStats(uid);
+      try {
+        const rows = await getLocalCache().getAllResultados();
+        if (!cancelled) {
+          setResultados(rows.filter((r) => r.usuarioId === uid));
+        }
+      } catch {
+        if (!cancelled) setResultados([]);
       }
-      if (!cancelled) setStats(s);
     })();
     return () => {
       cancelled = true;
@@ -212,8 +225,8 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
   const marks = useMemo(() => getChecklistMarks(), [marksVersion]);
 
   const resumen = useMemo(
-    () => construirTemarioChecklist(testSections, fichaSections, stats, marks, allMaterias),
-    [testSections, fichaSections, stats, marks, allMaterias],
+    () => construirTemarioChecklist(testSections, fichaSections, resultados, marks, allMaterias),
+    [testSections, fichaSections, resultados, marks, allMaterias],
   );
 
   const materiasOptions: MateriaOption[] = useMemo(
@@ -301,13 +314,20 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
         </div>
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Nota media</p>
-          <p className={`mt-1 text-2xl font-bold ${scoreColor(resumen.mediaTests)}`}>
-            {resumen.mediaTests !== null ? `${resumen.mediaTests}%` : "—"}
+          <p className={`mt-1 text-2xl font-bold ${notaColor(resumen.mediaTests)}`}>
+            {resumen.mediaTests !== null ? (
+              <>
+                {formatNotaSobre10(resumen.mediaTests)}
+                <span className="ml-0.5 text-base font-semibold text-slate-400">/10</span>
+              </>
+            ) : (
+              "—"
+            )}
           </p>
           <p className="text-sm text-slate-500">
             {resumen.testsHechos === 0
               ? "haz un test para ver tu media"
-              : `de ${resumen.testsHechos} test${resumen.testsHechos !== 1 ? "s" : ""} hecho${resumen.testsHechos !== 1 ? "s" : ""}`}
+              : `sobre 10 · ${resumen.mediaPct ?? "—"}% acierto bruto`}
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
@@ -330,7 +350,8 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
           <p className="text-sm font-semibold text-amber-950">Céntrate más aquí</p>
           <p className="mt-0.5 text-xs text-amber-800">
-            Materias con la nota media más baja. Prioriza los tests en rojo (&lt;60%).
+            Materias con la nota media más baja (penalizada sobre 10). Prioriza los tests en rojo
+            (&lt;6).
           </p>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {reforzar.map((m) => (
@@ -345,8 +366,8 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
                   }}
                 >
                   <span className="min-w-0 truncate font-medium text-slate-800">{m.materiaNombre}</span>
-                  <span className={`shrink-0 font-bold tabular-nums ${scoreColor(m.mediaTests)}`}>
-                    {m.mediaTests}%
+                  <span className={`shrink-0 font-bold tabular-nums ${notaColor(m.mediaTests)}`}>
+                    {formatNotaSobre10(m.mediaTests)}
                     <span className="ml-1 text-xs font-medium text-slate-500">
                       · {m.testsHechos} test{m.testsHechos !== 1 ? "s" : ""}
                     </span>
@@ -425,9 +446,9 @@ export function TemarioChecklist({ testSections, fichaSections, allMaterias }: P
       </div>
 
       <p className="text-xs text-slate-500">
-        Los tests se marcan solos al terminar un intento y muestran intentos × nota media. Las fichas
-        puedes marcarlas manualmente cuando las hayas repasado. Exportar notas PDF usa tus resultados
-        guardados en este dispositivo.
+        Los tests se marcan solos al terminar un intento. La cifra principal es la nota penalizada
+        sobre 10 (aciertos − incorrectas/4; en blanco, 0). El % es acierto bruto, sin penalización.
+        Las fichas puedes marcarlas manualmente cuando las hayas repasado.
       </p>
     </div>
   );

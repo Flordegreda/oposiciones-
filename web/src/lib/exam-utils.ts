@@ -187,7 +187,28 @@ export function formatExamTime(seconds: number): string {
 }
 
 export function examScore(ok: number, fail: number): string {
-  return (ok - fail * 0.25).toFixed(2);
+  return examNeto(ok, fail).toFixed(2);
+}
+
+/** Aciertos − incorrectas/4. Las no respondidas valen 0. */
+export function examNeto(ok: number, fail: number): number {
+  return ok - fail / 4;
+}
+
+/** Neto reescalado a base 10, comparable entre tests de distinto tamaño. */
+export function examNotaSobre10(ok: number, fail: number, total: number): number | null {
+  if (!Number.isFinite(total) || total <= 0) return null;
+  return (10 * examNeto(ok, fail)) / total;
+}
+
+const nota10Fmt = new Intl.NumberFormat("es-ES", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+export function formatNotaSobre10(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return nota10Fmt.format(n);
 }
 
 export function presetSummary(presetId: SimulacroPresetId, pick: SimulacroPick): string {

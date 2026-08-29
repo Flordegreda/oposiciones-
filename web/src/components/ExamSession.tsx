@@ -5,8 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicExamPregunta } from "@/lib/exam-utils";
 import {
   displayOptionToOriginal,
+  examNotaSobre10,
   examScore,
   formatExamTime,
+  formatNotaSobre10,
   originalOptionToDisplay,
 } from "@/lib/exam-utils";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
@@ -418,7 +420,8 @@ export function ExamSession({
   if (phase === "result") {
     const failCount = answered - okCount;
     const skipCount = total - answered;
-    const pct = answered > 0 ? Math.round((okCount / answered) * 100) : 0;
+    const pctBruto = total > 0 ? Math.round((okCount / total) * 100) : 0;
+    const nota10 = examNotaSobre10(okCount, failCount, total);
     const nota = examScore(okCount, failCount);
     const repasoStats = isRepaso
       ? calcularStatsRepaso(
@@ -452,13 +455,14 @@ export function ExamSession({
         )}
         <p
           className="result-score"
-          style={{ color: pct >= 60 ? "var(--success)" : "var(--danger)" }}
+          style={{ color: (nota10 ?? 0) >= 6 ? "var(--success)" : "var(--danger)" }}
         >
-          {pct}%
+          {formatNotaSobre10(nota10)}
+          <span className="result-score-base">/10</span>
         </p>
         <p className="muted">
-          {okCount} correctas · {failCount} incorrectas · {skipCount} sin responder · Nota:{" "}
-          {nota} / {total}
+          {pctBruto}% acierto bruto · {okCount} correctas · {failCount} incorrectas · {skipCount}{" "}
+          sin responder · Neto {nota}
         </p>
 
         {repasoStats && (
