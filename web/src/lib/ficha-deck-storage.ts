@@ -8,6 +8,9 @@ type FichaDeckSnapshot = {
   fingerprint: string;
   remainingIds: string[];
   cursor?: number;
+  completed?: boolean;
+  known?: number;
+  unknown?: number;
 };
 
 function storageKey(scope: string): string {
@@ -62,6 +65,9 @@ function saveSnapshot(scope: string, snap: FichaDeckSnapshot): void {
 export type FichaDeckState = {
   remaining: number[];
   cursor: number;
+  completed?: boolean;
+  known?: number;
+  unknown?: number;
 };
 
 function clampCursor(cursor: number, length: number): number {
@@ -81,6 +87,15 @@ export function beginFichaDeckOrder(
 
   const saved = loadSnapshot(scope);
   if (saved?.fingerprint === fingerprint) {
+    if (saved.completed || saved.remainingIds.length === 0) {
+      return {
+        remaining: [],
+        cursor: 0,
+        completed: true,
+        known: saved.known ?? cards.length,
+        unknown: saved.unknown ?? 0,
+      };
+    }
     const remaining: number[] = [];
     for (const id of saved.remainingIds) {
       const idx = indexById.get(id);
@@ -102,6 +117,24 @@ export function beginFichaDeckOrder(
     cursor: 0,
   });
   return { remaining: shuffledIds.map((id) => indexById.get(id)!), cursor: 0 };
+}
+
+export function persistFichaDeckCompleted(
+  scope: string,
+  cards: { id: string }[],
+  known: number,
+  unknown: number,
+): void {
+  if (!cards.length) return;
+  saveSnapshot(scope, {
+    v: STORAGE_VERSION,
+    fingerprint: questionIdsFingerprint(cards.map((c) => c.id)),
+    remainingIds: [],
+    cursor: 0,
+    completed: true,
+    known,
+    unknown,
+  });
 }
 
 export function persistFichaDeckOrder(

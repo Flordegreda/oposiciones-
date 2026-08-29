@@ -6,9 +6,11 @@ import { shuffle } from "@/lib/exam-utils";
 import {
   beginFichaDeckOrder,
   clearFichaDeckSession,
+  persistFichaDeckCompleted,
   persistFichaDeckOrder,
   type FichaDeckState,
 } from "@/lib/ficha-deck-storage";
+import { setMazoMarcado } from "@/lib/persistence/checklist-service";
 import { clearSeguir, rememberSeguir } from "@/lib/study-continue";
 import type { FichaCard } from "@/lib/queries/fichas";
 
@@ -21,6 +23,12 @@ type Props = {
   exitHref?: string;
 };
 
+type DoneSummary = {
+  known: number;
+  unknown: number;
+  pending: number;
+};
+
 export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: Props) {
   const cards = useMemo(() => fichas, [fichas]);
   const sessionScope = `ficha:${mazoId}`;
@@ -30,6 +38,7 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
   const [deck, setDeck] = useState<FichaDeckState>(() =>
     beginFichaDeckOrder(sessionScope, cards),
   );
+  const [unknownHits, setUnknownHits] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const skipClickRef = useRef(false);
@@ -40,15 +49,12 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
   const current = remaining[cursor] !== undefined ? cards[remaining[cursor]] : null;
   const canPrev = cursor > 0;
   const canNext = cursor < remaining.length - 1;
+  const done = Boolean(deck.completed) || remaining.length === 0;
 
-  const persist = useCallback(
+  const persistProgress = useCallback(
     (next: FichaDeckState) => {
+      if (!next.remaining.length) return;
       persistFichaDeckOrder(sessionScope, cards, next.remaining, next.cursor);
-      if (next.remaining.length === 0) {
-        clearFichaDeckSession(sessionScope);
-        clearSeguir("ficha", mazoId);
-        return;
-      }
       rememberSeguir({
         kind: "ficha",
         id: mazoId,
@@ -60,8 +66,33 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
     [cards, mazoId, sessionScope, title, total],
   );
 
+  const finishDeck = useCallback(
+    (nextRemaining: number[], nextUnknown: number) => {
+      const nextKnown = Math.max(0, total - nextRemaining.length);
+      persistFichaDeckCompleted(sessionScope, cards, nextKnown, nextUnknown);
+      setMazoMarcado(mazoId, true);
+      clearSeguir("ficha", mazoId);
+      setDeck({
+        remaining: [],
+        cursor: 0,
+        completed: true,
+        known: nextKnown,
+        unknown: nextUnknown,
+      });
+      setUnknownHits(nextUnknown);
+      setFlipped(false);
+    },
+    [cards, mazoId, sessionScope, total],
+  );
+
   useEffect(() => {
-    if (!remaining.length) return;
+    if (!done) return;
+    setMazoMarcado(mazoId, true);
+    clearSeguir("ficha", mazoId);
+  }, [done, mazoId]);
+
+  useEffect(() => {
+    if (done || !remaining.length) return;
     rememberSeguir({
       kind: "ficha",
       id: mazoId,
@@ -76,10 +107,10 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
   const applyDeck = useCallback(
     (next: FichaDeckState) => {
       setDeck(next);
-      persist(next);
+      persistProgress(next);
       setFlipped(false);
     },
-    [persist],
+    [persistProgress],
   );
 
   const go = useCallback(
@@ -96,26 +127,36 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
       if (!remaining.length) return;
       let nextRemaining: number[];
       let nextCursor: number;
+      let nextUnknown = unknownHits;
       if (knew) {
         nextRemaining = remaining.filter((_, i) => i !== cursor);
         nextCursor = nextRemaining.length === 0 ? 0 : Math.min(cursor, nextRemaining.length - 1);
       } else if (remaining.length === 1) {
+        nextUnknown += 1;
         nextRemaining = remaining;
         nextCursor = 0;
       } else {
+        nextUnknown += 1;
         const currentIdx = remaining[cursor]!;
         nextRemaining = [...remaining.slice(0, cursor), ...remaining.slice(cursor + 1), currentIdx];
         nextCursor = cursor >= nextRemaining.length ? 0 : cursor;
       }
+      setUnknownHits(nextUnknown);
+      if (knew && nextRemaining.length === 0) {
+        finishDeck([], nextUnknown);
+        return;
+      }
       applyDeck({ remaining: nextRemaining, cursor: nextCursor });
     },
-    [applyDeck, cursor, remaining],
+    [applyDeck, cursor, finishDeck, remaining, unknownHits],
   );
 
   const reshuffle = useCallback(() => {
+    clearFichaDeckSession(sessionScope);
     const order = shuffle(cards.map((_, i) => i));
+    setUnknownHits(0);
     applyDeck({ remaining: order, cursor: 0 });
-  }, [applyDeck, cards]);
+  }, [applyDeck, cards, sessionScope]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -128,7 +169,7 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         go(1);
-      } else       if (e.key === " " || e.key === "Enter") {
+      } else if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         setFlipped((f) => !f);
       } else if (e.key === "1" || e.key.toLowerCase() === "n") {
@@ -168,24 +209,28 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
     else go(-1);
   }
 
-  if (!current) {
+  if (done) {
+    const summary: DoneSummary = {
+      known: deck.known ?? known,
+      unknown: deck.unknown ?? unknownHits,
+      pending: Math.max(0, total - (deck.known ?? known)),
+    };
     return (
       <div className="card">
         <p className="ok" style={{ marginTop: 0 }}>
-          Mazo completado. Has marcado «Sé» en las {total} fichas.
+          Mazo terminado. Marcado como estudiado en el plan de temario.
+        </p>
+        <p className="muted" style={{ marginTop: "0.35rem" }}>
+          {summary.known} sé
+          {summary.pending > 0 ? ` · ${summary.pending} pendientes` : ""}
+          {summary.unknown > 0 ? ` · ${summary.unknown} no sé` : ""}
+          {` · ${total} fichas`}
         </p>
         <div className="form-actions">
           <button type="button" className="btn-primary" onClick={reshuffle}>
             Repasar otra vez
           </button>
-          <Link
-            href={exitHref}
-            className="btn-secondary"
-            onClick={() => {
-              clearFichaDeckSession(sessionScope);
-              clearSeguir("ficha", mazoId);
-            }}
-          >
+          <Link href={exitHref} className="btn-secondary">
             Volver a Fichas
           </Link>
         </div>
@@ -226,13 +271,13 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         <div className={`flashcard-inner${flipped ? " flashcard-inner--flipped" : ""}`}>
           <div className="flashcard-face flashcard-face--front">
             <p className="flashcard-label">Pregunta</p>
-            <p className="flashcard-enunciado">{current.frente}</p>
+            <p className="flashcard-enunciado">{current?.frente}</p>
             <p className="flashcard-tap-hint muted small">Toca para ver la respuesta</p>
           </div>
 
           <div className="flashcard-face flashcard-face--back">
             <p className="flashcard-label">Respuesta</p>
-            <p className="flashcard-answer">{current.dorso}</p>
+            <p className="flashcard-answer">{current?.dorso}</p>
             <p className="flashcard-tap-hint muted small">¿La sabías?</p>
           </div>
         </div>
@@ -279,13 +324,22 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
             Toca la tarjeta para ver la respuesta, o marca Sé / No sé. Teclado: espacio, ← →
           </p>
         ) : null}
-        <Link
-          href={exitHref}
-          className="btn-primary flashcard-finish-btn"
-          onClick={() => persist(deck)}
-        >
-          {known > 0 && remaining.length > 0 ? "Seguir luego" : "Finalizar"}
-        </Link>
+        <div className="flashcard-finish-row">
+          <Link
+            href={exitHref}
+            className="btn-secondary flashcard-finish-btn"
+            onClick={() => persistProgress(deck)}
+          >
+            Seguir luego
+          </Link>
+          <button
+            type="button"
+            className="btn-primary flashcard-finish-btn"
+            onClick={() => finishDeck(remaining, unknownHits)}
+          >
+            Finalizar
+          </button>
+        </div>
       </div>
     </div>
   );
