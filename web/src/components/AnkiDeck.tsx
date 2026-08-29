@@ -128,14 +128,20 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         go(1);
-      } else if (e.key === " " || e.key === "Enter") {
+      } else       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         setFlipped((f) => !f);
+      } else if (e.key === "1" || e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        grade(false);
+      } else if (e.key === "2" || e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        grade(true);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go]);
+  }, [go, grade]);
 
   const progress = total ? Math.round((known / total) * 100) : 0;
 
@@ -251,22 +257,28 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         </button>
       </div>
 
-      {flipped ? (
+      <div className="flashcard-sticky-actions">
         <div className="flashcard-nav flashcard-grade">
-          <button type="button" className="btn-secondary" onClick={() => grade(false)}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => grade(false)}
+          >
             No sé
           </button>
-          <button type="button" className="btn-primary" onClick={() => grade(true)}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => grade(true)}
+          >
             Sé
           </button>
         </div>
-      ) : (
-        <p className="muted small flashcard-swipe-hint">
-          Voltea la tarjeta para marcar Sé / No sé. En el teclado: ← → y espacio.
-        </p>
-      )}
-
-      <div className="flashcard-exit-bar">
+        {!flipped ? (
+          <p className="muted small flashcard-swipe-hint">
+            Toca la tarjeta para ver la respuesta, o marca Sé / No sé. Teclado: espacio, ← →
+          </p>
+        ) : null}
         <Link
           href={exitHref}
           className="btn-primary flashcard-finish-btn"
