@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:parse-import": "npx tsx scripts/test-parse-import-text.ts"
+    "export:pdfs": "node scripts/export-pdfs-to-folders.mjs",
+    "export:pdfs:dry": "node scripts/export-pdfs-to-folders.mjs --dry-run"
   },
   "dependencies": {
     "@sparticuz/chromium": "^133.0.0",

@@ -465,6 +465,52 @@ body::before {
   font-size: 9.5pt;
 }
 
+.print-fichas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.print-ficha-item {
+  display: flex;
+  gap: 0.55rem;
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #ddd;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-ficha-num {
+  margin: 0;
+  min-width: 1.6rem;
+  font-weight: 700;
+  font-size: 10pt;
+}
+
+.print-ficha-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.print-ficha-q,
+.print-ficha-a {
+  margin: 0 0 0.35rem;
+  font-size: 10.5pt;
+  line-height: 1.4;
+}
+
+.print-ficha-a {
+  color: #1e4d7b;
+}
+
+.print-ficha-label {
+  font-weight: 700;
+  font-size: 8.5pt;
+  letter-spacing: 0.04em;
+  color: #555;
+}
+
 @media print {
   .no-print {
     display: none !important;
