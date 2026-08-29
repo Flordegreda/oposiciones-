@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { shuffle } from "@/lib/exam-utils";
 import {
@@ -30,6 +31,7 @@ type DoneSummary = {
 };
 
 export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: Props) {
+  const router = useRouter();
   const cards = useMemo(() => fichas, [fichas]);
   const sessionScope = `ficha:${mazoId}`;
   const title = mazoNombre?.trim() || "Mazo";
@@ -52,9 +54,9 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
   const done = Boolean(deck.completed) || remaining.length === 0;
 
   const persistProgress = useCallback(
-    (next: FichaDeckState) => {
+    (next: FichaDeckState, unknown = 0) => {
       if (!next.remaining.length) return;
-      persistFichaDeckOrder(sessionScope, cards, next.remaining, next.cursor);
+      persistFichaDeckOrder(sessionScope, cards, next.remaining, next.cursor, unknown);
       rememberSeguir({
         kind: "ficha",
         id: mazoId,
@@ -92,22 +94,22 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
   }, [done, mazoId]);
 
   useEffect(() => {
-    if (done || !remaining.length) return;
+    if (typeof deck.unknown === "number") setUnknownHits(deck.unknown);
+    if (deck.completed || !deck.remaining.length) return;
     rememberSeguir({
       kind: "ficha",
       id: mazoId,
       title,
       href: `/fichas/${mazoId}`,
-      hint: `${cursor + 1} de ${remaining.length} pendientes · ${known} sé`,
+      hint: `${deck.cursor + 1} de ${deck.remaining.length} pendientes · ${Math.max(0, total - deck.remaining.length)} sé`,
     });
-    // Solo al abrir el mazo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const applyDeck = useCallback(
-    (next: FichaDeckState) => {
+    (next: FichaDeckState, unknown = 0) => {
       setDeck(next);
-      persistProgress(next);
+      persistProgress(next, unknown);
       setFlipped(false);
     },
     [persistProgress],
@@ -117,9 +119,9 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
     (delta: number) => {
       const nextCursor = cursor + delta;
       if (nextCursor < 0 || nextCursor >= remaining.length) return;
-      applyDeck({ remaining, cursor: nextCursor });
+      applyDeck({ remaining, cursor: nextCursor }, unknownHits);
     },
-    [applyDeck, cursor, remaining],
+    [applyDeck, cursor, remaining, unknownHits],
   );
 
   const grade = useCallback(
@@ -146,7 +148,7 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         finishDeck([], nextUnknown);
         return;
       }
-      applyDeck({ remaining: nextRemaining, cursor: nextCursor });
+      applyDeck({ remaining: nextRemaining, cursor: nextCursor }, nextUnknown);
     },
     [applyDeck, cursor, finishDeck, remaining, unknownHits],
   );
@@ -155,8 +157,13 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
     clearFichaDeckSession(sessionScope);
     const order = shuffle(cards.map((_, i) => i));
     setUnknownHits(0);
-    applyDeck({ remaining: order, cursor: 0 });
+    applyDeck({ remaining: order, cursor: 0 }, 0);
   }, [applyDeck, cards, sessionScope]);
+
+  const pauseDeck = useCallback(() => {
+    persistProgress(deck, unknownHits);
+    router.push(exitHref);
+  }, [deck, exitHref, persistProgress, router, unknownHits]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -325,13 +332,13 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
           </p>
         ) : null}
         <div className="flashcard-finish-row">
-          <Link
-            href={exitHref}
+          <button
+            type="button"
             className="btn-secondary flashcard-finish-btn"
-            onClick={() => persistProgress(deck)}
+            onClick={pauseDeck}
           >
             Seguir luego
-          </Link>
+          </button>
           <button
             type="button"
             className="btn-primary flashcard-finish-btn"

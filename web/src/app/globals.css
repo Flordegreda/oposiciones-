@@ -1472,6 +1472,9 @@ h1 {
   width: 100%;
   max-width: var(--max);
   margin: 0 auto;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
 }
 
 .flashcard-finish-row .flashcard-finish-btn {

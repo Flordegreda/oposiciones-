@@ -86,7 +86,7 @@ export function beginFichaDeckOrder(
   const indexById = new Map(cards.map((c, i) => [c.id, i]));
 
   const saved = loadSnapshot(scope);
-  if (saved?.fingerprint === fingerprint) {
+  if (saved) {
     if (saved.completed || saved.remainingIds.length === 0) {
       return {
         remaining: [],
@@ -99,13 +99,14 @@ export function beginFichaDeckOrder(
     const remaining: number[] = [];
     for (const id of saved.remainingIds) {
       const idx = indexById.get(id);
-      if (idx === undefined) {
-        break;
-      }
-      remaining.push(idx);
+      if (idx !== undefined) remaining.push(idx);
     }
-    if (remaining.length === saved.remainingIds.length) {
-      return { remaining, cursor: clampCursor(saved.cursor ?? 0, remaining.length) };
+    if (remaining.length > 0) {
+      return {
+        remaining,
+        cursor: clampCursor(saved.cursor ?? 0, remaining.length),
+        unknown: saved.unknown ?? 0,
+      };
     }
   }
 
@@ -142,12 +143,14 @@ export function persistFichaDeckOrder(
   cards: { id: string }[],
   remaining: number[],
   cursor = 0,
+  unknown = 0,
 ): void {
-  if (!cards.length) return;
+  if (!cards.length || remaining.length === 0) return;
   saveSnapshot(scope, {
     v: STORAGE_VERSION,
     fingerprint: questionIdsFingerprint(cards.map((c) => c.id)),
     remainingIds: remaining.map((i) => cards[i]!.id),
     cursor: clampCursor(cursor, remaining.length),
+    unknown,
   });
 }

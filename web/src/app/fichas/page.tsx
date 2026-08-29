@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FichasBiblioteca } from "@/components/FichasBiblioteca";
+import { MobileContinue } from "@/components/MobileContinue";
 import { MobileStudyHero } from "@/components/MobileStudyHero";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -64,13 +65,18 @@ export default async function FichasPage() {
           </div>
         )}
 
-        {!error && fichasOk && totalMazos > 0 && <FichasBiblioteca sections={sections} />}
+        {!error && fichasOk && totalMazos > 0 && (
+          <>
+            <MobileContinue />
+            <FichasBiblioteca sections={sections} />
+          </>
+        )}
       </main>
       <footer className="site-footer">
         <p>
           {JEX_SUBTITLE}
           {totalMazos > 0
-            ? ` · ${totalMazos} mazo${totalMazos !== 1 ? "s" : ""} · ${sections.length} materia${sections.length !== 1 ? "s" : ""}`
+            ? ` · ${totalMazos} mazo${totalMazos !== 1 ? "s" : ""} · ${sections.length} materia${sections.length !== 1 ? "s" : ""} con fichas`
             : ""}
         </p>
       </footer>
