@@ -5,6 +5,9 @@
 import {
   getLocalCache,
   getOrCreateUsuarioId,
+  isUsuarioId,
+  reassignLocalResultados,
+  setUsuarioId,
 } from "@/lib/persistence/local-cache-service";
 import type { TestResultRecord } from "@/lib/persistence/types";
 import { embedDetalleInRespuestas, extractDetalleFromRespuestas } from "@/lib/persistence/estadisticas-service";
@@ -161,6 +164,22 @@ export class SyncService {
       this.running = null;
     });
     return this.running;
+  }
+
+  /** Une este dispositivo al código de otro (mismo historial de tests). */
+  async adoptUsuarioId(raw: string): Promise<void> {
+    const newId = raw.trim().toLowerCase();
+    if (!isUsuarioId(newId)) {
+      throw new Error("El código no es válido. Cópialo entero desde el otro dispositivo.");
+    }
+    const oldId = getOrCreateUsuarioId();
+    if (oldId !== newId) {
+      if (this.running) await this.running;
+      await reassignLocalResultados(oldId, newId);
+      setUsuarioId(newId);
+      await getLocalCache().setMeta({ lastPullAt: null, dirty: true });
+    }
+    await this.syncNow("manual");
   }
 
   private async runSync(): Promise<void> {

@@ -1,3 +1,4 @@
+import { DeviceSyncPanel } from "@/components/DeviceSyncPanel";
 import { MobileContinue } from "@/components/MobileContinue";
 import { MobileStudyHero } from "@/components/MobileStudyHero";
 import { MobileStudyShortcuts } from "@/components/MobileStudyShortcuts";
@@ -32,6 +33,7 @@ export default async function HomePage() {
           <MobileStudyShortcuts />
         </>
       )}
+      <DeviceSyncPanel />
     </>
   );
 }

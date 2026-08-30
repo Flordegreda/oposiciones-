@@ -5,19 +5,24 @@ import { usePathname } from "next/navigation";
 
 const items = [
   {
+    href: "/",
+    label: "Resumen",
+    match: (p: string) => p === "/",
+  },
+  {
     href: "/practicar",
     label: "Tests",
     match: (p: string) => p === "/practicar" || p.startsWith("/test/"),
   },
   {
-    href: "/simulacro",
-    label: "Simulacro",
-    match: (p: string) => p.startsWith("/simulacro"),
-  },
-  {
     href: "/fichas",
     label: "Fichas",
     match: (p: string) => p.startsWith("/fichas"),
+  },
+  {
+    href: "/temario",
+    label: "Plan",
+    match: (p: string) => p.startsWith("/temario"),
   },
 ];
 

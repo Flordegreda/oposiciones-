@@ -23,7 +23,14 @@ const STORE = {
 } as const;
 
 const META_KEY = "sync";
-const DEVICE_STORAGE_KEY = "jex-usuario-id";
+export const DEVICE_STORAGE_KEY = "jex-usuario-id";
+
+const USUARIO_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isUsuarioId(value: string): boolean {
+  return USUARIO_ID_RE.test(value.trim());
+}
 
 function canUseIndexedDb(): boolean {
   return typeof indexedDB !== "undefined";
@@ -90,6 +97,26 @@ export function getOrCreateUsuarioId(): string {
   } catch {
     return crypto.randomUUID();
   }
+}
+
+export function setUsuarioId(id: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(DEVICE_STORAGE_KEY, id.trim().toLowerCase());
+}
+
+/** Pasa los resultados locales de un id a otro para unir dispositivos. */
+export async function reassignLocalResultados(fromId: string, toId: string): Promise<number> {
+  if (fromId === toId) return 0;
+  const cache = getLocalCache();
+  const all = await cache.getAllResultados();
+  const now = new Date().toISOString();
+  const next = all.map((r) =>
+    r.usuarioId === fromId
+      ? { ...r, usuarioId: toId, syncStatus: "pending" as const, updatedAt: now }
+      : r,
+  );
+  await cache.upsertResultados(next);
+  return next.filter((r) => r.usuarioId === toId && r.syncStatus === "pending").length;
 }
 
 export class LocalCacheService {

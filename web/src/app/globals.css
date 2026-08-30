@@ -1826,6 +1826,90 @@ h1 {
   animation: sync-pulse 1s ease-in-out infinite;
 }
 
+.device-sync {
+  margin: 0 0 1.5rem;
+  padding: 1.1rem 1rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 1.15rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.device-sync-head {
+  margin-bottom: 0.85rem;
+}
+
+.device-sync-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.device-sync-lead {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.device-sync-label {
+  display: block;
+  margin: 0.65rem 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.device-sync-code-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.device-sync-code {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  letter-spacing: -0.02em;
+}
+
+.device-sync-main-btn {
+  width: 100%;
+  margin-top: 0.85rem;
+}
+
+.device-sync-status {
+  margin: 0.45rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.device-sync-adopt {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.device-sync-ok {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: #047857;
+}
+
+.device-sync-err {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
 .sync-status-icon {
   font-weight: 700;
 }
@@ -2084,7 +2168,7 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: var(--muted);
     min-height: var(--bottom-nav-h);

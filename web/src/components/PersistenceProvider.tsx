@@ -15,12 +15,14 @@ type PersistenceContextValue = {
   phase: SyncPhase;
   detail: string | null;
   syncNow: () => Promise<void>;
+  adoptUsuarioId: (codigo: string) => Promise<void>;
 };
 
 const PersistenceContext = createContext<PersistenceContextValue>({
   phase: "idle",
   detail: null,
   syncNow: async () => undefined,
+  adoptUsuarioId: async () => undefined,
 });
 
 export function PersistenceProvider({ children }: { children: ReactNode }) {
@@ -44,9 +46,13 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
     await getSyncService().syncNow("manual");
   }, []);
 
+  const adoptUsuarioId = useCallback(async (codigo: string) => {
+    await getSyncService().adoptUsuarioId(codigo);
+  }, []);
+
   const value = useMemo(
-    () => ({ phase, detail, syncNow }),
-    [phase, detail, syncNow],
+    () => ({ phase, detail, syncNow, adoptUsuarioId }),
+    [phase, detail, syncNow, adoptUsuarioId],
   );
 
   return (

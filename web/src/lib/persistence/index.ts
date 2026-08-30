@@ -12,6 +12,8 @@ export {
   LocalCacheService,
   getLocalCache,
   getOrCreateUsuarioId,
+  isUsuarioId,
+  setUsuarioId,
 } from "@/lib/persistence/local-cache-service";
 export { SyncService, getSyncService } from "@/lib/persistence/sync-service";
 export type { SyncPhase } from "@/lib/persistence/sync-service";
