@@ -1,7 +1,13 @@
 import type { MaterialStats } from "@/lib/queries/bancos";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
-type MaterialProps = { mode: "material"; stats: MaterialStats };
+type MaterialProps = {
+  mode: "material";
+  stats: MaterialStats;
+  title?: string;
+  eyebrow?: string;
+  lead?: string;
+};
 type TestsProps = {
   mode: "tests";
   bancos: number;
@@ -56,9 +62,9 @@ export function MobileStudyHero(props: MobileStudyHeroProps) {
     const { stats } = props;
     return (
       <section className="mobile-study-hero mobile-study-hero--material" aria-label="Material disponible">
-        <p className="hero-eyebrow">Tu material</p>
-        <h1 className="page-title">Resumen</h1>
-        <p className="lead lead--compact">{JEX_SUBTITLE}</p>
+        <p className="hero-eyebrow">{props.eyebrow ?? "Tu material"}</p>
+        <h1 className="page-title">{props.title ?? "Resumen"}</h1>
+        <p className="lead lead--compact">{props.lead ?? JEX_SUBTITLE}</p>
         <div className="mobile-study-hero-body">
           <div className="mobile-study-hero-main">
             <p className="mobile-study-hero-kicker">Total preguntas</p>
@@ -169,7 +175,7 @@ export function MobileStudyHero(props: MobileStudyHeroProps) {
         <TypeCard
           label="Mazos"
           value={fmt(props.mazos)}
-          meta={`${props.materias} materia${props.materias !== 1 ? "s" : ""}`}
+          meta={`${props.materias} materia${props.materias !== 1 ? "s" : ""} con fichas`}
           variant="neutral"
         />
       </div>

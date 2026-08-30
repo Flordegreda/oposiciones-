@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const links = [
   { href: "/practicar", label: "Tests", hint: "Bancos por materia" },
-  { href: "/temario", label: "Plan", hint: "Notas y checklist" },
+  { href: "/temario", label: "Plan", hint: "Material disponible" },
   { href: "/fichas", label: "Fichas", hint: "Tarjetas Anki" },
   { href: "/simulacro", label: "Simulacro", hint: "Examen con tiempo" },
 ];
