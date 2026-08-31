@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MateriaSection } from "@/lib/queries/bancos";
 import type { MazoFichasSection } from "@/lib/queries/fichas";
+import { isProgresoBanco } from "@/lib/persistence/account";
 import { getChecklistMarks } from "@/lib/persistence/checklist-service";
 import {
   getLocalCache,
@@ -48,7 +49,9 @@ export function TemarioResultadosPrintView({
       try {
         const rows = await getLocalCache().getAllResultados();
         if (!cancelled) {
-          setResultados(rows.filter((r) => r.usuarioId === uid));
+          setResultados(
+            rows.filter((r) => r.usuarioId === uid && !isProgresoBanco(r.banco)),
+          );
         }
       } catch {
         if (!cancelled) setResultados([]);

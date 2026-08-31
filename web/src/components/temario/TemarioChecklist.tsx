@@ -5,10 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MateriaFilter, type MateriaOption } from "@/components/MateriaFilter";
 import type { MateriaSection } from "@/lib/queries/bancos";
 import type { MazoFichasSection } from "@/lib/queries/fichas";
+import { usePersistence } from "@/components/PersistenceProvider";
 import {
   getChecklistMarks,
   setMazoMarcado,
 } from "@/lib/persistence/checklist-service";
+import { isProgresoBanco } from "@/lib/persistence/account";
 import {
   getLocalCache,
   getOrCreateUsuarioId,
@@ -241,6 +243,7 @@ export function TemarioChecklist({
   allMaterias,
   variant = "avance",
 }: Props) {
+  const { revision } = usePersistence();
   const [resultados, setResultados] = useState<TestResultRecord[]>([]);
   const [marksVersion, setMarksVersion] = useState(0);
   const [materiaId, setMateriaId] = useState<string | null>(null);
@@ -255,7 +258,9 @@ export function TemarioChecklist({
       try {
         const rows = await getLocalCache().getAllResultados();
         if (!cancelled) {
-          setResultados(rows.filter((r) => r.usuarioId === uid));
+          setResultados(
+            rows.filter((r) => r.usuarioId === uid && !isProgresoBanco(r.banco)),
+          );
         }
       } catch {
         if (!cancelled) setResultados([]);
@@ -264,11 +269,11 @@ export function TemarioChecklist({
     return () => {
       cancelled = true;
     };
-  }, [variant]);
+  }, [variant, revision]);
 
   const marks = useMemo(
     () => (variant === "material" ? {} : getChecklistMarks()),
-    [marksVersion, variant],
+    [marksVersion, variant, revision],
   );
 
   const resumen = useMemo(

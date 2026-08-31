@@ -89,7 +89,7 @@ const FILTROS: { id: FiltroTiempo; label: string }[] = [
 
 export function EstadisticasDashboard() {
   const router = useRouter();
-  const { phase, syncNow } = usePersistence();
+  const { phase, revision, syncNow } = usePersistence();
   const [filtro, setFiltro] = useState<FiltroTiempo>("30dias");
   const [objetivoPct, setObjetivoPct] = useState(OBJETIVO_DEFAULT);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -116,7 +116,7 @@ export function EstadisticasDashboard() {
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, revision]);
 
   const bancosCriticos = useMemo(
     () =>
@@ -244,7 +244,7 @@ export function EstadisticasDashboard() {
             disabled={syncing || phase === "syncing"}
             className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
           >
-            {syncing ? "Sincronizando…" : "Sincronizar ahora"}
+            {syncing ? "Sincronizando…" : "Actualizar"}
           </button>
           <button
             type="button"

@@ -3,6 +3,11 @@
  * Solo navegador (client-side).
  */
 
+import {
+  JEX_ACCOUNT_ID,
+  PREV_USUARIO_KEY,
+  isProgresoBanco,
+} from "@/lib/persistence/account";
 import type {
   BancoCacheEntry,
   CacheMeta,
@@ -85,23 +90,66 @@ function reqToPromise<T>(req: IDBRequest<T>): Promise<T> {
   });
 }
 
-/** ID anónimo del dispositivo (hasta que exista auth.users). */
+/** ID de cuenta compartida (el mismo en móvil y PC). */
 export function getOrCreateUsuarioId(): string {
   if (typeof window === "undefined") return "server";
   try {
     const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
-    if (existing) return existing;
-    const id = crypto.randomUUID();
-    localStorage.setItem(DEVICE_STORAGE_KEY, id);
-    return id;
+    if (existing && existing !== JEX_ACCOUNT_ID) {
+      localStorage.setItem(PREV_USUARIO_KEY, existing);
+    }
+    if (existing === JEX_ACCOUNT_ID) return JEX_ACCOUNT_ID;
+    localStorage.setItem(DEVICE_STORAGE_KEY, JEX_ACCOUNT_ID);
+    return JEX_ACCOUNT_ID;
   } catch {
-    return crypto.randomUUID();
+    return JEX_ACCOUNT_ID;
+  }
+}
+
+export function peekPreviousUsuarioId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const prev = localStorage.getItem(PREV_USUARIO_KEY);
+    return prev && prev !== JEX_ACCOUNT_ID ? prev : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPreviousUsuarioId(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(PREV_USUARIO_KEY);
+  } catch {
+    /* ignore */
   }
 }
 
 export function setUsuarioId(id: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(DEVICE_STORAGE_KEY, id.trim().toLowerCase());
+}
+
+/** Reasigna cualquier resultado local a la cuenta compartida. Devuelve los ids antiguos. */
+export async function reassignAllLocalToAccount(): Promise<string[]> {
+  const cache = getLocalCache();
+  const all = await cache.getAllResultados();
+  const now = new Date().toISOString();
+  const fromIds = new Set<string>();
+  const next = all.map((r) => {
+    if (r.usuarioId === JEX_ACCOUNT_ID) return r;
+    fromIds.add(r.usuarioId);
+    return {
+      ...r,
+      usuarioId: JEX_ACCOUNT_ID,
+      syncStatus: "pending" as const,
+      updatedAt: now,
+    };
+  });
+  if (fromIds.size) await cache.upsertResultados(next);
+  const prev = peekPreviousUsuarioId();
+  if (prev) fromIds.add(prev);
+  return [...fromIds];
 }
 
 /** Pasa los resultados locales de un id a otro para unir dispositivos. */
@@ -261,7 +309,7 @@ export class LocalCacheService {
   /** Recalcula stats locales a partir de todos los resultados guardados. */
   async recomputeStats(usuarioId: string): Promise<UserStatsRecord> {
     const resultados = (await this.getAllResultados()).filter(
-      (r) => r.usuarioId === usuarioId,
+      (r) => r.usuarioId === usuarioId && !isProgresoBanco(r.banco),
     );
     const byBanco: UserStatsRecord["byBanco"] = {};
     const dailyMap = new Map<string, { tests: number; aciertos: number; fallos: number }>();

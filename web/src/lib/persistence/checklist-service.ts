@@ -42,14 +42,30 @@ export function isMazoMarcado(mazoId: string): boolean {
 export function setMazoMarcado(mazoId: string, done: boolean): void {
   const all = readAll();
   const key = mazoChecklistKey(mazoId);
-  if (done) {
-    all[key] = { done: true, at: new Date().toISOString() };
-  } else {
-    delete all[key];
-  }
+  all[key] = { done, at: new Date().toISOString() };
   writeAll(all);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("jex-progreso-changed"));
+  }
 }
 
 export function getChecklistMarks(): Record<string, ChecklistMark> {
   return readAll();
+}
+
+export function mergeChecklistMarks(remote: Record<string, ChecklistMark>): boolean {
+  const local = readAll();
+  let changed = false;
+  const keys = new Set([...Object.keys(local), ...Object.keys(remote)]);
+  const next: Record<string, ChecklistMark> = { ...local };
+  for (const key of keys) {
+    const a = local[key];
+    const b = remote[key];
+    const winner = !a ? b : !b ? a : Date.parse(b.at) >= Date.parse(a.at) ? b : a;
+    if (!winner) continue;
+    if (a?.done !== winner.done || a?.at !== winner.at) changed = true;
+    next[key] = winner;
+  }
+  if (changed) writeAll(next);
+  return changed;
 }

@@ -14,26 +14,28 @@ import { getSyncService, type SyncPhase } from "@/lib/persistence";
 type PersistenceContextValue = {
   phase: SyncPhase;
   detail: string | null;
+  revision: number;
   syncNow: () => Promise<void>;
-  adoptUsuarioId: (codigo: string) => Promise<void>;
 };
 
 const PersistenceContext = createContext<PersistenceContextValue>({
   phase: "idle",
   detail: null,
+  revision: 0,
   syncNow: async () => undefined,
-  adoptUsuarioId: async () => undefined,
 });
 
 export function PersistenceProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<SyncPhase>("idle");
   const [detail, setDetail] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     const sync = getSyncService();
-    const unsub = sync.subscribe((p, d) => {
+    const unsub = sync.subscribe((p, d, rev) => {
       setPhase(p);
       setDetail(d ?? null);
+      if (typeof rev === "number") setRevision(rev);
     });
     sync.start();
     return () => {
@@ -46,13 +48,9 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
     await getSyncService().syncNow("manual");
   }, []);
 
-  const adoptUsuarioId = useCallback(async (codigo: string) => {
-    await getSyncService().adoptUsuarioId(codigo);
-  }, []);
-
   const value = useMemo(
-    () => ({ phase, detail, syncNow, adoptUsuarioId }),
-    [phase, detail, syncNow, adoptUsuarioId],
+    () => ({ phase, detail, revision, syncNow }),
+    [phase, detail, revision, syncNow],
   );
 
   return (

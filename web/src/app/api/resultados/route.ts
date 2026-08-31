@@ -147,3 +147,42 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** PATCH: une resultados de un usuario_id antiguo a la cuenta compartida. */
+export async function PATCH(req: NextRequest) {
+  try {
+    if (!(await resultadosSchemaReady())) {
+      return NextResponse.json({ error: "Activa resultados_tests en Material" }, { status: 503 });
+    }
+
+    const body = (await req.json().catch(() => ({}))) as {
+      fromUsuarioId?: string;
+      toUsuarioId?: string;
+    };
+    const fromId = String(body.fromUsuarioId ?? "").trim().toLowerCase();
+    const toId = String(body.toUsuarioId ?? "").trim().toLowerCase();
+    if (!UUID_RE.test(fromId) || !UUID_RE.test(toId) || fromId === toId) {
+      return NextResponse.json({ error: "Ids no válidos" }, { status: 400 });
+    }
+
+    const supabase = getSupabase();
+    const { error, count } = await supabase
+      .from("resultados_tests")
+      .update({ usuario_id: toId, updated_at: new Date().toISOString() })
+      .eq("usuario_id", fromId);
+
+    if (error) throw new Error(error.message);
+
+    void supabase.rpc("refresh_estadisticas_usuario").then(() => undefined);
+
+    return NextResponse.json({ ok: true, moved: count ?? 0 });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Error al unir resultados" },
+      { status: 500 },
+    );
+  }
+}

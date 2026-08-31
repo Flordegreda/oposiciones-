@@ -1340,6 +1340,8 @@ h1 {
 .result-breakdown-text {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .result-flag {
@@ -1374,6 +1376,8 @@ h1 {
   font-size: 1.15rem;
   line-height: 1.5;
   margin: 0 0 1.25rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .supuesto-panel {
@@ -1402,6 +1406,8 @@ h1 {
   font-size: 0.95rem;
   line-height: 1.55;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   color: var(--foreground);
 }
 
@@ -1532,6 +1538,8 @@ h1 {
   cursor: pointer;
   perspective: 1200px;
   -webkit-tap-highlight-color: transparent;
+  white-space: normal;
+  overflow: visible;
 }
 
 .flashcard-inner {
@@ -1584,6 +1592,8 @@ h1 {
   font-size: 1.05rem;
   line-height: 1.55;
   color: var(--foreground);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .flashcard-answer {
@@ -1698,6 +1708,8 @@ h1 {
   cursor: pointer;
   font: inherit;
   line-height: 1.45;
+  white-space: normal;
+  overflow: visible;
   transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 
@@ -1749,6 +1761,9 @@ h1 {
 .option-text {
   flex: 1;
   min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .explain {
@@ -1757,6 +1772,8 @@ h1 {
   border-left: 4px solid var(--primary);
   padding: 0.85rem 1rem;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .test-actions {
@@ -1833,6 +1850,41 @@ h1 {
   border-radius: 1.15rem;
   background: #fff;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.device-sync--auto {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.device-sync-status-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.device-sync-dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.device-sync-dot--ok {
+  background: var(--success);
+}
+
+.device-sync-dot--warn {
+  background: var(--accent);
+}
+
+.device-sync-dot--pulse {
+  background: var(--primary);
+  animation: sync-pulse 1s ease-in-out infinite;
 }
 
 .device-sync-head {
@@ -2289,6 +2341,11 @@ h1 {
     font-size: 0.95rem;
   }
 
+  .supuesto-panel {
+    position: static;
+    max-height: none;
+  }
+
   .supuesto-panel-title {
     font-size: 1.05rem;
   }
@@ -2319,22 +2376,49 @@ h1 {
   .flashcard-enunciado,
   .flashcard-answer,
   .flashcard-explain {
-    font-size: 1.25rem;
-    line-height: 1.6;
+    font-size: 1.12rem;
+    line-height: 1.55;
   }
 
   .flashcard-explain {
-    font-size: 1.1rem;
+    font-size: 1.02rem;
   }
 
   .flashcard-face {
-    padding: 1.25rem 1.3rem;
+    padding: 1.15rem 1.1rem;
+    position: relative;
+    inset: auto;
+    transform: none;
+    backface-visibility: visible;
+    overflow: visible;
+    min-height: 12rem;
   }
 
   .flashcard-scene,
   .flashcard-inner {
-    min-height: min(34vh, 280px);
-    max-height: 40vh;
+    min-height: 12rem;
+    max-height: none;
+    height: auto;
+    transform: none;
+    transform-style: flat;
+    flex: none;
+  }
+
+  .flashcard-inner--flipped {
+    transform: none;
+  }
+
+  .flashcard-face--back {
+    display: none;
+    transform: none;
+  }
+
+  .flashcard-inner--flipped .flashcard-face--front {
+    display: none;
+  }
+
+  .flashcard-inner--flipped .flashcard-face--back {
+    display: flex;
   }
 
   .flashcard-grade .btn-primary,

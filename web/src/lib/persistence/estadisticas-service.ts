@@ -2,6 +2,7 @@
  * Cálculo de estadísticas del dashboard a partir de la caché local (IndexedDB).
  */
 
+import { isProgresoBanco } from "@/lib/persistence/account";
 import {
   getLocalCache,
   getOrCreateUsuarioId,
@@ -173,7 +174,7 @@ export async function getResultadosFromCache(): Promise<TestResultRecord[]> {
   const usuarioId = getOrCreateUsuarioId();
   const all = await cache.getAllResultados();
   return all
-    .filter((r) => r.usuarioId === usuarioId)
+    .filter((r) => r.usuarioId === usuarioId && !isProgresoBanco(r.banco))
     .map(normalizeResultado)
     .sort((a, b) => b.fecha.localeCompare(a.fecha));
 }

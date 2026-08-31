@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { DeviceSyncPanel } from "@/components/DeviceSyncPanel";
 import { EstadisticasDashboard } from "@/components/stats/EstadisticasDashboard";
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -22,7 +21,6 @@ export default function EstadisticasPage() {
           </p>
         </section>
 
-        <DeviceSyncPanel />
         <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
           <EstadisticasDashboard />
         </div>
