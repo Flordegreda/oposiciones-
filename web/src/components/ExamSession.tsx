@@ -609,7 +609,7 @@ export function ExamSession({
           </button>
           <button
             type="button"
-            className="btn-link btn-link--danger"
+            className="btn-danger"
             disabled={voiding}
             onClick={() => void discardAttempt()}
           >
@@ -786,6 +786,14 @@ export function ExamSession({
           </button>
         </div>
         <div className="test-actions-right">
+          <button
+            type="button"
+            className="btn-danger btn-sm"
+            disabled={voiding || grading}
+            onClick={() => void discardAttempt()}
+          >
+            Descartar intento
+          </button>
           <button
             type="button"
             className="btn-secondary btn-sm"

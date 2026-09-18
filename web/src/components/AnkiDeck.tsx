@@ -279,14 +279,19 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
 
   return (
     <div className="flashcard-deck">
-      <div className="flashcard-toolbar">
+        <div className="flashcard-toolbar">
         <span className="flashcard-count">
           {cursor + 1} / {remaining.length}
           {known > 0 ? ` · ${known} sé` : ""}
         </span>
-        <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
-          Mezclar
-        </button>
+        <div className="flashcard-toolbar-actions">
+          <button type="button" className="btn-danger btn-sm" onClick={discardAttempt}>
+            Descartar intento
+          </button>
+          <button type="button" className="btn-secondary btn-sm" onClick={reshuffle}>
+            Mezclar
+          </button>
+        </div>
       </div>
 
       <div className="flashcard-progress" aria-hidden>
@@ -381,7 +386,7 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         </div>
         <button
           type="button"
-          className="btn-link btn-link--danger flashcard-discard-link"
+          className="btn-danger flashcard-finish-btn"
           onClick={discardAttempt}
         >
           Descartar intento
