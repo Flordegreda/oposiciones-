@@ -165,6 +165,35 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
     router.push(exitHref);
   }, [deck, exitHref, persistProgress, router, unknownHits]);
 
+  const discardAttempt = useCallback(() => {
+    if (
+      !window.confirm(
+        "¿Descartar este intento? Se perderá el progreso del mazo y no se marcará como estudiado.",
+      )
+    ) {
+      return;
+    }
+    clearFichaDeckSession(sessionScope);
+    clearSeguir("ficha", mazoId);
+    router.push(exitHref);
+  }, [exitHref, mazoId, router, sessionScope]);
+
+  const voidLastAttempt = useCallback(() => {
+    if (
+      !window.confirm(
+        "¿Anular este intento? El mazo dejará de contar como estudiado en el plan de temario.",
+      )
+    ) {
+      return;
+    }
+    setMazoMarcado(mazoId, false);
+    clearFichaDeckSession(sessionScope);
+    clearSeguir("ficha", mazoId);
+    const order = shuffle(cards.map((_, i) => i));
+    setUnknownHits(0);
+    applyDeck({ remaining: order, cursor: 0 }, 0);
+  }, [applyDeck, cards, mazoId, sessionScope]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
@@ -236,6 +265,9 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
         <div className="form-actions">
           <button type="button" className="btn-primary" onClick={reshuffle}>
             Repasar otra vez
+          </button>
+          <button type="button" className="btn-danger" onClick={voidLastAttempt}>
+            Anular este intento
           </button>
           <Link href={exitHref} className="btn-secondary">
             Volver a Fichas
@@ -347,6 +379,13 @@ export function AnkiDeck({ mazoId, mazoNombre, fichas, exitHref = EXIT_HREF }: P
             Finalizar
           </button>
         </div>
+        <button
+          type="button"
+          className="btn-link btn-link--danger flashcard-discard-link"
+          onClick={discardAttempt}
+        >
+          Descartar intento
+        </button>
       </div>
     </div>
   );

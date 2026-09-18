@@ -8,6 +8,7 @@ import {
   PREV_USUARIO_KEY,
   isProgresoBanco,
 } from "@/lib/persistence/account";
+import { getVoidedIdSet } from "@/lib/persistence/voided-results";
 import type {
   BancoCacheEntry,
   CacheMeta,
@@ -207,6 +208,15 @@ export class LocalCacheService {
     await this.markDirty(true);
   }
 
+  async deleteResultado(id: string): Promise<void> {
+    if (!id) return;
+    const db = await this.db();
+    const tx = db.transaction(STORE.resultados, "readwrite");
+    tx.objectStore(STORE.resultados).delete(id);
+    await txDone(tx);
+    await this.markDirty(true);
+  }
+
   async upsertResultados(resultados: TestResultRecord[]): Promise<void> {
     if (!resultados.length) return;
     const db = await this.db();
@@ -259,9 +269,11 @@ export class LocalCacheService {
   }> {
     const local = await this.getAllResultados();
     const byId = new Map(local.map((r) => [r.id, r]));
+    const voided = getVoidedIdSet();
     let changed = false;
 
     for (const remote of cloud) {
+      if (voided.has(remote.id)) continue;
       const prev = byId.get(remote.id);
       if (!prev) {
         byId.set(remote.id, { ...remote, syncStatus: "synced" });
@@ -282,10 +294,22 @@ export class LocalCacheService {
       }
     }
 
+    for (const id of voided) {
+      if (byId.has(id)) {
+        byId.delete(id);
+        changed = true;
+      }
+    }
+
     const merged = [...byId.values()].sort((a, b) =>
       b.fecha.localeCompare(a.fecha),
     );
-    if (changed) await this.upsertResultados(merged);
+    if (changed) {
+      await this.upsertResultados(merged);
+      for (const id of voided) {
+        await this.deleteResultado(id);
+      }
+    }
     return { merged, changed };
   }
 

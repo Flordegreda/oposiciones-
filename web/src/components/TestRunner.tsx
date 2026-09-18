@@ -14,6 +14,9 @@ import {
   saveTestProgress,
   type TestProgressSnapshot,
 } from "@/lib/test-progress-storage";
+import { examNotaSobre10, formatNotaSobre10 } from "@/lib/exam-utils";
+import { getSyncService, type TestResultRecord } from "@/lib/persistence";
+import { getResultadosFromCache } from "@/lib/persistence/estadisticas-service";
 
 type Props = {
   bancoId: string;
@@ -46,6 +49,8 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
   const [examMode, setExamMode] = useState(false);
   const [saved, setSaved] = useState<TestProgressSnapshot | null>(null);
   const [ready, setReady] = useState(false);
+  const [prevResults, setPrevResults] = useState<TestResultRecord[]>([]);
+  const [voidingPrev, setVoidingPrev] = useState<string | null>(null);
 
   const sessionScope = `test:${bancoId}`;
 
@@ -133,6 +138,19 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
     setReady(true);
   }, [bancoId, fingerprint, startSaved]);
 
+  const refreshPrevResults = useCallback(async () => {
+    try {
+      const all = await getResultadosFromCache();
+      setPrevResults(all.filter((r) => r.banco === bancoId).slice(0, 5));
+    } catch {
+      setPrevResults([]);
+    }
+  }, [bancoId]);
+
+  useEffect(() => {
+    void refreshPrevResults();
+  }, [refreshPrevResults]);
+
   const persistProgress = useCallback(
     (index: number, answers: (number | null)[]) => {
       if (!session) return;
@@ -168,7 +186,46 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
     clearSeguir("test", bancoId);
     setSaved(null);
     setSession(null);
+    void refreshPrevResults();
+  }, [bancoId, sessionScope, refreshPrevResults]);
+
+  const discardInProgress = useCallback(() => {
+    completeSession();
+  }, [completeSession]);
+
+  const discardSaved = useCallback(() => {
+    if (
+      !window.confirm(
+        "¿Descartar el intento a medias? No se guardará. Podrás empezar de nuevo.",
+      )
+    ) {
+      return;
+    }
+    clearExamSession(sessionScope);
+    clearTestProgress(bancoId);
+    clearSeguir("test", bancoId);
+    setSaved(null);
   }, [bancoId, sessionScope]);
+
+  const voidPrevious = useCallback(
+    async (id: string) => {
+      if (
+        !window.confirm(
+          "¿Anular este intento? Se borrará de las estadísticas y del plan de temario.",
+        )
+      ) {
+        return;
+      }
+      setVoidingPrev(id);
+      try {
+        await getSyncService().voidResult(id);
+        await refreshPrevResults();
+      } finally {
+        setVoidingPrev(null);
+      }
+    },
+    [refreshPrevResults],
+  );
 
   if (!ready && !session) {
     return (
@@ -189,6 +246,7 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
         timerSeconds={null}
         backHref="/practicar"
         onFinish={completeSession}
+        onDiscard={discardInProgress}
         onPause={() => {
           setSaved(loadTestProgress(bancoId));
           setSession(null);
@@ -242,6 +300,12 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
             <span className="muted small">{savedHint}</span>
           </button>
         )}
+        {saved && (
+          <button type="button" className="test-mode-btn test-mode-btn--danger" onClick={discardSaved}>
+            <strong>Descartar intento</strong>
+            <span className="muted small">Borra el progreso a medias. No cuenta como resultado.</span>
+          </button>
+        )}
         <button type="button" className="test-mode-btn" onClick={() => startFresh(allPreguntas)}>
           <strong>{saved ? "Empezar de nuevo" : "Todo el banco"}</strong>
           <span className="muted small">
@@ -261,6 +325,44 @@ export function TestRunner({ bancoId, bancoNombre, preguntas: raw }: Props) {
           terminar.
         </span>
       </label>
+
+      {prevResults.length > 0 && (
+        <div className="attempt-history">
+          <p className="test-meta">Intentos anteriores</p>
+          <ul className="attempt-history-list">
+            {prevResults.map((r) => {
+              const nota = examNotaSobre10(r.aciertos, r.fallos, r.totalPreguntas);
+              let when = r.fecha;
+              try {
+                when = new Date(r.fecha).toLocaleString("es-ES", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              } catch {
+                /* keep iso */
+              }
+              return (
+                <li key={r.id} className="attempt-history-item">
+                  <span>
+                    {when} · {formatNotaSobre10(nota)}/10 · {r.aciertos}/{r.totalPreguntas}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-link btn-link--danger btn-sm"
+                    disabled={voidingPrev === r.id}
+                    onClick={() => void voidPrevious(r.id)}
+                  >
+                    {voidingPrev === r.id ? "Anulando…" : "Anular"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

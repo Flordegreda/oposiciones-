@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase/server";
 import { resultadosSchemaReady } from "@/lib/queries/schema";
+import { PROGRESO_RESULT_ID } from "@/lib/persistence/account";
 
 export const runtime = "nodejs";
 
@@ -150,6 +151,44 @@ export async function POST(req: NextRequest) {
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** DELETE: anula un intento (?id=&usuarioId=). */
+export async function DELETE(req: NextRequest) {
+  try {
+    if (!(await resultadosSchemaReady())) {
+      return NextResponse.json({ error: "Activa resultados_tests en Material" }, { status: 503 });
+    }
+
+    const id = String(req.nextUrl.searchParams.get("id") ?? "").trim();
+    const usuarioId = String(req.nextUrl.searchParams.get("usuarioId") ?? "")
+      .trim()
+      .toLowerCase();
+    if (!UUID_RE.test(id) || !UUID_RE.test(usuarioId)) {
+      return NextResponse.json({ error: "Ids no válidos" }, { status: 400 });
+    }
+    if (id.toLowerCase() === PROGRESO_RESULT_ID) {
+      return NextResponse.json({ error: "No se puede anular el progreso" }, { status: 400 });
+    }
+
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from("resultados_tests")
+      .delete()
+      .eq("id", id)
+      .eq("usuario_id", usuarioId);
+
+    if (error) throw new Error(error.message);
+
+    void supabase.rpc("refresh_estadisticas_usuario").then(() => undefined);
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Error al anular el intento" },
+      { status: 500 },
+    );
+  }
+}
 
 /** PATCH: une resultados de un usuario_id antiguo a la cuenta compartida. */
 export async function PATCH(req: NextRequest) {

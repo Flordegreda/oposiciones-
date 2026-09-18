@@ -25,6 +25,11 @@ import {
 import type { TestResultRecord } from "@/lib/persistence/types";
 import { embedDetalleInRespuestas, extractDetalleFromRespuestas } from "@/lib/persistence/estadisticas-service";
 import { fetchWithRetry } from "@/lib/retry";
+import {
+  getPendingVoidIds,
+  markResultadoVoided,
+  markResultadoVoidSynced,
+} from "@/lib/persistence/voided-results";
 
 export type SyncPhase = "idle" | "syncing" | "synced" | "offline" | "error";
 
@@ -223,6 +228,39 @@ export class SyncService {
     return record;
   }
 
+  /** Borra un intento del historial (local + nube). */
+  async voidResult(id: string): Promise<void> {
+    if (!id || id === PROGRESO_RESULT_ID) return;
+    markResultadoVoided(id, false);
+    const cache = getLocalCache();
+    await cache.deleteResultado(id);
+    await cache.recomputeStats(getOrCreateUsuarioId());
+    this.bumpRevision();
+    try {
+      await this.flushVoids();
+    } catch {
+      /* se reintenta en el próximo sync */
+    }
+    void this.syncNow("focus");
+  }
+
+  private async flushVoids(): Promise<void> {
+    const ids = getPendingVoidIds().filter((id) => id !== PROGRESO_RESULT_ID);
+    if (!ids.length) return;
+    const usuarioId = getOrCreateUsuarioId();
+    for (const id of ids) {
+      const qs = new URLSearchParams({ usuarioId, id });
+      const res = await fetchWithRetry(
+        `/api/resultados?${qs}`,
+        { method: "DELETE" },
+        { retries: 1, baseDelayMs: 300, maxDelayMs: 2_000 },
+      );
+      if (res.ok || res.status === 404) {
+        markResultadoVoidSynced(id);
+      }
+    }
+  }
+
   async syncNow(reason: "startup" | "interval" | "manual" | "focus" = "manual"): Promise<void> {
     if (this.running) return this.running;
     this.running = this.runSync(reason).finally(() => {
@@ -287,6 +325,7 @@ export class SyncService {
       const raw = data.resultados ?? [];
       const tests = raw.filter((r) => !isProgresoBanco(r.banco)).map(cloudToLocal);
       const progreso = raw.find((r) => isProgresoBanco(r.banco));
+      await this.flushVoids().catch(() => undefined);
       const merged = await cache.mergeCloudResultados(tests);
       const checklistChanged = progreso ? this.applyProgreso(progreso) : false;
       await cache.recomputeStats(usuarioId);

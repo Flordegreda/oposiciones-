@@ -47,6 +47,8 @@ type Props = {
   initialAnswers?: (number | null)[];
   /** Salir a medias: no borrar el progreso. */
   onPause?: () => void;
+  /** Descartar el intento en curso (sin guardar) o anular el resultado. */
+  onDiscard?: () => void;
   onProgress?: (index: number, answers: (number | null)[]) => void;
 };
 
@@ -77,6 +79,7 @@ export function ExamSession({
   initialIndex = 0,
   initialAnswers,
   onPause,
+  onDiscard,
   onProgress,
 }: Props) {
   const pathname = usePathname();
@@ -84,6 +87,7 @@ export function ExamSession({
   const timerIdRef = useRef<number | null>(null);
   const startedAtRef = useRef<number>(Date.now());
   const savedResultRef = useRef(false);
+  const resultIdRef = useRef<string | null>(null);
   const [phase, setPhase] = useState<Phase>("test");
   const [index, setIndex] = useState(() => {
     if (
@@ -107,6 +111,8 @@ export function ExamSession({
   const [timerEnded, setTimerEnded] = useState(false);
   const [grading, setGrading] = useState(false);
   const [localSaved, setLocalSaved] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const [voiding, setVoiding] = useState(false);
 
   const isRepaso = tipo === "repaso_fallos";
 
@@ -254,9 +260,12 @@ export function ExamSession({
       Math.round((Date.now() - startedAtRef.current) / 1000),
     );
 
+    const resultId = crypto.randomUUID();
+    resultIdRef.current = resultId;
+    setSavedResultId(resultId);
     void getSyncService()
       .saveResultAndEnqueue({
-        id: crypto.randomUUID(),
+        id: resultId,
         banco,
         test: title,
         fecha: new Date().toISOString(),
@@ -272,10 +281,13 @@ export function ExamSession({
         if (isRepaso) {
           await marcarRepasoCompletado(detallePreguntas.map((d) => d.preguntaId));
         }
+        setSavedResultId(resultId);
         setLocalSaved(true);
       })
       .catch(() => {
         savedResultRef.current = false;
+        resultIdRef.current = null;
+        setSavedResultId(null);
       });
   }, [
     phase,
@@ -328,6 +340,39 @@ export function ExamSession({
     backHref,
     router,
   ]);
+
+  const leaveAfterDiscard = useCallback(() => {
+    if (onDiscard) {
+      onDiscard();
+      return;
+    }
+    onFinish?.();
+    if (pathname !== backHref) router.push(backHref);
+  }, [onDiscard, onFinish, pathname, backHref, router]);
+
+  const discardAttempt = useCallback(async () => {
+    const inProgress = phase === "test";
+    const msg = inProgress
+      ? "¿Descartar este intento? No se guardará el progreso. Podrás empezar de nuevo."
+      : "¿Anular este intento? Se borrará de las estadísticas y del plan de temario.";
+    if (!window.confirm(msg)) return;
+
+    stopTimer();
+    setVoiding(true);
+    try {
+      const id = resultIdRef.current || savedResultId;
+      if (id) {
+        await getSyncService().voidResult(id);
+      }
+      resultIdRef.current = null;
+      setSavedResultId(null);
+      setLocalSaved(false);
+      savedResultRef.current = false;
+    } finally {
+      setVoiding(false);
+    }
+    leaveAfterDiscard();
+  }, [phase, stopTimer, savedResultId, leaveAfterDiscard]);
 
   useEffect(() => {
     if (phase !== "test" || timerSeconds === null) return;
@@ -562,6 +607,14 @@ export function ExamSession({
           <button type="button" className="btn-primary" onClick={() => onFinish?.()}>
             {onFinish ? "Volver" : "Repetir"}
           </button>
+          <button
+            type="button"
+            className="btn-link btn-link--danger"
+            disabled={voiding}
+            onClick={() => void discardAttempt()}
+          >
+            {voiding ? "Anulando…" : "Anular este intento"}
+          </button>
           <button type="button" className="btn-link" onClick={exitSession}>
             Salir
           </button>
@@ -595,6 +648,14 @@ export function ExamSession({
               ⏱ {formatExamTime(remaining)}
             </span>
           )}
+          <button
+            type="button"
+            className="btn-link btn-sm btn-link--danger"
+            disabled={voiding}
+            onClick={() => void discardAttempt()}
+          >
+            Descartar
+          </button>
           <button type="button" className="btn-link btn-sm" onClick={exitSession}>
             Salir
           </button>

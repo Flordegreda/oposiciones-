@@ -1110,9 +1110,45 @@ h1 {
   background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
 }
 
-.test-mode-btn.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.test-mode-btn--danger {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+}
+
+.test-mode-btn--danger:hover {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--surface) 88%, var(--danger) 12%);
+}
+
+.attempt-history {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.attempt-history-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.attempt-history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.88rem;
+}
+
+.flashcard-discard-link {
+  display: block;
+  width: 100%;
+  max-width: var(--max);
+  margin: 0.35rem auto 0;
+  text-align: center;
 }
 
 .test-start-title {

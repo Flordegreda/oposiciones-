@@ -144,6 +144,7 @@ export function SimulacroLauncher({ meta }: Props) {
           timerSeconds={running.timerSeconds}
           backHref="/simulacro"
           onFinish={exitSimulacro}
+          onDiscard={exitSimulacro}
           optionMaps={running.optionMaps}
           originalOpciones={running.originalOpciones}
         />

@@ -98,6 +98,7 @@ export function EstadisticasDashboard() {
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<TestReciente | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [voidingId, setVoidingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -175,6 +176,27 @@ export function EstadisticasDashboard() {
       setError(e instanceof Error ? e.message : "No se pudo subir el historial");
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleVoidResult(id: string) {
+    if (
+      !window.confirm(
+        "¿Anular este intento? Se borrará de las estadísticas y del plan de temario.",
+      )
+    ) {
+      return;
+    }
+    setVoidingId(id);
+    setError(null);
+    try {
+      await getSyncService().voidResult(id);
+      setDetalle(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo anular el intento");
+    } finally {
+      setVoidingId(null);
     }
   }
 
@@ -578,7 +600,12 @@ export function EstadisticasDashboard() {
       )}
 
       {detalle && (
-        <TestDetalleModal test={detalle} onClose={() => setDetalle(null)} />
+        <TestDetalleModal
+          test={detalle}
+          voiding={voidingId === detalle.id}
+          onClose={() => setDetalle(null)}
+          onVoid={handleVoidResult}
+        />
       )}
     </div>
   );
@@ -712,9 +739,13 @@ function KpiCard({
 function TestDetalleModal({
   test,
   onClose,
+  onVoid,
+  voiding,
 }: {
   test: TestReciente;
   onClose: () => void;
+  onVoid?: (id: string) => Promise<void> | void;
+  voiding?: boolean;
 }) {
   const bancoHref =
     test.banco && test.banco !== "simulacro" && test.banco !== "desconocido"
@@ -793,6 +824,14 @@ function TestDetalleModal({
           >
             Abrir banco
           </Link>
+          <button
+            type="button"
+            className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+            disabled={voiding}
+            onClick={() => void onVoid?.(test.id)}
+          >
+            {voiding ? "Anulando…" : "Anular intento"}
+          </button>
           <button
             type="button"
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"

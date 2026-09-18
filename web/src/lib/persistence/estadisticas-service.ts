@@ -3,6 +3,7 @@
  */
 
 import { isProgresoBanco } from "@/lib/persistence/account";
+import { getVoidedIdSet } from "@/lib/persistence/voided-results";
 import {
   getLocalCache,
   getOrCreateUsuarioId,
@@ -172,9 +173,13 @@ export function extractDetalleFromRespuestas(
 export async function getResultadosFromCache(): Promise<TestResultRecord[]> {
   const cache = getLocalCache();
   const usuarioId = getOrCreateUsuarioId();
+  const voided = getVoidedIdSet();
   const all = await cache.getAllResultados();
   return all
-    .filter((r) => r.usuarioId === usuarioId && !isProgresoBanco(r.banco))
+    .filter(
+      (r) =>
+        r.usuarioId === usuarioId && !isProgresoBanco(r.banco) && !voided.has(r.id),
+    )
     .map(normalizeResultado)
     .sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
