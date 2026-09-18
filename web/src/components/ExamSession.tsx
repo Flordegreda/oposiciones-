@@ -88,6 +88,9 @@ export function ExamSession({
   const startedAtRef = useRef<number>(Date.now());
   const savedResultRef = useRef(false);
   const resultIdRef = useRef<string | null>(null);
+  const deadlineRef = useRef<number | null>(null);
+  const finishTestRef = useRef<() => Promise<void>>(async () => undefined);
+  const finishingRef = useRef(false);
   const [phase, setPhase] = useState<Phase>("test");
   const [index, setIndex] = useState(() => {
     if (
@@ -174,6 +177,12 @@ export function ExamSession({
   const canPrintWithKey = phase === "result" && answerMeta.size > 0;
 
   const finishTest = useCallback(async () => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    if (timerIdRef.current !== null) {
+      window.clearInterval(timerIdRef.current);
+      timerIdRef.current = null;
+    }
     if (examMode) {
       setGrading(true);
       try {
@@ -214,6 +223,8 @@ export function ExamSession({
     }
     setPhase("result");
   }, [examMode, active, answers, optionMaps]);
+
+  finishTestRef.current = finishTest;
 
   // Persistencia híbrida: IndexedDB al instante + sync en background
   useEffect(() => {
@@ -307,6 +318,7 @@ export function ExamSession({
       window.clearInterval(timerIdRef.current);
       timerIdRef.current = null;
     }
+    deadlineRef.current = null;
     setRemaining(null);
   }, []);
 
@@ -375,16 +387,23 @@ export function ExamSession({
   }, [phase, stopTimer, savedResultId, leaveAfterDiscard]);
 
   useEffect(() => {
-    if (phase !== "test" || timerSeconds === null) return;
-    const deadline = Date.now() + timerSeconds * 1000;
-    setRemaining(timerSeconds);
+    if (phase !== "test" || timerSeconds === null || timerSeconds <= 0) return;
+    if (deadlineRef.current === null) {
+      deadlineRef.current = Date.now() + timerSeconds * 1000;
+    }
 
     const tick = () => {
+      const deadline = deadlineRef.current;
+      if (deadline === null) return;
       const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setRemaining(left);
       if (left === 0) {
+        if (timerIdRef.current !== null) {
+          window.clearInterval(timerIdRef.current);
+          timerIdRef.current = null;
+        }
         setTimerEnded(true);
-        void finishTest();
+        void finishTestRef.current();
       }
     };
 
@@ -396,7 +415,7 @@ export function ExamSession({
         timerIdRef.current = null;
       }
     };
-  }, [phase, timerSeconds, finishTest]);
+  }, [phase, timerSeconds]);
 
   const goTo = useCallback(
     (i: number) => {
@@ -640,14 +659,6 @@ export function ExamSession({
           {canPrintWithKey && (
             <TestPrintButton title={title} preguntas={printable} />
           )}
-          {timerSeconds !== null && remaining !== null && (
-            <span
-              className={`test-timer ${remaining <= 300 ? "warning" : ""}`}
-              aria-live="polite"
-            >
-              ⏱ {formatExamTime(remaining)}
-            </span>
-          )}
           <button
             type="button"
             className="btn-link btn-sm btn-link--danger"
@@ -661,6 +672,14 @@ export function ExamSession({
           </button>
         </div>
       </div>
+      {timerSeconds !== null && remaining !== null && (
+        <div
+          className={`test-timer test-timer--bar ${remaining <= 300 ? "warning" : ""}`}
+          aria-live="polite"
+        >
+          ⏱ {formatExamTime(remaining)}
+        </div>
+      )}
 
       {banner && (
         <p

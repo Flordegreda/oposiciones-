@@ -2093,6 +2093,16 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+.test-timer--bar {
+  display: block;
+  width: fit-content;
+  margin: 0 0 0.85rem;
+  font-size: 1.05rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
 .test-timer.warning {
   color: var(--danger);
   background: var(--danger-bg);
