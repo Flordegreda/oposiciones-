@@ -422,17 +422,6 @@ export function notaBanda(notaSobre10: number | null): NotaBanda {
   return "baja";
 }
 
-/** Materias con tests hechos, de peor media a mejor (para saber dónde centrarse). */
-export function materiasAReforzar(
-  materias: TemarioMateriaResumen[],
-  max = 6,
-): TemarioMateriaResumen[] {
-  return materias
-    .filter((m) => m.mediaTests !== null && m.testsHechos > 0)
-    .sort((a, b) => (a.mediaTests ?? 0) - (b.mediaTests ?? 0))
-    .slice(0, max);
-}
-
 function tipoEtiqueta(item: TemarioChecklistItem): string {
   if (item.kind === "fichas") return "Fichas";
   return item.tipo === "practico" ? "Práctico" : "Teórico";

@@ -463,29 +463,6 @@ body::before {
   color: #888;
 }
 
-.print-notas-focus {
-  margin: 0 0 1.1rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid #e2b86a;
-  border-radius: 4px;
-  background: #fff8eb;
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-.print-notas-focus-title {
-  margin: 0 0 0.15rem;
-  font-size: 11pt;
-  font-weight: 700;
-}
-
-.print-notas-focus-list {
-  margin: 0.35rem 0 0;
-  padding-left: 1.2rem;
-  font-size: 9pt;
-  line-height: 1.45;
-}
-
 .print-check-box {
   display: inline-block;
   width: 0.85rem;
@@ -525,6 +502,70 @@ body::before {
   color: #666;
   font-style: italic;
   font-size: 9.5pt;
+}
+
+.print-informe-table {
+  font-size: 8.5pt;
+}
+
+.print-informe-fecha {
+  white-space: nowrap;
+  font-size: 8pt;
+  color: #444;
+  width: 7.2rem;
+}
+
+.print-informe-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  width: 3.2rem;
+}
+
+.print-informe-listado {
+  margin-bottom: 1.25rem;
+}
+
+.print-informe-mal {
+  margin-top: 1.25rem;
+}
+
+.print-informe-mal-test {
+  margin: 0.85rem 0 1rem;
+}
+
+.print-informe-mal-title {
+  margin: 0 0 0.25rem;
+  font-size: 10pt;
+  font-weight: 700;
+}
+
+.print-informe-mal-meta {
+  font-weight: 400;
+  font-size: 8pt;
+  color: #555;
+}
+
+.print-informe-mal-list {
+  margin: 0.2rem 0 0;
+  padding-left: 1.15rem;
+  font-size: 9pt;
+  line-height: 1.4;
+}
+
+.print-informe-mal-list li {
+  margin: 0 0 0.4rem;
+}
+
+.print-informe-mal-enunciado {
+  display: block;
+}
+
+.print-informe-mal-letras {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 8pt;
+  color: #7f1d1d;
 }
 
 .print-fichas-list {
@@ -584,6 +625,11 @@ body::before {
   }
 
   .print-checklist-table tbody tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-informe-mal-list li {
     break-inside: avoid;
     page-break-inside: avoid;
   }

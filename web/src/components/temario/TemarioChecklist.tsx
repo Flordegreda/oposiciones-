@@ -21,7 +21,6 @@ import {
   construirTemarioChecklist,
   construirTemarioInventario,
   formatContenidoResumen,
-  materiasAReforzar,
   type MateriaCatalogo,
   type TemarioChecklistItem,
   type TemarioMateriaResumen,
@@ -348,7 +347,6 @@ export function TemarioChecklist({
   }
 
   const pendientes = resumen.totalItems - resumen.hechos;
-  const reforzar = variant === "avance" ? materiasAReforzar(resumen.materias) : [];
   const inventario = variant === "material";
 
   return (
@@ -421,39 +419,6 @@ export function TemarioChecklist({
         </div>
       )}
 
-      {!inventario && reforzar.length > 0 && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-          <p className="text-sm font-semibold text-amber-950">Céntrate más aquí</p>
-          <p className="mt-0.5 text-xs text-amber-800">
-            Materias con la nota media más baja (penalizada sobre 10). Prioriza los tests en rojo
-            (&lt;6).
-          </p>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-            {reforzar.map((m) => (
-              <li key={m.materiaId}>
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-amber-200/80 bg-white px-3 py-2 text-left text-sm hover:border-amber-400"
-                  onClick={() => {
-                    setSoloPendientes(false);
-                    setMateriaId(m.materiaId);
-                    setOpenIds((prev) => new Set(prev).add(m.materiaId));
-                  }}
-                >
-                  <span className="min-w-0 truncate font-medium text-slate-800">{m.materiaNombre}</span>
-                  <span className={`shrink-0 font-bold tabular-nums ${notaColor(m.mediaTests)}`}>
-                    {formatNotaSobre10(m.mediaTests)}
-                    <span className="ml-1 text-xs font-medium text-slate-500">
-                      · {m.testsHechos} test{m.testsHechos !== 1 ? "s" : ""}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {inventario && (
         <p className="rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
           <span className="font-semibold text-slate-800">Material total: </span>
@@ -472,14 +437,24 @@ export function TemarioChecklist({
             🖨️ Imprimir inventario
           </a>
         ) : (
-          <a
-            href="/imprimir/temario/resultados"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
-          >
-            📄 Exportar notas PDF
-          </a>
+          <>
+            <a
+              href="/imprimir/temario/resultados"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+            >
+              📄 Exportar notas PDF
+            </a>
+            <a
+              href="/imprimir/resultados?periodo=todo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+            >
+              🖨️ Informe de tests
+            </a>
+          </>
         )}
         {materiasOptions.length > 1 && (
           <MateriaFilter

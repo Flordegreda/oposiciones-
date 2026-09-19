@@ -211,6 +211,21 @@ export function formatNotaSobre10(n: number | null | undefined): string {
   return nota10Fmt.format(n);
 }
 
+const netoFmt = new Intl.NumberFormat("es-ES", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+export function formatNeto(ok: number, fail: number): string {
+  return netoFmt.format(examNeto(ok, fail));
+}
+
+/** Letra A/B/C/D a partir del índice de opción (0-based). */
+export function letraOpcion(i: number | null | undefined): string {
+  if (i == null || !Number.isInteger(i) || i < 0 || i > 25) return "—";
+  return String.fromCharCode(65 + i);
+}
+
 export function presetSummary(presetId: SimulacroPresetId, pick: SimulacroPick): string {
   const preset = SIMULACRO_PRESETS.find((p) => p.id === presetId)!;
   const parts = [`${pick.teoricoUsed} teóricas`, `${pick.practicoUsed} prácticas`];

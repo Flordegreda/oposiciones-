@@ -75,6 +75,7 @@ export type TestReciente = {
   bancoNombre: string;
   test: string;
   aciertos: number;
+  fallos: number;
   totalPreguntas: number;
   porcentaje: number;
   tiempoTotal: number | null;
@@ -596,6 +597,7 @@ export function obtenerTestsRecientes(
     bancoNombre: bancoNombreFrom(r.banco, r.test, bancos),
     test: r.test,
     aciertos: r.aciertos,
+    fallos: r.fallos,
     totalPreguntas: r.totalPreguntas,
     porcentaje:
       r.totalPreguntas > 0 ? (r.aciertos / r.totalPreguntas) * 100 : 0,

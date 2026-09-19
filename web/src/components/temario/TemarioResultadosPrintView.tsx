@@ -14,7 +14,6 @@ import { formatNotaSobre10 } from "@/lib/exam-utils";
 import {
   construirTemarioChecklist,
   formatContenidoResumen,
-  materiasAReforzar,
   notaBanda,
   tipoCodigo,
   tipoEtiqueta,
@@ -77,11 +76,6 @@ export function TemarioResultadosPrintView({
     year: "numeric",
   });
 
-  const reforzar = materiasAReforzar(resumen.materias, 8);
-  const testsConNota = resumen.materias.flatMap((m) =>
-    m.items.filter((i) => i.kind === "test" && i.notaSobre10 !== null),
-  );
-
   if (!ready) {
     return (
       <>
@@ -134,28 +128,6 @@ export function TemarioResultadosPrintView({
             · Verde ≥7,5
           </p>
         </header>
-
-        {reforzar.length > 0 && (
-          <section className="print-notas-focus">
-            <h2 className="print-notas-focus-title">Céntrate más aquí</h2>
-            <p className="print-checklist-materia-meta">
-              Materias con la nota media más baja ({testsConNota.length} test
-              {testsConNota.length !== 1 ? "s" : ""} con nota).
-            </p>
-            <ol className="print-notas-focus-list">
-              {reforzar.map((m) => (
-                <li key={m.materiaId}>
-                  <strong>{m.materiaNombre}</strong>
-                  {" · "}
-                  media {formatNotaSobre10(m.mediaTests)}/10
-                  {m.mediaPct !== null && <> ({m.mediaPct}%)</>}
-                  {" · "}
-                  {m.testsHechos}/{m.testsTotal} tests
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
 
         {resumen.testsHechos === 0 && (
           <p className="print-checklist-empty" style={{ padding: "0.75rem 0" }}>

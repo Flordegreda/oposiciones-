@@ -16,6 +16,7 @@ import {
   type FiltroTiempo,
   type TestReciente,
 } from "@/lib/persistence/estadisticas-service";
+import { examNotaSobre10, formatNotaSobre10, formatNeto } from "@/lib/exam-utils";
 import { getLocalCache, getSyncService } from "@/lib/persistence";
 
 const OBJETIVO_DEFAULT = 70;
@@ -268,6 +269,14 @@ export function EstadisticasDashboard() {
           >
             {syncing ? "Sincronizando…" : "Actualizar"}
           </button>
+          <a
+            href={`/imprimir/resultados?periodo=${filtro}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            Imprimir informe
+          </a>
           <button
             type="button"
             onClick={() => void handleExportLocal()}
@@ -535,7 +544,8 @@ export function EstadisticasDashboard() {
                 Rendimiento por test
               </h2>
               <p className="text-sm text-slate-500">
-                Más recientes primero · pulsa una fila para ver el detalle
+                Más recientes primero · pulsa una fila para ver el detalle · la neta penaliza
+                incorrectas (−1/4)
               </p>
             </div>
             {(data?.testsRecientes.length ?? 0) === 0 ? (
@@ -553,7 +563,9 @@ export function EstadisticasDashboard() {
                     <tr>
                       <th className="px-4 py-3 font-medium">Test</th>
                       <th className="px-4 py-3 font-medium">Aciertos</th>
-                      <th className="min-w-[140px] px-4 py-3 font-medium">%</th>
+                      <th className="px-4 py-3 font-medium">Fallos</th>
+                      <th className="px-4 py-3 font-medium">Neta /10</th>
+                      <th className="min-w-[140px] px-4 py-3 font-medium">% bruto</th>
                       <th className="px-4 py-3 font-medium">Tiempo</th>
                       <th className="px-4 py-3 font-medium">Fecha</th>
                     </tr>
@@ -571,6 +583,14 @@ export function EstadisticasDashboard() {
                         </td>
                         <td className="px-4 py-3 tabular-nums text-slate-700">
                           {t.aciertos}/{t.totalPreguntas}
+                        </td>
+                        <td className="px-4 py-3 tabular-nums text-slate-700">
+                          {t.fallos}
+                        </td>
+                        <td className="px-4 py-3 tabular-nums font-medium text-slate-800">
+                          {formatNotaSobre10(
+                            examNotaSobre10(t.aciertos, t.fallos, t.totalPreguntas),
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="mb-1 text-xs font-medium text-slate-600">
@@ -780,7 +800,24 @@ function TestDetalleModal({
 
         <dl className="mb-4 grid grid-cols-2 gap-3 text-sm">
           <div className="rounded-xl bg-slate-50 p-3">
-            <dt className="text-xs text-slate-500">Aciertos</dt>
+            <dt className="text-xs text-slate-500">Nota neta</dt>
+            <dd className="font-semibold text-slate-800">
+              {formatNotaSobre10(
+                examNotaSobre10(test.aciertos, test.fallos, test.totalPreguntas),
+              )}
+              /10 · neto {formatNeto(test.aciertos, test.fallos)}
+            </dd>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-3">
+            <dt className="text-xs text-slate-500">Aciertos / fallos</dt>
+            <dd className="font-semibold text-slate-800">
+              {test.aciertos} aciertos · {test.fallos} fallos ·{" "}
+              {Math.max(0, test.totalPreguntas - test.aciertos - test.fallos)} en
+              blanco
+            </dd>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-3">
+            <dt className="text-xs text-slate-500">Acierto bruto</dt>
             <dd className="font-semibold text-slate-800">
               {test.aciertos}/{test.totalPreguntas} ({test.porcentaje.toFixed(0)}%)
             </dd>

@@ -5,9 +5,16 @@ import Link from "next/link";
 type Props = {
   soloPendientes?: boolean;
   showToggle?: boolean;
+  backHref?: string;
+  backLabel?: string;
 };
 
-export function PrintTemarioToolbar({ soloPendientes = true, showToggle = true }: Props) {
+export function PrintTemarioToolbar({
+  soloPendientes = true,
+  showToggle = true,
+  backHref = "/temario",
+  backLabel = "← Volver al plan",
+}: Props) {
   return (
     <div className="print-toolbar no-print">
       <button type="button" className="print-toolbar-btn" onClick={() => window.print()}>
@@ -21,8 +28,8 @@ export function PrintTemarioToolbar({ soloPendientes = true, showToggle = true }
           {soloPendientes ? "Ver temario completo" : "Ver solo pendientes"}
         </Link>
       )}
-      <Link href="/temario" className="print-toolbar-link">
-        ← Volver al plan
+      <Link href={backHref} className="print-toolbar-link">
+        {backLabel}
       </Link>
     </div>
   );

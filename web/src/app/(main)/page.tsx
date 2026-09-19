@@ -39,7 +39,7 @@ export default async function HomePage() {
         <p className="hero-eyebrow">Tu avance</p>
         <h1 className="page-title">Resumen</h1>
         <p className="lead lead--compact">
-          Notas, tests hechos y en qué centrarte · {JEX_SUBTITLE}
+          Notas, tests hechos y pendientes · {JEX_SUBTITLE}
         </p>
       </section>
 
