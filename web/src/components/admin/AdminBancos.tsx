@@ -6,7 +6,18 @@ import { useEffect, useMemo, useState } from "react";
 import { MateriaFilter } from "@/components/MateriaFilter";
 import { TestPrintButton } from "@/components/TestPrintButton";
 import type { BancoRow } from "@/lib/queries/bancos";
-import { materiaNombre, sortBancosByNombre } from "@/lib/queries/bancos";
+
+function materiaNombre(m: BancoRow["materias"]): string {
+  if (!m) return "Sin materia";
+  if (Array.isArray(m)) return m[0]?.nombre ?? "Sin materia";
+  return m.nombre;
+}
+
+function sortBancosByNombre(bancos: BancoRow[]): BancoRow[] {
+  return [...bancos].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base", numeric: true }),
+  );
+}
 
 type Props = { bancos: BancoRow[] };
 
