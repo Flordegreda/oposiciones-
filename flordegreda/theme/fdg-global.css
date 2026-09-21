@@ -4,18 +4,44 @@
 
 :root {
   --fdg-content-max: 1400px;
+  --fdg-content-pad: 28px;
+  --fdg-sand: #e9e6d7;
+  --fdg-paper: #e9e6d7;
 }
 
-/* ---- ANCHO MÁXIMO Y LATERALES ---- */
+/* Mismo arena en márgenes de página y cabecera */
+html,
+body {
+  background-color: var(--fdg-sand) !important;
+}
+
+/* ---- ANCHO ÚNICO en todas las páginas (caja 1400px, no a sangre) ---- */
+body .grid-container,
+body .wp-block-group__inner-container,
+body .site.grid-container,
+body .one-container .container,
+body .one-container #page.site.grid-container,
+body #page.site.grid-container,
+body .site-header .inside-header,
+body .main-navigation .inside-navigation.grid-container,
+body .inside-site-info.grid-container,
+body .fdg-footer__inner {
+  max-width: var(--fdg-content-max) !important;
+}
+
 .grid-container {
   max-width: var(--fdg-content-max) !important;
-  padding-left: 28px !important;
-  padding-right: 28px !important;
+  padding-left: var(--fdg-content-pad) !important;
+  padding-right: var(--fdg-content-pad) !important;
 }
 
 .one-container .container,
-.one-container #page.site.grid-container {
+.one-container #page.site.grid-container,
+#page.site.grid-container {
   max-width: var(--fdg-content-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  background-color: var(--fdg-sand) !important;
 }
 
 .site-content .content-area {
@@ -26,7 +52,8 @@
 .site-header {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding: 0 !important;
-  background-color: #e9e6d7 !important;
+  background-color: var(--fdg-sand) !important;
+  overflow: visible !important;
 }
 
 .site-header .inside-header {
@@ -38,6 +65,9 @@
   gap: 20px;
   flex-wrap: wrap;
   max-width: var(--fdg-content-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  overflow: visible !important;
 }
 
 .fdg-header-logo,
@@ -46,6 +76,7 @@
   margin-right: auto;
   line-height: 0;
   display: block !important;
+  overflow: visible !important;
 }
 
 /* Sin logo fuera de la cabecera */
@@ -59,11 +90,25 @@
 }
 
 .site-header .header-image,
-.fdg-header-logo .header-image {
-  width: 200px !important;
-  max-width: min(200px, 42vw) !important;
+.fdg-header-logo .header-image,
+.site-header .header-image.is-logo-image {
+  width: 220px !important;
+  max-width: min(220px, 48vw) !important;
   height: auto !important;
-  display: block;
+  max-height: none !important;
+  object-fit: contain !important;
+  display: block !important;
+  /* Sin multiply: el fondo del PNG ya es --fdg-sand (#e9e6d7) */
+  mix-blend-mode: normal;
+  background: transparent !important;
+}
+
+.fdg-header-logo,
+.site-header .site-logo.fdg-header-logo {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
 .site-header .main-navigation {
@@ -113,8 +158,10 @@
   }
 
   .site-header .header-image,
-  .fdg-header-logo .header-image {
-    width: 150px !important;
+  .fdg-header-logo .header-image,
+  .site-header .header-image.is-logo-image {
+    width: 160px !important;
+    max-width: min(160px, 48vw) !important;
   }
 
   .main-navigation.toggled .main-nav {

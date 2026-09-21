@@ -33,7 +33,7 @@
 }
 .single-plantas .site-content .grid-container,
 .single-insectos .site-content .grid-container {
-  max-width: 1240px !important;
+  max-width: var(--fdg-content-max) !important;
   padding: 0 !important;
 }
 

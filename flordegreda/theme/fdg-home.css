@@ -1,0 +1,627 @@
+/* ============================================================
+   FLOR DE GREDA — Página de inicio (fdg-home.css)
+   ============================================================ */
+
+/* Quitar padding y título de GeneratePress en la home */
+.home .inside-article,
+.home .entry-content { padding: 0 !important; margin: 0 !important; }
+.home .entry-header,
+.home .entry-footer,
+.home .page-header { display: none !important; }
+.home .site-content { padding: 0 !important; }
+.home .site-content .grid-container { max-width: 100% !important; padding: 0 !important; }
+.home .inside-article { max-width: 100% !important; }
+/* Header en caja GP (no a sangre) — igual que resto del sitio */
+
+/* ---- HERO ---- */
+.fdg-home-hero {
+  position: relative;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding: 80px 48px 100px;
+  width: 100%;
+}
+.fdg-home-hero--compact {
+  min-height: auto;
+  padding: 36px 24px 40px;
+  text-align: center;
+  align-items: center;
+}
+.fdg-home-hero--compact .fdg-home-hero__contenido {
+  max-width: 100%;
+}
+.fdg-home-hero__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(160deg, rgba(35,62,18,0.88) 0%, rgba(60,90,30,0.75) 50%, rgba(90,120,50,0.6) 100%),
+    url('https://flordegreda.es/wp-content/uploads/2026/01/JAGUARZO.webp') center/cover no-repeat;
+  z-index: 0;
+}
+.fdg-home-hero__contenido {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+}
+.fdg-home-hero__lugar {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,0.65) !important;
+  margin: 0 0 16px !important;
+}
+.fdg-home-hero__titulo {
+  font-size: 46px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  line-height: 1.1 !important;
+  margin: 0 0 20px !important;
+  padding: 0 !important;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.fdg-home-hero__subtitulo {
+  font-size: 17px !important;
+  color: rgba(255,255,255,0.82) !important;
+  line-height: 1.65 !important;
+  margin: 0 0 36px !important;
+  max-width: 520px;
+}
+.fdg-home-hero--compact .fdg-home-hero__titulo {
+  font-size: 28px !important;
+  margin: 0 0 8px !important;
+}
+.fdg-home-hero--compact .fdg-home-hero__subtitulo {
+  font-size: 15px !important;
+  margin: 0 !important;
+}
+.fdg-home-hero--compact .fdg-home-hero__lugar {
+  margin: 0 0 10px !important;
+}
+
+/* ---- PORTAL (3 botones) ---- */
+.fdg-home-portal {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fdg-home-portal__btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 22px;
+  background: #fff;
+  border: 1px solid #d8e4cc;
+  border-radius: 14px;
+  text-decoration: none !important;
+  color: #2a3a1a !important;
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fdg-home-portal__btn:hover,
+.fdg-home-portal__btn:focus {
+  border-color: #4a7c2f;
+  box-shadow: 0 4px 16px rgba(74, 124, 47, 0.12);
+}
+.fdg-home-portal__icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.fdg-home-portal__label {
+  flex: 1;
+}
+
+/* Datos estadísticos en el hero */
+.fdg-home-hero__datos {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  gap: 0;
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+.fdg-home-hero__dato {
+  flex: 1;
+  padding: 20px 48px;
+  border-right: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fdg-home-hero__dato:last-child { border-right: none; }
+.fdg-home-hero__dato-num {
+  font-size: 26px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1;
+}
+.fdg-home-hero__dato-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.04em;
+}
+
+
+/* ============================================================
+   FLOR DE GREDA — Sección Temporada (home)
+   ============================================================ */
+
+.fdg-temporada {
+  background: #fff;
+  padding: 56px 48px;
+  border-bottom: 1px solid #e8ede4;
+}
+
+.fdg-temporada__cabecera {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto 36px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.fdg-temporada__etiqueta {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a7c2f;
+  background: #eaf3de;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.fdg-temporada__titulo {
+  font-size: 28px !important;
+  font-weight: 600 !important;
+  color: #1e3010 !important;
+  margin: 0 0 8px !important;
+}
+
+.fdg-temporada__desc {
+  font-size: 14px !important;
+  color: #888 !important;
+  margin: 0 !important;
+}
+
+/* Selector de meses */
+.fdg-temporada__meses {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fdg-temporada__mes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666 !important;
+  text-decoration: none !important;
+  background: #f5f5f3;
+  transition: background 0.15s, color 0.15s;
+}
+.fdg-temporada__mes:hover {
+  background: #eaf3de;
+  color: #3a6624 !important;
+}
+.fdg-temporada__mes--activo {
+  background: #4a7c2f !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+
+/* Grid de tarjetas de temporada */
+.fdg-temporada__grid {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.fdg-temporada__tarjeta {
+  text-decoration: none !important;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f7f9f4;
+  border: 1px solid #e8ede4;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: block;
+}
+.fdg-temporada__tarjeta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+}
+
+.fdg-temporada__img {
+  height: 120px;
+  background: #dce8d0 center/cover no-repeat;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+
+.fdg-temporada__badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.fdg-temporada__badge--planta {
+  background: rgba(46,100,20,0.80);
+  color: #e8f5e2;
+}
+.fdg-temporada__badge--insecto {
+  background: rgba(120,60,10,0.80);
+  color: #fef3e2;
+}
+
+.fdg-temporada__info {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fdg-temporada__info em {
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 600;
+  color: #1e3010;
+  line-height: 1.3;
+  display: block;
+}
+.fdg-temporada__info span {
+  font-size: 12px;
+  color: #888;
+  display: block;
+}
+.fdg-temporada__info small {
+  font-size: 11px;
+  color: #4a7c2f;
+  font-weight: 500;
+  display: block;
+  margin-top: 2px;
+}
+
+.fdg-temporada__vacio {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  padding: 0 48px 8px;
+  color: #666;
+  font-size: 0.92rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .fdg-temporada { padding: 40px 20px; }
+  .fdg-temporada__cabecera { flex-direction: column; gap: 20px; }
+  .fdg-temporada__meses { justify-content: flex-start; }
+  .fdg-temporada__grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+/* ---- ZONAS (home) ---- */
+.fdg-zonas-home {
+  background: #fff;
+  padding: 40px 24px;
+  border-bottom: 1px solid #e8ede4;
+  text-align: center;
+}
+.fdg-zonas-home__inner { max-width: 520px; margin: 0 auto; }
+.fdg-zonas-home__titulo {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #2a3a1a !important;
+  margin: 0 0 8px !important;
+}
+.fdg-zonas-home__texto {
+  font-size: 15px !important;
+  color: #666 !important;
+  margin: 0 0 20px !important;
+  line-height: 1.5 !important;
+}
+.fdg-zonas-home__btn {
+  display: inline-block;
+  background: #4a7c2f;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 50px;
+}
+
+/* ---- CATÁLOGO (CTA) ---- */
+.fdg-home-catalogo {
+  background: var(--e, #e9e6d7);
+  padding: 48px 24px;
+  text-align: center;
+}
+.fdg-home-catalogo__inner {
+  max-width: 520px;
+  margin: 0 auto;
+}
+.fdg-home-catalogo__titulo {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #2a3a1a !important;
+  margin: 0 0 8px !important;
+}
+.fdg-home-catalogo__desc {
+  font-size: 15px !important;
+  color: #666 !important;
+  margin: 0 0 24px !important;
+  line-height: 1.5 !important;
+}
+.fdg-home-catalogo__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+.fdg-zonas-home__btn--sec {
+  background: #fff;
+  color: #4a7c2f !important;
+  border: 2px solid #4a7c2f;
+}
+.fdg-zonas-home__btn--sec:hover {
+  background: #eaf3de;
+}
+
+
+/* ---- MAPA GENERAL (home) ---- */
+.fdg-home-mapa {
+  background: #fff;
+  padding: 64px 48px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.fdg-home-mapa__cabecera {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto 28px;
+}
+.fdg-home-mapa__titulo {
+  font-size: 26px !important;
+  font-weight: 600 !important;
+  color: #2a3a1a !important;
+  margin: 0 0 10px !important;
+}
+.fdg-home-mapa__desc {
+  font-size: 15px !important;
+  color: #666 !important;
+  margin: 0 !important;
+}
+#fdg-mapa-home {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  height: 480px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+}
+#fdg-mapa-home .leaflet-container {
+  height: 100%;
+  border-radius: 16px;
+}
+
+/* Popup del mapa general */
+.fdg-popup {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-width: 180px;
+}
+.fdg-popup img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.fdg-popup__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fdg-popup__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3010;
+  font-style: italic;
+  display: block;
+}
+.fdg-popup__comun {
+  font-size: 12px;
+  color: #888;
+  display: block;
+}
+.fdg-popup__familia {
+  font-size: 11px;
+  color: #4a7c2f;
+  font-weight: 500;
+  display: block;
+  margin-top: 2px;
+}
+.fdg-popup__link {
+  font-size: 12px;
+  color: #4a7c2f !important;
+  font-weight: 600;
+  text-decoration: none !important;
+  margin-top: 6px;
+  display: block;
+}
+.fdg-popup__link:hover { text-decoration: underline !important; }
+
+@media (max-width: 768px) {
+  .fdg-home-mapa { padding: 40px 20px; }
+  #fdg-mapa-home { height: 320px; }
+}
+/* ---- GRID DE TARJETAS ---- */
+.fdg-home-grid {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+/* ---- TARJETA ---- */
+.fdg-tarjeta {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none !important;
+  display: block;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.fdg-tarjeta:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.13);
+}
+
+/* Imagen de la tarjeta */
+.fdg-tarjeta__imagen {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  background: #c8d9b8;
+}
+.fdg-tarjeta__imagen img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  max-width: none !important;
+  transition: transform 0.4s ease;
+}
+.fdg-tarjeta:hover .fdg-tarjeta__imagen img {
+  transform: scale(1.06);
+}
+.fdg-tarjeta__imagen--vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #dce8d0;
+}
+.fdg-tarjeta__imagen-placeholder {
+  font-size: 48px;
+  opacity: 0.4;
+}
+
+/* Badge familia/orden */
+.fdg-tarjeta__familia {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.45);
+  color: #e8f5e2;
+  font-size: 11px;
+  font-style: italic;
+  padding: 3px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+/* Chip tipo Planta / Insecto */
+.fdg-tarjeta__tipo {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+  letter-spacing: 0.04em;
+}
+.fdg-tarjeta__tipo--planta {
+  background: rgba(46, 100, 20, 0.75);
+  color: #e8f5e2;
+}
+.fdg-tarjeta__tipo--insecto {
+  background: rgba(120, 60, 10, 0.75);
+  color: #fef3e2;
+}
+
+/* Info de la tarjeta */
+.fdg-tarjeta__info {
+  padding: 18px 20px 20px;
+}
+.fdg-tarjeta__nombre-cientifico {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  font-style: italic !important;
+  color: #1e3010 !important;
+  margin: 0 0 4px !important;
+  line-height: 1.2 !important;
+}
+.fdg-tarjeta__nombre-comun {
+  font-size: 13px !important;
+  color: #888 !important;
+  margin: 0 0 14px !important;
+}
+.fdg-tarjeta__meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid #f0ede6;
+  padding-top: 12px;
+}
+.fdg-tarjeta__floracion {
+  font-size: 12px;
+  color: #4a7c2f;
+  font-weight: 500;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .fdg-home-hero { padding: 60px 24px 80px; min-height: 420px; }
+  .fdg-home-hero__titulo { font-size: 32px !important; }
+  .fdg-home-hero__subtitulo { font-size: 15px !important; }
+  .fdg-home-hero__datos { position: relative; border-top: 1px solid rgba(255,255,255,0.15); }
+  .fdg-home-hero__dato { padding: 16px 24px; }
+  .fdg-home-catalogo { padding: 40px 20px; }
+  .fdg-home-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+}
+
+/* Badge especie protegida en tarjetas */
+.fdg-tarjeta__protegida {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: .03em;
+  margin: 4px 0 2px;
+}
+/* Badge en fichas */
+.fdg-chip--protegida {
+  font-weight: 700 !important;
+}

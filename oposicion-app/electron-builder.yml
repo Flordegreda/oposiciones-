@@ -1,0 +1,21 @@
+appId: com.jex.control-oposicion
+productName: Control de oposición
+directories:
+  output: release
+files:
+  - dist-electron/**/*
+  - dist/**/*
+extraResources:
+  - from: seed_materias.json
+    to: seed_materias.json
+asarUnpack:
+  - '**/*.node'
+  - node_modules/better-sqlite3/**/*
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Control de oposición
+  artifactName: ControlOposicion-Setup-${version}.${ext}

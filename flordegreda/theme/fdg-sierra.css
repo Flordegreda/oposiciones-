@@ -1,0 +1,771 @@
+/* ============================================================
+   FLOR DE GREDA — Sierra de María Andrés (editorial)
+   ============================================================ */
+
+.page-template-page-sierra .entry-header,
+.page-template-page-sierra .entry-footer { display: none !important; }
+.page-template-page-sierra .site-content { padding: 0 !important; }
+.page-template-page-sierra .site-content .grid-container { max-width: 100% !important; padding: 0 !important; }
+.page-template-page-sierra .inside-article { padding: 0 !important; max-width: 100% !important; }
+
+.fdg-sierra {
+  --sierra-ink: #141a12;
+  --sierra-moss: #2a3d22;
+  --sierra-sage: #5c7352;
+  --sierra-line: rgba(20, 26, 18, 0.12);
+  --sierra-paper: #e9e6d7;
+  --sierra-cream: #e9e6d7;
+  --sierra-night: #0c100e;
+  --sierra-serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  color: var(--sierra-ink);
+  background: var(--sierra-paper);
+  font-variant-numeric: tabular-nums;
+}
+
+.sierra-wrap {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  padding-left: clamp(20px, 4vw, 48px);
+  padding-right: clamp(20px, 4vw, 48px);
+}
+
+/* ---- Kicker & headings ---- */
+.sierra-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 20px;
+}
+
+.sierra-kicker--light { color: rgba(255, 255, 255, 0.45); }
+
+.sierra-heading {
+  font-size: clamp(28px, 4vw, 38px) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.12 !important;
+  color: var(--sierra-ink) !important;
+  margin: 0 0 16px !important;
+}
+
+.sierra-heading--light { color: #f0ede6 !important; }
+
+.sierra-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sierra-sage);
+  margin: 0 0 20px;
+}
+
+.sierra-label--sep { margin-top: 48px; }
+
+.sierra-lead {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #4a5244;
+  margin: 0 0 40px;
+  max-width: 56ch;
+}
+
+.sierra-lead--narrow { max-width: 48ch; }
+.sierra-lead--light { color: rgba(240, 237, 230, 0.72); }
+
+/* ---- Hero ---- */
+.sierra-hero {
+  position: relative;
+  min-height: min(88vh, 820px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(48px, 8vw, 96px) clamp(20px, 4vw, 48px) 0;
+  overflow: hidden;
+}
+
+.sierra-hero__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(12, 16, 10, 0.35) 0%, rgba(12, 16, 10, 0.55) 45%, rgba(12, 16, 10, 0.92) 100%),
+    url('https://flordegreda.es/wp-content/uploads/2026/01/JAGUARZO.webp') center 30% / cover no-repeat;
+  z-index: 0;
+}
+
+.sierra-hero__inner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  width: 100%;
+  padding-bottom: clamp(32px, 5vw, 56px);
+}
+
+.sierra-hero__title {
+  font-size: clamp(40px, 7vw, 72px) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.03em;
+  line-height: 1.02 !important;
+  color: #fff !important;
+  margin: 0 0 24px !important;
+  max-width: 14ch;
+}
+
+.sierra-hero__deck {
+  font-size: clamp(16px, 2vw, 19px);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0;
+  max-width: 42ch;
+}
+
+/* ---- Metrics ---- */
+.sierra-metrics {
+  position: relative;
+  z-index: 1;
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 10, 8, 0.55);
+  backdrop-filter: blur(12px);
+}
+
+.sierra-metrics__item {
+  padding: 22px clamp(12px, 2vw, 24px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sierra-metrics__item:last-child { border-right: none; }
+
+.sierra-metrics__item dt {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin-bottom: 8px;
+}
+
+.sierra-metrics__item dd {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+  line-height: 1;
+}
+
+.sierra-metrics__item dd small {
+  font-size: 0.45em;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.65;
+}
+
+/* ---- Intro ---- */
+.sierra-intro {
+  padding: clamp(56px, 8vw, 96px) 0;
+  border-bottom: 1px solid var(--sierra-line);
+}
+
+.sierra-intro__grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: clamp(32px, 6vw, 80px);
+  align-items: start;
+}
+
+.sierra-intro__quote {
+  font-family: var(--sierra-serif);
+  font-size: clamp(22px, 3vw, 30px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--sierra-moss);
+  margin: 0;
+  padding: 0;
+  border: none;
+  quotes: none;
+}
+
+.sierra-dl {
+  margin: 0;
+  border-top: 1px solid var(--sierra-line);
+}
+
+.sierra-dl div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--sierra-line);
+}
+
+.sierra-dl dt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sierra-sage);
+}
+
+.sierra-dl dd {
+  font-size: 15px;
+  color: var(--sierra-ink);
+  margin: 0;
+  text-align: right;
+}
+
+/* ---- Map ---- */
+.sierra-mapa {
+  padding: clamp(56px, 8vw, 80px) 0 clamp(32px, 5vw, 48px);
+}
+
+.sierra-mapa__head {
+  margin-bottom: 32px;
+}
+
+.sierra-mapa__stage {
+  position: relative;
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  padding: 0 clamp(12px, 2vw, 24px);
+}
+
+.sierra-mapa__canvas {
+  width: 100%;
+  height: clamp(360px, 52vh, 560px);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(20, 26, 18, 0.12);
+}
+
+.sierra-mapa__leyenda {
+  position: absolute;
+  left: clamp(28px, 4vw, 44px);
+  bottom: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 14px 18px;
+  background: rgba(246, 244, 239, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--sierra-line);
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: #4a5244;
+}
+
+.sierra-mapa__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border-radius: 1px;
+}
+
+.sierra-mapa__swatch--lic { background: rgba(42, 61, 34, 0.35); border: 1px solid rgba(42, 61, 34, 0.5); }
+.sierra-mapa__swatch--mun { background: rgba(92, 115, 82, 0.25); border: 1px dashed rgba(92, 115, 82, 0.6); }
+.sierra-mapa__swatch--pin { background: var(--sierra-moss); border-radius: 50%; width: 10px; height: 10px; }
+
+/* ---- Habitats ---- */
+.sierra-habitats {
+  padding: clamp(56px, 8vw, 88px) 0;
+  background: #fff;
+  border-top: 1px solid var(--sierra-line);
+  border-bottom: 1px solid var(--sierra-line);
+}
+
+.sierra-hablist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--sierra-line);
+}
+
+.sierra-hablist__item {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: clamp(16px, 3vw, 32px);
+  padding: 28px 0;
+  border-bottom: 1px solid var(--sierra-line);
+  align-items: start;
+}
+
+.sierra-hablist__idx {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--sierra-sage);
+  padding-top: 4px;
+}
+
+.sierra-hablist__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.sierra-hablist__top h3 {
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  color: var(--sierra-ink) !important;
+  margin: 0 !important;
+}
+
+.sierra-hablist__pct {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--sierra-moss);
+  line-height: 1;
+}
+
+.sierra-hablist__track {
+  height: 2px;
+  background: var(--sierra-cream);
+  margin-bottom: 12px;
+}
+
+.sierra-hablist__track span {
+  display: block;
+  height: 100%;
+  background: var(--sierra-moss);
+}
+
+.sierra-hablist__body p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #5a6356;
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* ---- Night / bats ---- */
+.sierra-noche {
+  padding: clamp(64px, 9vw, 100px) 0;
+  background: var(--sierra-night);
+  color: #e8e4dc;
+}
+
+.sierra-registro {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.sierra-registro thead th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.38);
+  padding: 0 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sierra-registro tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sierra-registro td {
+  padding: 16px 12px 16px 0;
+  vertical-align: top;
+  color: rgba(232, 228, 220, 0.88);
+}
+
+.sierra-registro__num {
+  width: 48px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.sierra-registro__nc em {
+  font-family: var(--sierra-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: #f0ede6;
+}
+
+.sierra-registro__hab {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ---- Day registers ---- */
+.sierra-registros {
+  padding: clamp(56px, 8vw, 88px) 0;
+}
+
+.sierra-registros__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(32px, 6vw, 64px);
+}
+
+.sierra-registros .sierra-registro thead th,
+.sierra-registros .sierra-registro td {
+  color: var(--sierra-ink);
+  border-color: var(--sierra-line);
+}
+
+.sierra-registros .sierra-registro thead th {
+  color: var(--sierra-sage);
+}
+
+.sierra-registros .sierra-registro__nc em {
+  color: var(--sierra-moss);
+}
+
+.sierra-registros .sierra-registro__hab {
+  color: #6b7568;
+}
+
+.sierra-registro--compact td {
+  padding: 12px 8px 12px 0;
+}
+
+.sierra-nota {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #6b7568;
+  margin: 20px 0 0;
+  max-width: 40ch;
+}
+
+/* ---- Catalog (uses fdg-tarjeta from fdg-home.css) ---- */
+.sierra-catalogo {
+  padding: clamp(56px, 8vw, 88px) 0;
+  background: var(--sierra-cream);
+  border-top: 1px solid var(--sierra-line);
+}
+
+.sierra-catalogo__grid {
+  margin-bottom: 8px;
+}
+
+.sierra-catalogo .fdg-tarjeta__imagen--vacia {
+  background: #d4dcc8;
+}
+
+.sierra-catalogo .fdg-tarjeta__imagen-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #c8d4b8 0%, #dce6d0 100%);
+}
+
+.sierra-link-row { margin: 8px 0 0; }
+
+.sierra-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sierra-moss) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(42, 61, 34, 0.25);
+  padding-bottom: 2px;
+  transition: border-color 0.15s;
+}
+
+.sierra-link:hover { border-color: var(--sierra-moss); }
+
+/* ---- Routes ---- */
+.sierra-rutas {
+  padding: clamp(56px, 8vw, 88px) 0;
+  background: #fff;
+}
+
+.sierra-rutas__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--sierra-line);
+}
+
+.sierra-rutas__list li {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 20px;
+  padding: 24px 24px 24px 0;
+  border-bottom: 1px solid var(--sierra-line);
+}
+
+.sierra-rutas__list li:nth-child(odd) { padding-right: 32px; }
+.sierra-rutas__list li:nth-child(even) { padding-left: 32px; border-left: 1px solid var(--sierra-line); }
+
+.sierra-rutas__num {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--sierra-sage);
+  padding-top: 2px;
+}
+
+.sierra-rutas__list strong {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--sierra-ink);
+  margin-bottom: 6px;
+}
+
+.sierra-rutas__list p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5a6356;
+  margin: 0;
+}
+
+/* ---- Footer ---- */
+.sierra-foot {
+  padding: clamp(40px, 6vw, 64px) 0;
+  border-top: 1px solid var(--sierra-line);
+}
+
+.sierra-foot__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: end;
+}
+
+.sierra-foot__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+}
+
+.sierra-foot__nav a {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sierra-ink) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.sierra-foot__nav a:hover { border-color: var(--sierra-ink); }
+
+.sierra-foot__creditos {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #8a9284;
+  margin: 0;
+  text-align: right;
+}
+
+/* ============================================================
+   Home — bloque territorio (refinado)
+   ============================================================ */
+.fdg-territorio {
+  background: var(--fdg-sand, #e9e6d7);
+  border-bottom: 1px solid rgba(20, 26, 18, 0.1);
+  padding: clamp(48px, 7vw, 72px) clamp(20px, 4vw, 48px);
+}
+
+.fdg-territorio__inner {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: clamp(28px, 5vw, 56px);
+  align-items: center;
+}
+
+.fdg-territorio__etiqueta {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #5c7352;
+  margin-bottom: 12px;
+}
+
+.fdg-territorio__titulo {
+  font-size: clamp(24px, 3vw, 32px) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.02em;
+  color: #141a12 !important;
+  margin: 0 0 16px !important;
+}
+
+.fdg-territorio__texto {
+  font-size: 16px !important;
+  line-height: 1.65 !important;
+  color: #4a5244 !important;
+  margin: 0 0 16px !important;
+  max-width: 42ch;
+}
+
+.fdg-territorio__highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: grid;
+  gap: 6px;
+}
+
+.fdg-territorio__highlights li {
+  font-size: 14px;
+  color: #5a6356;
+  padding-left: 14px;
+  position: relative;
+}
+
+.fdg-territorio__highlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #5c7352;
+}
+
+.fdg-territorio__btn {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #141a12 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(20, 26, 18, 0.35);
+  padding-bottom: 3px;
+  transition: border-color 0.15s;
+}
+
+.fdg-territorio__btn:hover { border-color: #141a12; }
+
+.fdg-territorio__mapa {
+  position: relative;
+  width: 100%;
+  height: clamp(280px, 34vw, 360px);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(20, 26, 18, 0.1);
+}
+
+.fdg-mapa--estatico .leaflet-container {
+  cursor: default;
+  background: #e8e6df;
+}
+
+.fdg-mapa-cardinales {
+  position: absolute;
+  inset: 0;
+  z-index: 450;
+  pointer-events: none;
+}
+
+.fdg-mapa-cardinales__n,
+.fdg-mapa-cardinales__s,
+.fdg-mapa-cardinales__e,
+.fdg-mapa-cardinales__o {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid #1e3010;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1e3010;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+}
+
+.fdg-mapa-cardinales__n { top: 8px; left: 50%; transform: translateX(-50%); }
+.fdg-mapa-cardinales__s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.fdg-mapa-cardinales__e { right: 8px; top: 50%; transform: translateY(-50%); }
+.fdg-mapa-cardinales__o { left: 8px; top: 50%; transform: translateY(-50%); }
+
+.fdg-territorio__mapa-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: #5f5e5a;
+}
+
+.fdg-territorio__mapa-leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fdg-territorio__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 2px solid transparent;
+}
+
+.fdg-territorio__swatch--mun {
+  background: #d8e4cc;
+  border-color: #7a8f6a;
+}
+
+.fdg-territorio__swatch--lic {
+  background: rgba(74, 124, 47, 0.45);
+  border-color: #2d4a1e;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .sierra-metrics { grid-template-columns: repeat(3, 1fr); }
+  .sierra-metrics__item:nth-child(3) { border-right: none; }
+  .sierra-metrics__item:nth-child(4),
+  .sierra-metrics__item:nth-child(5) { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+
+  .sierra-intro__grid,
+  .sierra-registros__grid,
+  .sierra-foot__grid,
+  .fdg-territorio__inner { grid-template-columns: 1fr; }
+
+  .sierra-foot__creditos { text-align: left; }
+
+  .sierra-rutas__list { grid-template-columns: 1fr; }
+  .sierra-rutas__list li:nth-child(even) {
+    padding-left: 0;
+    border-left: none;
+  }
+  .sierra-rutas__list li:nth-child(odd) { padding-right: 0; }
+
+  .sierra-registro thead { display: none; }
+  .sierra-noche .sierra-registro tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 16px 0;
+  }
+  .sierra-registro td { padding: 2px 0; }
+}
+
+@media (max-width: 560px) {
+  .sierra-metrics { grid-template-columns: 1fr 1fr; }
+  .sierra-hablist__item { grid-template-columns: 40px 1fr; }
+  .sierra-mapa__leyenda {
+    position: static;
+    margin-top: 12px;
+  }
+}

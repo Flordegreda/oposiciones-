@@ -1,0 +1,241 @@
+/* ============================================================
+   FLOR DE GREDA — Archivo de plantas (fdg-archivo.css)
+   ============================================================ */
+
+.post-type-archive-plantas .entry-header,
+.post-type-archive-plantas .entry-footer,
+.page-id-399 .entry-header, .page-id-399 .entry-footer,
+.page-id-462 .entry-header, .page-id-462 .entry-footer { display: none !important; }
+.post-type-archive-plantas .site-content,
+.page-id-399 .site-content,
+.page-id-462 .site-content {
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+}
+.post-type-archive-plantas .site-content .grid-container,
+.page-id-399 .site-content .grid-container,
+.page-id-462 .site-content .grid-container { max-width: 100% !important; padding: 0 !important; width: 100% !important; }
+.post-type-archive-plantas .inside-article,
+.page-id-399 .inside-article,
+.page-id-462 .inside-article { padding: 0 !important; max-width: 100% !important; width: 100% !important; }
+.post-type-archive-plantas .fdg-archivo,
+.page-id-399 .fdg-archivo,
+.page-id-462 .fdg-archivo {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* ---- CABECERA ---- */
+.fdg-archivo__cabecera {
+  background: linear-gradient(160deg, rgba(35,62,18,0.92) 0%, rgba(70,100,35,0.82) 100%),
+              url('https://flordegreda.es/wp-content/uploads/2026/01/JAGUARZO.webp') center/cover no-repeat;
+  padding: 56px 48px 48px;
+}
+.fdg-archivo__cabecera-inner { max-width: var(--fdg-content-max); margin: 0 auto; }
+.fdg-archivo__titulo {
+  font-size: 36px !important; font-weight: 600 !important;
+  color: #fff !important; margin: 0 0 10px !important;
+}
+.fdg-archivo__desc {
+  font-size: 16px !important; color: rgba(255,255,255,0.72) !important; margin: 0 !important;
+}
+
+/* ---- FILTROS ---- */
+.fdg-archivo__filtros-wrap {
+  background: #fff;
+  border-bottom: 1px solid #e8ede4;
+  padding: 16px 48px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.fdg-filtros {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.fdg-filtro {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fdg-filtro--texto {
+  background: #f7f9f4;
+  border: 1px solid #d8e4cc;
+  border-radius: 50px;
+  padding: 6px 14px;
+  gap: 8px;
+  transition: border-color 0.2s;
+}
+.fdg-filtro--texto:focus-within {
+  border-color: #4a7c2f;
+  background: #fff;
+}
+.fdg-filtro__input {
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  color: #444 !important;
+  padding: 0 !important;
+  width: 160px;
+}
+.fdg-filtro__input::placeholder { color: #bbb; }
+.fdg-filtro__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  white-space: nowrap;
+}
+.fdg-filtro__select {
+  font-size: 13px;
+  color: #333;
+  background: #f7f9f4;
+  border: 1px solid #d8e4cc;
+  border-radius: 50px;
+  padding: 6px 28px 6px 14px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234a7c2f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.fdg-filtro__select:focus { outline: none; border-color: #4a7c2f; }
+.fdg-filtro__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #c0392b !important;
+  font-weight: 500;
+  background: #fdf3f2;
+  border: 1px solid #f5c6c0;
+  border-radius: 50px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  text-decoration: none !important;
+}
+.fdg-filtro__reset:hover { background: #fbe8e6; }
+.fdg-filtros__contador {
+  font-size: 13px;
+  color: #888;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.fdg-filtros__contador span {
+  color: #4a7c2f;
+  font-weight: 700;
+}
+
+/* ---- CONTENIDO ---- */
+.fdg-archivo__contenido {
+  background: var(--fdg-sand, #e9e6d7);
+  padding: 48px;
+  min-height: 400px;
+}
+.fdg-archivo__grid {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+/* ---- VACÍO ---- */
+.fdg-archivo__vacio {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  text-align: center;
+  padding: 80px 0;
+  color: #666;
+}
+
+/* ---- ZONAS (listas simples) ---- */
+.fdg-zonas-lista {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fdg-zonas-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #e0e8d8;
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-decoration: none !important;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fdg-zonas-item:hover {
+  border-color: #4a7c2f;
+  box-shadow: 0 2px 12px rgba(74, 124, 47, 0.12);
+}
+.fdg-zonas-item__nombre {
+  font-size: 17px;
+  font-weight: 600;
+  color: #2a3a1a;
+}
+.fdg-zonas-item__count {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+.fdg-zonas-volver { margin: 0 0 8px; }
+.fdg-zonas-volver a { color: rgba(255,255,255,0.85); text-decoration: none; }
+.fdg-zonas-seccion {
+  margin: 0 0 16px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2d5016;
+}
+.fdg-archivo__grid--bloque { margin-bottom: 40px; }
+.fdg-zonas-btn {
+  display: inline-block;
+  margin-top: 12px;
+  background: #4a7c2f;
+  color: #fff !important;
+  border-radius: 8px;
+  padding: 10px 20px;
+  text-decoration: none !important;
+  font-size: 14px;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .fdg-archivo__cabecera { padding: 40px 20px; }
+  .fdg-archivo__filtros-wrap { padding: 12px 20px; flex-direction: column; align-items: flex-start; }
+  .fdg-filtros { gap: 8px; }
+  .fdg-filtro__input { width: 120px; }
+  .fdg-archivo__contenido { padding: 32px 20px; }
+  .fdg-archivo__grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+}
+
+/* ---- Ficha neófito (single plantas/insectos) ---- */
+.fdg-hero__titulo-principal { font-size: 2rem !important; font-weight: 600 !important; margin: 0 !important; }
+.fdg-ficha-neofito { display: grid; gap: 20px; max-width: none; }
+.fdg-ficha-neofito__bloque { margin: 0; }
+.fdg-ficha-neofito__texto { font-size: 1.05rem; line-height: 1.65; color: #2a3a1a; margin: 6px 0 0; }
+.fdg-ficha-neofito__bloque--curiosidad .fdg-ficha-neofito__texto {
+  font-style: italic;
+  padding: 12px 16px;
+  background: #f7f5ee;
+  border-left: 3px solid #4a7c2f;
+  border-radius: 0 8px 8px 0;
+}

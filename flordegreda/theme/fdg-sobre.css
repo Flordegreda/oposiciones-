@@ -1,0 +1,75 @@
+/* ============================================================
+   FLOR DE GREDA — Página Sobre (fdg-sobre.css)
+   ============================================================ */
+
+.page-id-396 .entry-header,
+.page-id-396 .entry-footer { display: none !important; }
+.page-id-396 .site-content { padding: 0 !important; }
+.page-id-396 .site-content .grid-container { max-width: 100% !important; padding: 0 !important; }
+.page-id-396 .inside-article { padding: 0 !important; max-width: 100% !important; }
+
+/* Hero */
+.fdg-sobre__hero {
+  background: linear-gradient(160deg, rgba(35,62,18,0.92) 0%, rgba(70,100,35,0.80) 100%),
+              url('https://flordegreda.es/wp-content/uploads/2026/01/JAGUARZO.webp') center/cover no-repeat;
+  padding: 80px 48px 72px;
+  text-align: center;
+}
+.fdg-sobre__hero-inner { max-width: 640px; margin: 0 auto; }
+.fdg-sobre__pretitulo {
+  font-size: 12px !important; font-weight: 600 !important;
+  letter-spacing: 0.14em !important; text-transform: uppercase !important;
+  color: rgba(255,255,255,0.6) !important; margin: 0 0 14px !important;
+}
+.fdg-sobre__titulo {
+  font-size: 48px !important; font-weight: 600 !important;
+  color: #fff !important; margin: 0 0 16px !important;
+  font-style: italic !important; line-height: 1.1 !important;
+}
+.fdg-sobre__subtitulo {
+  font-size: 16px !important; color: rgba(255,255,255,0.78) !important;
+  margin: 0 !important; line-height: 1.4 !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 640px) {
+  .fdg-sobre__subtitulo { white-space: normal !important; font-size: 14px !important; }
+}
+
+/* Contenido */
+.fdg-sobre__seccion {
+  background: #e9e6d7;
+  padding: 64px 48px;
+}
+.fdg-sobre__contenido {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+.fdg-sobre__bloque {
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px 40px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+.fdg-sobre__bloque h2 {
+  font-size: 22px !important; font-weight: 600 !important;
+  color: #2a3a1a !important; margin: 0 0 20px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 2px solid #eaf3de !important;
+}
+.fdg-sobre__bloque p {
+  font-size: 16px !important; line-height: 1.8 !important;
+  color: #555 !important; margin: 0 0 16px !important;
+}
+.fdg-sobre__bloque p:last-child { margin-bottom: 0 !important; }
+.fdg-sobre__bloque em { color: #4a7c2f; }
+.fdg-sobre__bloque--contacto { background: #f7f9f4; border: 1px solid #d8e8c8; }
+
+@media (max-width: 768px) {
+  .fdg-sobre__hero { padding: 56px 24px; }
+  .fdg-sobre__titulo { font-size: 34px !important; }
+  .fdg-sobre__seccion { padding: 40px 20px; }
+  .fdg-sobre__bloque { padding: 24px 20px; }
+}

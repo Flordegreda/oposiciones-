@@ -1,0 +1,37 @@
+{
+  "name": "control-oposicion",
+  "version": "1.0.0",
+  "description": "Gestor documental local de las carpetas de la oposición JEX",
+  "private": true,
+  "author": "Control Oposición",
+  "main": "dist-electron/main/index.js",
+  "scripts": {
+    "dev": "vite",
+    "start": "electron .",
+    "build:ui": "vite build",
+    "build": "vite build && electron-builder --win nsis",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.13.4",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "electron": "^34.5.8",
+    "electron-builder": "^25.1.8",
+    "lucide-react": "^0.474.0",
+    "postcss": "^8.5.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  }
+}

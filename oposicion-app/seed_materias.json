@@ -1,0 +1,1761 @@
+{
+  "meta": {
+    "oposicion": "JEX A1 Juridica - Junta de Extremadura",
+    "generado": "2026-08-20",
+    "total_items": 255,
+    "penal_factor": 3
+  },
+  "materias": [
+    {
+      "carpeta": 1,
+      "nombre": "ABOGACIA GENERAL",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "ABOGACIA GENERAL TEORICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ABOGACIA GENERAL TEORICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ABOGACIA GENERAL TEORICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ABOGACIA GENERAL TEORICO 4",
+          "num": 80,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "ABOGACIA PRACTICO",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "ABOGACIA PRACTICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ABOGACIA 1",
+          "num": 133,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 2,
+      "nombre": "ADMIN ELECTRONICA",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "AMINISTRACION ELECTRONICA 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "AMINISTRACION ELECTRONICA 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "AMINISTRACION ELECTRONICA 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "AMINISTRACION ELECTRONICA 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION ELECTRONICA 1 (a)",
+          "num": 111,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION ELECTRONICA 1 (b)",
+          "num": 32,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION ELECTRONICA 1 (c)",
+          "num": 48,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION ELECTRONICA 2",
+          "num": 52,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 3,
+      "nombre": "ADMIN LOCAL",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "ADMINISTRACION LOCAL",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ADMINISTRACION LOCAL - PARTE 1",
+          "num": 106,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ADMINISTRACION LOCAL - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ADMINISTRACION LOCAL PRACTICO 4",
+          "num": 49,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "ADMINISTRACION LOCAL PRACTICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "ADMINISTRACION LOCAL PRACTICO 2",
+          "num": 49,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "ADMINISTRACION LOCAL PRACTICO 3",
+          "num": 49,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "SUPUESTO ENCADENADO ADMINISTRACION LOCAL",
+          "num": 5,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "SUPUESTO ENCADENADO ADMINISTRACION LOCAL 2",
+          "num": 6,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION LOCAL",
+          "num": 74,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION LOCAL 1 (a)",
+          "num": 60,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION LOCAL 1 (b)",
+          "num": 146,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "ADMINISTRACION LOCAL 3",
+          "num": 23,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 4,
+      "nombre": "COLEGIOS PROFESIONALES",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "COLEGIOS PROFESIONALES TEORICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "COLEGIOS PROFESIONALES TEORICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "COLEGIOS PROFESIONALES PRACTICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "COLEGIOS PROFESIONALES",
+          "num": 181,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 5,
+      "nombre": "COMISION JURIDICA",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "COMISION JURIDICA 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "COMISION JURIDICA 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "COMISION JURIDICA 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "COMISION JUIRIDICA PRACTICO",
+          "num": 55,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "COMISION JURIDICA 1",
+          "num": 88,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "COMISION JURIDICA 2",
+          "num": 51,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 6,
+      "nombre": "LCSP",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 1 - PARTE 2",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 10 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 10 - PARTE 2",
+          "num": 20,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 2 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 2 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 2 - PARTE 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 2 - PARTE 4",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 2 - PARTE 5",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 2 - PARTE 6",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 3 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 3 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 4 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 4 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 5 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 5 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 6 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 6 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 7 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 7 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 8 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 8 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LCSP TEORICO 9 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LCSP PRACTICO",
+          "num": 60,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 7,
+      "nombre": "DISCIPLINARIO",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "DISCIPLINARIO 4",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "DISCIPLINARIO POTESTAD SANCIONADORA 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "DISCIPLINARIO POTESTAD SANCIONADORA 1 - PARTE 2",
+          "num": 29,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "DISCIPLINARIO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "PRACTICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "DISCIPLINARIO 1",
+          "num": 142,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 8,
+      "nombre": "EJECUCION RESOLUCIONES",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "EJECUCION SENTENCIAS 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EJECUCION RESOLUCIONES ENCADENADO 1",
+          "num": 44,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 9,
+      "nombre": "EBEP",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 1 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 2 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 2 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 3 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 3 - PARTE 2",
+          "num": 45,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 4 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 4 - PARTE 2",
+          "num": 47,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 5 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 5 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 6 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 6 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 6 - PARTE 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 6 - PARTE 4",
+          "num": 30,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 7",
+          "num": 56,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EBEP TEORICO 8",
+          "num": 56,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP ENCADENADO 0",
+          "num": 57,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP ENCADENADO 3",
+          "num": 58,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 11",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 12",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 13",
+          "num": 52,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 14",
+          "num": 52,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 16",
+          "num": 52,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 2",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 5",
+          "num": 59,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EBEP PRACTICO 8",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "EBEP 1",
+          "num": 117,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "EBEP 2",
+          "num": 154,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 10,
+      "nombre": "ET",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 1 - PARTE 2",
+          "num": 49,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 2 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 2 - PARTE 2",
+          "num": 20,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 4 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 4 - PARTE 2",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 5 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "ET TEORICO 5 - PARTE 2",
+          "num": 40,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 11,
+      "nombre": "EXPROPIACION",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "EXPROPIACION FORZOSA",
+          "num": 90,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EXPROPIACION TEORICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "EXPROPIACION TEORICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "EXPROPIACION ENCADENADO 1",
+          "num": 11,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "EXPROPIACION 1",
+          "num": 76,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "EXPROPIACION 2",
+          "num": 40,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "EXPROPIACION 3",
+          "num": 39,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 12,
+      "nombre": "GOBIERNO ABIERTO",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "GOBIERNO ABIERTO",
+          "num": 50,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 13,
+      "nombre": "HACIENDA",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "HACIENDA TEORICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "HACIENDA TEORICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "HACIENDA TEORICO 3",
+          "num": 30,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "HACIENDA TEORICO 4",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "HACIENDA TEORICO 5",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "HACIENDA TEORICO 6",
+          "num": 45,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 14,
+      "nombre": "IGUALDAD",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "IGUALDAD",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "IUALDAD 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "IGUALDAD 2",
+          "num": 49,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "IGUALDAD ENCADENADO 1",
+          "num": 18,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "IGUALDAD 1",
+          "num": 107,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 15,
+      "nombre": "INCOMPATIBILIDADES",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "INCOMPATIBILIDADES",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "INCOMPATIBILIDADES 2",
+          "num": 49,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "INCOMPATIBILIDADES",
+          "num": 52,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "INCOMPATIBILIADES",
+          "num": 95,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 16,
+      "nombre": "LJCA",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 4",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 5",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 6",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 7",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LJCA TEORICO 8",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LJCA PRACTICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LJCA PRACTICO 1",
+          "num": 25,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LJCA PRACTICO 2",
+          "num": 25,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LJCA 1",
+          "num": 53,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LJCA 2",
+          "num": 20,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LJCA 3",
+          "num": 44,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LJCA 4",
+          "num": 30,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LJCA 5",
+          "num": 50,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LJCA 6",
+          "num": 33,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 17,
+      "nombre": "JURISDICCION SOCIAL",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "JURISDICCION SOCIAL",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "JURISDICCION SOCIAL 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "JURISDICCION SOCIAL 1",
+          "num": 53,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "JURISDICCION SOCIAL 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "JURISDICCION SOCIAL 1",
+          "num": 151,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "JURISDICCION SOCIAL 2",
+          "num": 61,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 18,
+      "nombre": "LFPEX (FUNCION PUBLICA)",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 1 - PARTE 2",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 2 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 2 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 3 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 3 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 4 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 4 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 5 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 5 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 5 - PARTE 3",
+          "num": 46,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 6 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 7 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 7 - PARTE 2",
+          "num": 20,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 8 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LFPEX TEORICO 8 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 19,
+      "nombre": "LEY 1/2002 (GOBIERNO EX)",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LEY 1/2002 TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LEY 1/2002 TEORICO 1 - PARTE 2",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LEY 1/2002 TEORICO 2 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LEY 1/2002 TEORICO 2 - PARTE 2",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LEY 1/2002 TEORICO 3",
+          "num": 40,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 20,
+      "nombre": "LIBERTAD SINDICAL",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LIBERTAD SINDICAL",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LIBERTAD SINDICAL 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LIBERTAD SINDICAL",
+          "num": 97,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LIBERTAD SINDICAL 1",
+          "num": 53,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "LIBERTAD SINDICAL 2",
+          "num": 28,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 21,
+      "nombre": "PATRIMONIO",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "PATRIMONIO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "PATRIMONIO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "PATRIMONIO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "PATRIMONIO 4",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "PATRIMONIO 5",
+          "num": 30,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "PATRIMONIO PRACTICO 1",
+          "num": 30,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "PATRIMONIO PRACTICO 2",
+          "num": 52,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "PATRIMONIO PRACTICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "PATRIMONIO 1",
+          "num": 103,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "PATRIMONIO 2",
+          "num": 79,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "PATRIMONIO 3",
+          "num": 26,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 22,
+      "nombre": "LPRL",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LPRL TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPRL TEORICO 1 - PARTE 2",
+          "num": 30,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPRL ENCADENADO 1",
+          "num": 17,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 23,
+      "nombre": "LPACAP",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 1",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 10",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 11",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 12",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 13 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 14",
+          "num": 45,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 15",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 2",
+          "num": 49,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 4",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 5",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 6",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 7 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 7 - PARTE 2",
+          "num": 54,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 8",
+          "num": 39,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LPACAP TEORICO 9",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "DISCIPLINARIO PRACTICO 2",
+          "num": 20,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPACAP PRACTICO 1",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPACAP PRACTICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPACAP PRACTICO 4",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPACAP PRACTICO 5",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPACAP PRACTICO 6",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPACAP PRACTICO 7",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "LPACAP PRACTICO 8",
+          "num": 50,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 24,
+      "nombre": "PROTECCION DATOS",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "PROTECCION DATOS TEORICO 1",
+          "num": 20,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 25,
+      "nombre": "LRJSP",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 1 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 1 - PARTE 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 2 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 2 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 2 - PARTE 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 3 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 3 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 5 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 5 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "LRJSP TEORICO 5 - PARTE 3",
+          "num": 40,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 26,
+      "nombre": "SUBVENCIONES",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "SUBVENCIONES TEORICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "SUBVENCIONES TEORICO 2",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "SUBVENCIONES TEORICO 3",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "SUBVENCIONES TEORICO 4",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "SUBVENCIONES TEORICO 5",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "SUBVENCIONES TEORICO 6",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "SUBVENCIONES TEORICO 7",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "SUBVENCIONES PRACTICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "SUBVENCIONES PRACTICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "SUBVENCIONES 1 (a)",
+          "num": 56,
+          "estado": "En Anki"
+        },
+        {
+          "tipo": "F",
+          "nombre": "SUBVENCIONES 1 (b)",
+          "num": 64,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 27,
+      "nombre": "TASAS Y PRECIOS",
+      "sin_material": false,
+      "items": []
+    },
+    {
+      "carpeta": 28,
+      "nombre": "TECNICA NORMATIVA",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "TECNICA NORMATIVA",
+          "num": 31,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "TECNICA NORMATIVA 1",
+          "num": 59,
+          "estado": "Generado"
+        }
+      ]
+    },
+    {
+      "carpeta": 29,
+      "nombre": "TRIBUNAL CONSTITUCIONAL",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "TRIBUNAL CONST TEORICO 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "TRIBUNAL CONSTITUCIONAL TEORICO 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "TRIBUNAL CONSTITUCIONAL ENCADENADO 1",
+          "num": 15,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "TRIBUNAL CONSTITUCIONAL ENCADENADO 2",
+          "num": 20,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "TRIBUNAL CONSTITUCIONAL ENCADENADO 3",
+          "num": 25,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "F",
+          "nombre": "TRIBUNAL CONSTITUCIONAL 1",
+          "num": 74,
+          "estado": "En Anki"
+        }
+      ]
+    },
+    {
+      "carpeta": 30,
+      "nombre": "TRIBUNAL DE CUENTAS",
+      "sin_material": false,
+      "items": []
+    },
+    {
+      "carpeta": 31,
+      "nombre": "INSTITUCIONES UE",
+      "sin_material": false,
+      "items": []
+    },
+    {
+      "carpeta": 32,
+      "nombre": "V CONVENIO",
+      "sin_material": false,
+      "items": [
+        {
+          "tipo": "T",
+          "nombre": "V CONVENIO TEORICO 1 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "V CONVENIO TEORICO 1 - PARTE 2",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "V CONVENIO TEORICO 2 - PARTE 1",
+          "num": 50,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "V CONVENIO TEORICO 2 - PARTE 2",
+          "num": 40,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "T",
+          "nombre": "V CONVENIO TEORICO 3",
+          "num": 30,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "V CONVENIO COMPLEMENTOS",
+          "num": 60,
+          "estado": "Generado"
+        },
+        {
+          "tipo": "P",
+          "nombre": "V CONVENIO ENCADENADO 3",
+          "num": 13,
+          "estado": "Generado"
+        }
+      ]
+    }
+  ]
+}

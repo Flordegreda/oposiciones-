@@ -672,7 +672,7 @@ function fdg_render_instalar_page() {
 // PWA — manifest, iconos e instalación
 add_action( 'wp_head', 'fdg_pwa_head' );
 function fdg_pwa_head() {
-	$icon = 'https://flordegreda.es/wp-content/uploads/2026/05/cropped-LOGO.png';
+	$icon = 'https://flordegreda.es/wp-content/uploads/2026/05/LOGO.png';
 	echo '<link rel="manifest" href="' . esc_url( home_url( '/manifest.json' ) ) . '">' . "\n";
 	echo '<meta name="theme-color" content="#2d4a1e">' . "\n";
 	echo '<meta name="mobile-web-app-capable" content="yes">' . "\n";
@@ -920,7 +920,7 @@ function fdg_render_header_logo() {
 		$url = fdg_seo_logo_url();
 	}
 	if ( ! $url ) {
-		$url = content_url( 'uploads/2026/05/cropped-LOGO.png' );
+		$url = content_url( 'uploads/2026/05/LOGO.png' );
 	}
 	$name = get_bloginfo( 'name' );
 	printf(
@@ -1026,10 +1026,10 @@ add_action( 'wp_enqueue_scripts', 'fdg_encolar_estilos' );
 function fdg_encolar_estilos() {
 
     // CSS global
-    wp_enqueue_style( 'fdg-global', get_template_directory_uri() . '/fdg-global.css', array(), '1.0.7' );
+    wp_enqueue_style( 'fdg-global', get_template_directory_uri() . '/fdg-global.css', array(), '1.2.1' );
 
     if ( is_singular( 'plantas' ) ) {
-        wp_enqueue_style( 'fdg-fichas-plantas', get_template_directory_uri() . '/fdg-plantas.css', array(), '1.2.0' );
+        wp_enqueue_style( 'fdg-fichas-plantas', get_template_directory_uri() . '/fdg-plantas.css', array(), '1.3.0' );
         wp_enqueue_style(  'glightbox-css', 'https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css', array(), '3.3.0' );
         wp_enqueue_script( 'glightbox-js',  'https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js',  array(), '3.3.0', true );
         wp_add_inline_script(
@@ -1038,7 +1038,7 @@ function fdg_encolar_estilos() {
         );
     }
     if ( is_singular( 'insectos' ) ) {
-        wp_enqueue_style( 'fdg-fichas-plantas', get_template_directory_uri() . '/fdg-plantas.css', array(), '1.2.0' );
+        wp_enqueue_style( 'fdg-fichas-plantas', get_template_directory_uri() . '/fdg-plantas.css', array(), '1.3.0' );
         wp_enqueue_style(  'glightbox-css', 'https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css', array(), '3.3.0' );
         wp_enqueue_script( 'glightbox-js',  'https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js',  array(), '3.3.0', true );
         wp_add_inline_script(
@@ -1047,16 +1047,16 @@ function fdg_encolar_estilos() {
         );
     }
     if ( is_page( 'insectos' ) || is_page( 'catalogo-insectos' ) ) {
-        wp_enqueue_style( 'fdg-archivo',  get_template_directory_uri() . '/fdg-archivo.css',  array(), '1.1.0' );
-        wp_enqueue_style( 'fdg-home',     get_template_directory_uri() . '/fdg-home.css',      array(), '1.0.5' );
+        wp_enqueue_style( 'fdg-archivo',  get_template_directory_uri() . '/fdg-archivo.css',  array(), '1.2.2' );
+        wp_enqueue_style( 'fdg-home',     get_template_directory_uri() . '/fdg-home.css',      array(), '1.2.1' );
     }
 
     if ( is_front_page() || is_page(485) || is_page(248) ) {
-        wp_enqueue_style( 'fdg-home', get_template_directory_uri() . '/fdg-home.css', array(), '1.1.1' );
+        wp_enqueue_style( 'fdg-home', get_template_directory_uri() . '/fdg-home.css', array(), '1.2.1' );
     }
     if ( is_post_type_archive( 'plantas' ) || is_page( 'catalogo' ) ) {
-        wp_enqueue_style( 'fdg-archivo', get_template_directory_uri() . '/fdg-archivo.css', array(), '1.1.0' );
-        wp_enqueue_style( 'fdg-home',    get_template_directory_uri() . '/fdg-home.css',    array(), '1.0.4' );
+        wp_enqueue_style( 'fdg-archivo', get_template_directory_uri() . '/fdg-archivo.css', array(), '1.2.2' );
+        wp_enqueue_style( 'fdg-home',    get_template_directory_uri() . '/fdg-home.css',    array(), '1.2.1' );
     }
     if ( is_page( 'sobre' ) ) {
         wp_enqueue_style( 'fdg-sobre', get_template_directory_uri() . '/fdg-sobre.css', array(), '1.0.0' );

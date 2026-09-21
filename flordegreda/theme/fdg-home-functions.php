@@ -279,7 +279,7 @@ function fdg_enqueue_home_sierra_map() {
 	$uri = get_template_directory_uri();
 	wp_enqueue_style( 'leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
 	wp_enqueue_script( 'leaflet-js', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
-	wp_enqueue_style( 'fdg-sierra', $uri . '/fdg-sierra.css', array(), '1.0.5' );
+	wp_enqueue_style( 'fdg-sierra', $uri . '/fdg-sierra.css', array(), '1.1.1' );
 	wp_enqueue_script( 'fdg-sierra', $uri . '/fdg-sierra.js', array( 'leaflet-js' ), '1.0.5', true );
 }
 

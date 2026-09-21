@@ -1,0 +1,283 @@
+/* Mapa de zonas — /zonas/ */
+
+body.fdg-zonas-index .site-footer,
+body.fdg-zonas-index .fdg-footer,
+body.fdg-zonas-page .site-footer,
+body.fdg-zonas-page .fdg-footer {
+  display: block !important;
+}
+
+body.fdg-zonas-index .site-content,
+body.fdg-zonas-page .site-content {
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+}
+body.fdg-zonas-index .site-content .grid-container,
+body.fdg-zonas-index .inside-article,
+body.fdg-zonas-page .site-content .grid-container,
+body.fdg-zonas-page .inside-article {
+  max-width: 100% !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+body.fdg-zonas-index #page.site.grid-container,
+body.fdg-zonas-page #page.site.grid-container {
+  max-width: var(--fdg-content-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+body.fdg-zonas-index .fdg-archivo,
+body.fdg-zonas-index .fdg-zonas-estatico-wrap,
+body.fdg-zonas-page .fdg-archivo,
+body.fdg-zonas-page .fdg-zonas-estatico-wrap {
+  width: 100% !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+}
+body.fdg-zonas-index .entry-header,
+body.fdg-zonas-index .entry-footer,
+body.fdg-zonas-page .entry-header,
+body.fdg-zonas-page .entry-footer {
+  display: none !important;
+}
+
+/* Panel superior: sectores | mapa real */
+.fdg-zonas-paneles {
+  padding: clamp(40px, 6vw, 64px) clamp(24px, 4vw, 48px);
+  background: var(--fdg-sand, #e9e6d7);
+}
+
+.fdg-zonas-paneles__inner {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.15fr);
+  gap: clamp(28px, 5vw, 56px);
+  align-items: start;
+}
+
+.fdg-zonas-paneles__hint {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.fdg-zonas-paneles__der .fdg-territorio__titulo {
+  margin-top: 0 !important;
+}
+
+.fdg-zonas-paneles__der .fdg-territorio__texto {
+  max-width: none;
+}
+
+.fdg-zonas-paneles__der .fdg-territorio__mapa {
+  min-height: 380px;
+  height: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(30, 48, 16, 0.1);
+}
+
+.fdg-zonas-paneles__der .fdg-territorio__mapa-leyenda {
+  margin-top: 12px;
+}
+
+/* Esquema de sectores (izquierda) */
+.fdg-zonas-estatico__mapa {
+  position: relative;
+  margin: 24px 0 0;
+  max-width: 100%;
+}
+
+.fdg-zonas-brujula {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #1e3010;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e3010;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+  z-index: 4;
+  pointer-events: none;
+}
+.fdg-zonas-brujula--n { top: 8px; left: 50%; transform: translateX(-50%); }
+.fdg-zonas-brujula--s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.fdg-zonas-brujula--e { right: 8px; top: 50%; transform: translateY(-50%); }
+.fdg-zonas-brujula--o { left: 8px; top: 50%; transform: translateY(-50%); }
+
+.fdg-zonas-cuadrantes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 5px;
+  aspect-ratio: 1;
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 3px 16px rgba(30, 48, 16, 0.1);
+}
+
+.fdg-zonas-cuad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none !important;
+  background: color-mix(in srgb, var(--sector-color, #4a7c2f) 28%, #fff);
+  border: 2px solid color-mix(in srgb, var(--sector-color, #4a7c2f) 55%, #fff);
+  transition: filter 0.15s, transform 0.15s;
+  color: #1e3010 !important;
+  padding: 10px;
+}
+.fdg-zonas-cuad:hover {
+  filter: brightness(0.96);
+  transform: scale(1.01);
+}
+.fdg-zonas-cuad__letra {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.85;
+}
+.fdg-zonas-cuad__nombre {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+  opacity: 0.75;
+}
+
+.fdg-zonas-pueblo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+.fdg-zonas-pueblo__punto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #c0392b;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  margin-bottom: 5px;
+}
+.fdg-zonas-pueblo__nombre {
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  max-width: 9em;
+  line-height: 1.25;
+  color: #1e3010;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+
+/* Listado de zonas por sector */
+.fdg-zonas-sectores-wrap {
+  background: #fff;
+  padding: clamp(40px, 6vw, 64px) clamp(24px, 4vw, 48px);
+}
+
+.fdg-zonas-sectores-lista {
+  max-width: var(--fdg-content-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.fdg-zonas-sector {
+  background: #f7f9f4;
+  border: 1px solid #e8ede4;
+  border-radius: 16px;
+  padding: 24px 26px;
+}
+
+.fdg-zonas-sector__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e3010;
+  margin: 0 0 12px;
+}
+.fdg-zonas-sector__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.fdg-zonas-sector__swatch--sierra { background: #4a7c2f; }
+
+.fdg-zonas-subzona-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.fdg-zonas-subzona-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #eaf3de;
+  border: 1px solid #c5d9b0;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2a4a18 !important;
+  text-decoration: none !important;
+}
+.fdg-zonas-subzona-link:hover { background: #d8ebc8; border-color: #4a7c2f; }
+.fdg-zonas-subzona-link--sin-url { opacity: 0.65; cursor: default; }
+
+.fdg-zonas-sector__vacio,
+.fdg-zonas-sector__intro {
+  color: #666;
+  font-size: 0.92rem;
+  margin: 0 0 12px;
+}
+
+.fdg-zonas-sector--especial {
+  grid-column: 1 / -1;
+  padding: 28px 30px;
+  background: linear-gradient(135deg, #f7f9f4 0%, #eaf3de 100%);
+  border: 1px solid #d4e8c2;
+}
+
+@media (max-width: 900px) {
+  .fdg-zonas-paneles__inner {
+    grid-template-columns: 1fr;
+  }
+  .fdg-zonas-sectores-lista {
+    grid-template-columns: 1fr;
+  }
+  .fdg-zonas-paneles__der .fdg-territorio__mapa {
+    min-height: 320px;
+  }
+  .fdg-zonas-estatico__mapa {
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .fdg-zonas-cuad__letra { font-size: 20px; }
+}

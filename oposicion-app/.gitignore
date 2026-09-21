@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-electron
+release
+_electron-unpack
+*.db
+*.db-wal
+*.db-shm
+main-boot.log
+.DS_Store
