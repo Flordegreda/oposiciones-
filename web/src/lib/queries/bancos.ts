@@ -8,6 +8,9 @@ import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
 } from "@/lib/supuesto-utils";
+import { materiaNombre, sortBancosByNombre } from "@/lib/banco-display";
+
+export { materiaNombre, sortBancosByNombre } from "@/lib/banco-display";
 
 export type BancoRow = {
   id: string;
@@ -91,18 +94,6 @@ export async function getJexLineaId(): Promise<string | null> {
     .eq("slug", JEX_SLUG)
     .maybeSingle();
   return data?.id ?? null;
-}
-
-export function materiaNombre(m: BancoRow["materias"]): string {
-  if (!m) return "Sin materia";
-  if (Array.isArray(m)) return m[0]?.nombre ?? "Sin materia";
-  return m.nombre;
-}
-
-export function sortBancosByNombre(bancos: BancoRow[]): BancoRow[] {
-  return [...bancos].sort((a, b) =>
-    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base", numeric: true }),
-  );
 }
 
 function attachPreguntaCounts(
