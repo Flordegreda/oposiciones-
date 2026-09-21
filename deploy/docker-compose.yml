@@ -43,7 +43,6 @@ services:
     restart: unless-stopped
     depends_on:
       - postgrest
-      - caddy
     environment:
       SUPABASE_URL: http://caddy
       NEXT_PUBLIC_SUPABASE_URL: ${PUBLIC_APP_URL}
