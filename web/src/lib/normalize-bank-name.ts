@@ -128,18 +128,26 @@ export function normalizeBankNameRules(original: string): string {
   let name = collapseSpaces(original);
 
   name = name.replace(/\s*\(\+\d+\s*temas?\)(?:\s*\(\+\d+\s*temas?\))*/gi, "");
-  name = name.replace(/\s*\((\d+)\/(\d+)\)\s*/g, " - PARTE $1");
+  if (!/\bPARTE\s+\d+\b/i.test(name)) {
+    name = name.replace(/\s*\((\d+)\/(\d+)\)\s*/g, " - PARTE $1");
+  }
 
   const replacements: Array<[RegExp, string]> = [
     [/\bLRJSPT\b/g, "LRJSP"],
     [/\bEJCUCION\b/g, "EJECUCION"],
     [/\bGOBIENRO\b/g, "GOBIERNO"],
     [/\bIGAULDAD\b/g, "IGUALDAD"],
+    [/\bIUALDAD\b/g, "IGUALDAD"],
+    [/\bINCOMPATIBILIADES\b/g, "INCOMPATIBILIDADES"],
+    [/\bFUCNION\b/g, "FUNCION"],
+    [/\bFUNCION PULICA\b/g, "FUNCION PUBLICA"],
     [/\bADMON\b/g, "ADMINISTRACION"],
     [/\bADMIN LOCAL\b/g, "ADMINISTRACION LOCAL"],
     [/\bCOLEGIOS PROFESIONAL\b/g, "COLEGIOS PROFESIONALES"],
     [/\bABOGACIA TEORICO\b/g, "ABOGACIA GENERAL TEORICO"],
     [/\bABOGACIA PRACTICO\b/g, "ABOGACIA GENERAL PRACTICO"],
+    [/\bESTATUTO TRA\b/g, "ESTATUTO TRABAJADORES"],
+    [/\bREGIMEN JCO\b/g, "REGIMEN JURIDICO"],
     [/\bTEORI\b/g, "TEORICO"],
     [/\bTEO\b/g, "TEORICO"],
     [/\bPRAC\b/g, "PRACTICO"],
@@ -150,6 +158,11 @@ export function normalizeBankNameRules(original: string): string {
   for (const [pattern, replacement] of replacements) {
     name = name.replace(pattern, replacement);
   }
+
+  name = name.replace(
+    /\b(TEORICO|PRACTICO|ENCADENADO)\s+(\d+)(?:\s+\d+)+\s*$/i,
+    "$1 $2",
+  );
 
   return collapseSpaces(name);
 }

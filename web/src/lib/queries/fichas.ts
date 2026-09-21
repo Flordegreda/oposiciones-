@@ -186,7 +186,9 @@ export async function fetchFichasStatsByMateria(): Promise<{
 }
 
 export async function fetchMazosGrouped(): Promise<MazoFichasSection[]> {
-  const mazos = await fetchMazosFichas({ activeOnly: true });
+  const mazos = (await fetchMazosFichas({ activeOnly: true })).filter(
+    (m) => m.numFichas > 0,
+  );
   const map = new Map<string, MazoFichasSection>();
 
   for (const mazo of mazos) {

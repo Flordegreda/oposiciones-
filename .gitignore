@@ -1,5 +1,4 @@
 node_modules/
-.app-scan/
 .env
 .env.local
 .env.production.local
@@ -8,4 +7,11 @@ web/.next/
 web/node_modules/
 web/.vercel/
 web/tmp-*
+web/tsconfig.tsbuildinfo
+web/.env.local
+web/.env.production.local
+web/.env.vercel.*
+flordegreda-work/tmp-*
 flordegreda-work/
+flordegreda/_*.html
+flordegreda/sample-page*.html

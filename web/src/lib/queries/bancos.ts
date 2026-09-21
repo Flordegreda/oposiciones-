@@ -1,7 +1,9 @@
 import { getSupabase } from "@/lib/supabase/server";
 import { JEX_SLUG } from "@/lib/constants";
+import { coverageStatsFromLists } from "@/lib/coverage-stats";
 import type { PrintBundle, PrintablePregunta } from "@/lib/print-test";
 import { preguntasTableExists, preguntasRpcReady, supuestosSchemaReady, fichasSchemaReady } from "@/lib/queries/schema";
+import { fetchMazosGrouped } from "@/lib/queries/fichas";
 import {
   sortPreguntasWithSupuestos,
   type SupuestoRow,
@@ -52,19 +54,32 @@ export type MateriaStatsRow = {
 };
 
 export type MaterialStats = {
+  /** Materias con al menos un test o un mazo (unión). */
   materias: number;
   bancos: number;
   preguntas: number;
   teorico: TipoStats;
   practico: TipoStats;
-  /** Mazos de fichas Anki (0 si el esquema no está activo). */
+  /** Mazos activos con ≥1 ficha. Cada parte (1/3) cuenta como uno. */
   mazosFichas: number;
-  /** Total de fichas pregunta/respuesta. */
+  /** Tarjetas de esos mazos (no COUNT crudo de la tabla). */
   fichas: number;
   porMateria: MateriaStatsRow[];
 };
 
 const emptyTipoStats = (): TipoStats => ({ bancos: 0, preguntas: 0 });
+
+/** Mismos criterios que /practicar y la portada: activo, línea JEX/legacy, con preguntas. */
+function bancoCuentaEnCobertura(
+  b: BancoRow,
+  jexId: string | null,
+  requirePreguntas: boolean,
+): boolean {
+  if (b.active === false) return false;
+  if (jexId && b.linea_id && b.linea_id !== jexId) return false;
+  if (requirePreguntas && (b.numPreguntas ?? 0) === 0) return false;
+  return true;
+}
 
 const PAGE_SIZE = 1000;
 
@@ -292,9 +307,10 @@ export async function getPracticarDataUncached() {
     : new Map<string, number>();
 
   const withCounts = attachPreguntaCounts(rows, counts);
-  const practicables = hasPreguntas
-    ? withCounts.filter((b) => (b.numPreguntas ?? 0) > 0)
-    : withCounts;
+  const jexId = await getJexLineaId();
+  const practicables = withCounts.filter((b) =>
+    bancoCuentaEnCobertura(b, jexId, hasPreguntas),
+  );
 
   return {
     sections: groupByMateria(practicables),
@@ -453,25 +469,18 @@ export async function getAdminPageDataUncached(): Promise<AdminPageData> {
     ? await fetchPreguntaCountsByBanco(bancos.map((b) => b.id))
     : new Map<string, number>();
 
-  const stats = buildMaterialStats(materias, bancos, counts);
-  const extras: Promise<void>[] = [];
-  if (fichasOk) {
-    extras.push(
-      (async () => {
-        const supabaseCounts = getSupabase();
-        const [mazosRes, fichasRes] = await Promise.all([
-          supabaseCounts.from("mazos_fichas").select("id", { count: "exact", head: true }),
-          supabaseCounts.from("fichas").select("id", { count: "exact", head: true }),
-        ]);
-        stats.mazosFichas = mazosRes.count ?? 0;
-        stats.fichas = fichasRes.count ?? 0;
-      })(),
-    );
-  }
-  if (extras.length) await Promise.all(extras);
+  const withCounts = attachPreguntaCounts(bancos, counts);
+  const jexId = await getJexLineaId();
+  const forStats = withCounts.filter((b) =>
+    bancoCuentaEnCobertura(b, jexId, schemaOk),
+  );
+
+  const fichaSections = fichasOk ? await fetchMazosGrouped() : [];
+  const stats = coverageStatsFromLists(groupByMateria(forStats), fichaSections);
+  stats.porMateria = buildMaterialStats(materias, forStats, counts).porMateria;
 
   return {
-    bancos: sortBancosByNombre(attachPreguntaCounts(bancos, counts)),
+    bancos: sortBancosByNombre(withCounts),
     materias: buildMateriasWithCounts(materias, bancos),
     stats,
     schemaOk,
