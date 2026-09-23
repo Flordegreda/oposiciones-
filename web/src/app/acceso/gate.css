@@ -1,0 +1,74 @@
+.gate-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.gate-card {
+  width: min(26rem, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 1.75rem 1.6rem 1.5rem;
+}
+
+.gate-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.gate-title {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.85rem;
+  margin: 0 0 0.25rem;
+}
+
+.gate-lead {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  margin: 0 0 1.25rem;
+}
+
+.gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.gate-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.gate-input {
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--option-bg);
+}
+
+.gate-input:focus {
+  outline: 2px solid rgba(30, 77, 123, 0.35);
+  border-color: var(--primary);
+}
+
+.gate-submit {
+  margin-top: 0.35rem;
+  width: 100%;
+}
+
+.gate-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}

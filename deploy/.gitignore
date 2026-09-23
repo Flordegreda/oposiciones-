@@ -1,2 +1,5 @@
 .env
 postgres/00-roles.generated.sql
+.env.bak
+admin.hash
+.admin-basic-pass

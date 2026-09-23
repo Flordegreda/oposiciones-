@@ -8,14 +8,13 @@ import {
   examNotaSobre10,
   formatNeto,
   formatNotaSobre10,
-  letraOpcion,
 } from "@/lib/exam-utils";
 import {
   filtrarPorFecha,
   getResultadosFromCache,
   type FiltroTiempo,
 } from "@/lib/persistence/estadisticas-service";
-import type { PreguntaResultadoDetalle, TestResultRecord } from "@/lib/persistence/types";
+import type { TestResultRecord } from "@/lib/persistence/types";
 import { notaBanda } from "@/lib/temario-checklist";
 
 const FILTRO_LABEL: Record<FiltroTiempo, string> = {
@@ -46,10 +45,6 @@ function formatFecha(iso: string): string {
 
 function enBlancoDe(r: TestResultRecord): number {
   return Math.max(0, r.totalPreguntas - r.aciertos - r.fallos);
-}
-
-function preguntasMal(r: TestResultRecord): PreguntaResultadoDetalle[] {
-  return (r.detallePreguntas ?? []).filter((d) => d.respondida && !d.correcta);
 }
 
 export function ResultadosPrintView() {
@@ -85,8 +80,7 @@ export function ResultadosPrintView() {
     const media10 = notas.length
       ? notas.reduce((s, n) => s + n, 0) / notas.length
       : null;
-    const malTotal = rows.reduce((n, r) => n + preguntasMal(r).length, 0);
-    return { tests, aciertos, fallos, preguntas, blancos, media10, malTotal };
+    return { tests, aciertos, fallos, preguntas, blancos, media10 };
   }, [resultados]);
 
   const date = new Date().toLocaleDateString("es-ES", {
@@ -139,8 +133,7 @@ export function ResultadosPrintView() {
           </p>
           <p className="print-checklist-legend">
             Nota neta = aciertos − incorrectas/4 (en blanco, 0). La nota /10 es esa neta
-            reescalada al tamaño del test. Las preguntas mal son las contestadas de forma
-            incorrecta (no las dejadas en blanco).
+            reescalada al tamaño del test.
           </p>
         </header>
 
@@ -203,55 +196,6 @@ export function ResultadosPrintView() {
                   })}
                 </tbody>
               </table>
-            </section>
-
-            <section className="print-informe-mal">
-              <h2 className="print-checklist-materia-title">Preguntas mal contestadas</h2>
-              <p className="print-checklist-materia-meta">
-                {resumen.malTotal} pregunta{resumen.malTotal !== 1 ? "s" : ""} incorrecta
-                {resumen.malTotal !== 1 ? "s" : ""}
-                {resumen.malTotal === 0 ? " en este periodo." : ", agrupadas por test."}
-              </p>
-              {resultados.map((r) => {
-                const mal = preguntasMal(r);
-                if (!mal.length && !(r.fallos > 0)) return null;
-                return (
-                  <article key={r.id} className="print-informe-mal-test">
-                    <h3 className="print-informe-mal-title">
-                      {r.test}
-                      <span className="print-informe-mal-meta">
-                        {" "}
-                        · {formatFecha(r.fecha)} · {r.fallos} fallo
-                        {r.fallos !== 1 ? "s" : ""} · neto {formatNeto(r.aciertos, r.fallos)} ·{" "}
-                        {formatNotaSobre10(
-                          examNotaSobre10(r.aciertos, r.fallos, r.totalPreguntas),
-                        )}
-                        /10
-                      </span>
-                    </h3>
-                    {mal.length === 0 ? (
-                      <p className="print-checklist-empty">
-                        Este intento tiene {r.fallos} fallo{r.fallos !== 1 ? "s" : ""}, pero no
-                        se guardó el enunciado.
-                      </p>
-                    ) : (
-                      <ol className="print-informe-mal-list">
-                        {mal.map((d) => (
-                          <li key={d.preguntaId}>
-                            <span className="print-informe-mal-enunciado">{d.enunciado}</span>
-                            <span className="print-informe-mal-letras">
-                              Tu respuesta: {letraOpcion(d.seleccion)}
-                              {d.respuestaCorrecta != null && (
-                                <> · Correcta: {letraOpcion(d.respuestaCorrecta)}</>
-                              )}
-                            </span>
-                          </li>
-                        ))}
-                      </ol>
-                    )}
-                  </article>
-                );
-              })}
             </section>
           </>
         )}

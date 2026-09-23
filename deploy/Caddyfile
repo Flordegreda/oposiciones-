@@ -1,14 +1,66 @@
-:80 {
-  handle_path /rest/v1/* {
-    reverse_proxy postgrest:3000
-  }
-  reverse_proxy app:3000
+{
+	email {$ACME_EMAIL}
 }
 
-# Cuando tengas dominio, sustituye el bloque anterior por:
-# tudominio.es {
-#   handle_path /rest/v1/* {
-#     reverse_proxy postgrest:3000
-#   }
-#   reverse_proxy app:3000
-# }
+(jex_site) {
+	header X-Robots-Tag "noindex, nofollow"
+
+	handle /robots.txt {
+		header Content-Type "text/plain; charset=utf-8"
+		respond <<EOF
+User-agent: *
+Disallow: /
+EOF
+	}
+
+	@restInternal {
+		host caddy
+		path /rest/v1 /rest/v1/*
+	}
+	handle @restInternal {
+		handle_path /rest/v1/* {
+			reverse_proxy postgrest:3000
+		}
+	}
+
+	@restPublic {
+		path /rest/v1 /rest/v1/*
+	}
+	handle @restPublic {
+		forward_auth app:3000 {
+			uri /api/auth/verify
+		}
+		handle_path /rest/v1/* {
+			reverse_proxy postgrest:3000
+		}
+	}
+
+	handle {
+		reverse_proxy app:3000
+	}
+}
+
+app.jexopo.blog {
+	import jex_site
+}
+
+vmi3599244.contaboserver.net {
+	header X-Robots-Tag "noindex, nofollow"
+	redir https://app.jexopo.blog{uri} 308
+}
+
+http:// {
+	@restInternal {
+		host caddy
+		path /rest/v1 /rest/v1/*
+	}
+	handle @restInternal {
+		handle_path /rest/v1/* {
+			reverse_proxy postgrest:3000
+		}
+	}
+
+	handle {
+		redir https://app.jexopo.blog{uri} 308
+	}
+}

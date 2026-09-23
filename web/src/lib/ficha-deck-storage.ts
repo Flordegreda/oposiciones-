@@ -62,6 +62,26 @@ function saveSnapshot(scope: string, snap: FichaDeckSnapshot): void {
   }
 }
 
+export type FichaDeckResumen = {
+  pendientes: number;
+  completed: boolean;
+  known: number | null;
+  unknown: number;
+};
+
+/** Lectura sin efectos del estado guardado de un mazo (para estadísticas). */
+export function readFichaDeckResumen(scope: string): FichaDeckResumen | null {
+  const snap = loadSnapshot(scope);
+  if (!snap) return null;
+  const completed = Boolean(snap.completed) || snap.remainingIds.length === 0;
+  return {
+    pendientes: completed ? 0 : snap.remainingIds.length,
+    completed,
+    known: typeof snap.known === "number" ? snap.known : null,
+    unknown: snap.unknown ?? 0,
+  };
+}
+
 export type FichaDeckState = {
   remaining: number[];
   cursor: number;

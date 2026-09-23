@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { JEX_SUBTITLE, SITE_CREDIT, SITE_TITLE } from "@/lib/constants";
 import { usePageHeaderState } from "@/components/page-header-context";
+import { LogoutButton } from "@/components/LogoutButton";
 
 type Props = {
   backHref?: string;
@@ -34,11 +35,12 @@ export function SiteHeader({ backHref, backLabel, pageTitle }: Props) {
         <nav className="site-nav site-nav--desktop" aria-label="Principal">
           <Link href="/">Resumen</Link>
           <Link href="/practicar">Tests</Link>
-          <Link href="/temario">Plan</Link>
           <Link href="/fichas">Fichas</Link>
           <Link href="/simulacro">Simulacro</Link>
+          <Link href="/estadisticas">Estadísticas</Link>
           <Link href="/admin">Material</Link>
         </nav>
+        <LogoutButton />
       </div>
       {showContext && (
         <div className="site-header-context">

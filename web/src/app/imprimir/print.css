@@ -313,7 +313,7 @@ body::before {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 8px;
-  background: #1e4d7b;
+  background: #007a33;
   color: #fff;
   font-family: system-ui, sans-serif;
   font-size: 14px;
@@ -324,7 +324,7 @@ body::before {
 .print-toolbar-link {
   font-family: system-ui, sans-serif;
   font-size: 14px;
-  color: #1e4d7b;
+  color: #007a33;
 }
 
 .print-checklist-doc {
@@ -604,7 +604,7 @@ body::before {
 }
 
 .print-ficha-a {
-  color: #1e4d7b;
+  color: #007a33;
 }
 
 .print-ficha-label {

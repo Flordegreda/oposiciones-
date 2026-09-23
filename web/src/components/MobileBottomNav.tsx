@@ -20,9 +20,9 @@ const items = [
     match: (p: string) => p.startsWith("/fichas"),
   },
   {
-    href: "/temario",
-    label: "Plan",
-    match: (p: string) => p.startsWith("/temario"),
+    href: "/estadisticas",
+    label: "Estadísticas",
+    match: (p: string) => p.startsWith("/estadisticas"),
   },
 ];
 

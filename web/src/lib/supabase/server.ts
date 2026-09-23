@@ -25,7 +25,7 @@ export function getSupabase(): SupabaseClient {
 
   if (!url || !key) {
     throw new Error(
-      "Faltan NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.local",
+      "No hay conexión con la base de datos",
     );
   }
 

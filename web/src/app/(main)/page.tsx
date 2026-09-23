@@ -1,12 +1,11 @@
 import { DeviceSyncPanel } from "@/components/DeviceSyncPanel";
 import { MobileContinue } from "@/components/MobileContinue";
-import { MobileStudyShortcuts } from "@/components/MobileStudyShortcuts";
 import { PwaInstallHint } from "@/components/PwaInstallHint";
-import { TemarioChecklist } from "@/components/temario/TemarioChecklist";
-import { JEX_SUBTITLE } from "@/lib/constants";
+import { ResumenAvance } from "@/components/ResumenAvance";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { getMateriasWithCounts } from "@/lib/queries/bancos";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
+import { errorMessage } from "@/lib/error-message";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +21,14 @@ export default async function HomePage() {
       getPracticarData(),
     ]);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Error al cargar el avance";
+    error = errorMessage(e, "Error al cargar el avance");
   }
 
   try {
     fichaSections = await fetchMazosGrouped();
-  } catch {
+  } catch (e) {
     fichaSections = [];
+    if (!error) error = errorMessage(e, "Error al cargar las fichas");
   }
 
   const hasMaterial = testSections.length > 0 || fichaSections.length > 0 || allMaterias.length > 0;
@@ -36,11 +36,8 @@ export default async function HomePage() {
   return (
     <>
       <section className="hero hero--compact">
-        <p className="hero-eyebrow">Tu avance</p>
         <h1 className="page-title">Resumen</h1>
-        <p className="lead lead--compact">
-          Notas, tests hechos y pendientes · {JEX_SUBTITLE}
-        </p>
+        <p className="lead lead--compact">Avance y material</p>
       </section>
 
       {error && (
@@ -53,17 +50,13 @@ export default async function HomePage() {
       <MobileContinue />
 
       {hasMaterial && (
-        <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
-          <TemarioChecklist
-            variant="avance"
-            testSections={testSections}
-            fichaSections={fichaSections}
-            allMaterias={allMaterias}
-          />
-        </div>
+        <ResumenAvance
+          testSections={testSections}
+          fichaSections={fichaSections}
+          allMaterias={allMaterias}
+        />
       )}
 
-      <MobileStudyShortcuts />
       <DeviceSyncPanel />
     </>
   );

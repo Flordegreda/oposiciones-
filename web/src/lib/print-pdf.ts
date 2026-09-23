@@ -58,6 +58,10 @@ export async function urlToPdf(url: string): Promise<Buffer> {
   const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
+    const printKey = process.env.GATE_SECRET;
+    if (printKey) {
+      await page.setExtraHTTPHeaders({ "x-jex-print-key": printKey });
+    }
     await page.emulateMediaType("print");
     await page.goto(url, { waitUntil: "load", timeout: 45_000 });
     const pdf = await page.pdf(PDF_OPTS);
