@@ -13,7 +13,7 @@ export function DeviceSyncPanel() {
         : phase === "offline"
           ? detail || "Sin conexión · se guardará al volver"
           : phase === "error"
-            ? detail || "No se pudo sincronizar. Reintentará solo."
+            ? detail || "No se ha podido subir el avance. En otro dispositivo no lo verás."
             : "Sincronizando en segundo plano";
 
   return (
@@ -26,10 +26,6 @@ export function DeviceSyncPanel() {
           aria-hidden
         />
         {status}
-      </p>
-      <p className="device-sync-lead">
-        Los tests y las fichas marcadas se copian solos entre el móvil y el ordenador. No hace
-        falta ningún código.
       </p>
     </section>
   );

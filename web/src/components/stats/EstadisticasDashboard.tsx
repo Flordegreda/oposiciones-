@@ -88,8 +88,12 @@ const FILTROS: { id: FiltroTiempo; label: string }[] = [
   { id: "todo", label: "Todo el historial" },
 ];
 
-export function EstadisticasDashboard() {
+export function EstadisticasDashboard({ bancoIds }: { bancoIds?: string[] } = {}) {
   const router = useRouter();
+  const bancosVigentes = useMemo(
+    () => (bancoIds ? new Set(bancoIds) : undefined),
+    [bancoIds],
+  );
   const { phase, revision, syncNow } = usePersistence();
   const [filtro, setFiltro] = useState<FiltroTiempo>("30dias");
   const [objetivoPct, setObjetivoPct] = useState(OBJETIVO_DEFAULT);
@@ -105,7 +109,7 @@ export function EstadisticasDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const dash = await obtenerDashboardData(filtro);
+      const dash = await obtenerDashboardData(filtro, bancosVigentes);
       setData(dash);
       const meta = await getLocalCache().getMeta();
       setLastSync(meta.lastPullAt || meta.lastPushAt);
@@ -114,7 +118,7 @@ export function EstadisticasDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [filtro]);
+  }, [filtro, bancosVigentes]);
 
   useEffect(() => {
     void load();
@@ -208,6 +212,13 @@ export function EstadisticasDashboard() {
     if (v >= 60) return "orange" as const;
     return "red" as const;
   }, [resumen?.aciertosGlobal]);
+  const notaTone = useMemo(() => {
+    const v = resumen?.notaMedia;
+    if (v == null) return "blue" as const;
+    if (v >= 7) return "green" as const;
+    if (v >= 5) return "orange" as const;
+    return "red" as const;
+  }, [resumen?.notaMedia]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-1 pb-8 sm:px-0">
@@ -322,7 +333,7 @@ export function EstadisticasDashboard() {
           ) : null}
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <KpiCard
               title="Tests completados"
               value={String(resumen?.testsCompletados ?? 0)}
@@ -332,6 +343,11 @@ export function EstadisticasDashboard() {
               title="Aciertos global"
               value={`${(resumen?.aciertosGlobal ?? 0).toFixed(1)}%`}
               tone={aciertosTone}
+            />
+            <KpiCard
+              title="Nota media (con penalización)"
+              value={formatNotaSobre10(resumen?.notaMedia)}
+              tone={notaTone}
             />
             <KpiCard
               title="Tiempo por test"
@@ -370,7 +386,7 @@ export function EstadisticasDashboard() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Bancos */}
-            <div className="space-y-6">
+            <div className="grid gap-6 lg:col-span-2 lg:grid-cols-2">
               <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
                 <h2 className="mb-1 text-lg font-semibold text-slate-800">
                   Rendimiento por banco
@@ -404,21 +420,21 @@ export function EstadisticasDashboard() {
                   ⏱️ Tiempo medio por banco
                 </h2>
                 <p className="mb-4 text-sm text-slate-500">
-                  Segundos de media para completar un test de cada banco
+                  Minutos de media para completar un test de cada banco
                 </p>
                 <TiempoMedioBancosChart data={data?.tiempoMedioBancos ?? []} />
               </section>
             </div>
 
             {/* Fallos agregados por banco */}
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+            <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5 lg:col-span-2">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="mb-1 text-lg font-semibold text-slate-800">
                     Preguntas más falladas
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Por banco · peores primero · periodo seleccionado
+                    Top 10 por banco · peores primero · periodo seleccionado
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -454,26 +470,46 @@ export function EstadisticasDashboard() {
                   <table className="min-w-full text-left text-sm">
                     <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                       <tr>
+                        <th className="w-8 px-2 py-2.5 font-medium">#</th>
                         <th className="px-3 py-2.5 font-medium">Banco</th>
-                        <th className="min-w-[160px] px-3 py-2.5 font-medium">
+                        <th className="min-w-[140px] px-3 py-2.5 font-medium">
                           % aciertos
                         </th>
                         <th className="px-3 py-2.5 font-medium">Fallidas</th>
-                        <th className="px-3 py-2.5 font-medium">Respondidas</th>
+                        <th className="hidden px-3 py-2.5 font-medium sm:table-cell">
+                          Respondidas
+                        </th>
                         <th className="px-3 py-2.5 font-medium">Acción</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {(data?.fallosPorBanco ?? []).map((b) => {
+                      {(data?.fallosPorBanco ?? []).slice(0, 10).map((b, i) => {
                         const critico = b.porcentajeAciertos < UMBRAL_BANCO_CRITICO;
+                        const abrible =
+                          b.banco !== "simulacro" &&
+                          b.banco !== "desconocido" &&
+                          (!bancosVigentes || bancosVigentes.has(b.banco));
                         return (
                           <tr
                             key={b.banco}
                             className="border-t border-slate-100 align-middle"
                           >
+                            <td className="px-2 py-3 tabular-nums text-slate-400">
+                              {i + 1}
+                            </td>
                             <td className="px-3 py-3 font-medium text-slate-800">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span>{b.bancoNombre}</span>
+                                {abrible ? (
+                                  <Link
+                                    href={`/test/${b.banco}`}
+                                    className="text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-[var(--primary)] hover:decoration-current"
+                                    title="Abrir el test"
+                                  >
+                                    {b.bancoNombre}
+                                  </Link>
+                                ) : (
+                                  <span>{b.bancoNombre}</span>
+                                )}
                                 {critico && (
                                   <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
                                     Crítico
@@ -507,7 +543,7 @@ export function EstadisticasDashboard() {
                             <td className="px-3 py-3 tabular-nums text-red-600">
                               {b.totalFallidas}
                             </td>
-                            <td className="px-3 py-3 tabular-nums text-slate-600">
+                            <td className="hidden px-3 py-3 tabular-nums text-slate-600 sm:table-cell">
                               {b.totalRespondidas}
                             </td>
                             <td className="px-3 py-3">
@@ -524,7 +560,7 @@ export function EstadisticasDashboard() {
                                   router.push(`/repaso-fallos?${q}`);
                                 }}
                               >
-                                Repasar {b.bancoNombre.length > 18 ? "banco" : b.bancoNombre}
+                                Repasar fallos
                               </button>
                             </td>
                           </tr>

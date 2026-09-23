@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { JEX_SUBTITLE } from "@/lib/constants";
 import { fetchMazosGrouped } from "@/lib/queries/fichas";
 import { fichasSchemaReady } from "@/lib/queries/schema";
+import { errorMessage } from "@/lib/error-message";
 
 /** Lista de mazos: siempre fresca tras importar (evita pantalla vacía por ISR). */
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export default async function FichasPage() {
     fichasOk = await fichasSchemaReady();
     if (fichasOk) sections = await fetchMazosGrouped();
   } catch (e) {
-    error = e instanceof Error ? e.message : "Error al cargar fichas";
+    error = errorMessage(e, "Error al cargar las fichas");
   }
 
   const totalMazos = sections.reduce((n, s) => n + s.mazos.length, 0);

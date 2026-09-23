@@ -11,16 +11,25 @@ export default function Icon() {
           width: "100%",
           height: "100%",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#1e4d7b",
-          color: "#fffefb",
-          fontSize: 168,
-          fontWeight: 800,
-          letterSpacing: -4,
+          flexDirection: "column",
+          background: "#007a33",
         }}
       >
-        JEX
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#ffffff",
+            fontSize: 168,
+            fontWeight: 800,
+            letterSpacing: -4,
+          }}
+        >
+          JEX
+        </div>
+        <div style={{ height: 72, background: "#111111" }} />
       </div>
     ),
     size,

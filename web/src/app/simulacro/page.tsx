@@ -4,6 +4,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SimulacroLauncher } from "@/components/SimulacroLauncher";
 import { JEX_SUBTITLE } from "@/lib/constants";
 import { getSimulacroMeta } from "@/lib/queries/simulacro";
+import { errorMessage } from "@/lib/error-message";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -18,13 +19,7 @@ export default async function SimulacroPage() {
   try {
     meta = await getSimulacroMeta();
   } catch (e) {
-    const msg =
-      e instanceof Error
-        ? e.message
-        : typeof e === "object" && e && "message" in e
-          ? String((e as { message: unknown }).message)
-          : "Error al cargar preguntas";
-    error = msg;
+    error = errorMessage(e, "Error al cargar las preguntas");
   }
 
   return (

@@ -19,6 +19,8 @@ export type FiltroTiempo = "7dias" | "30dias" | "90dias" | "todo";
 export type ResumenEstadisticas = {
   testsCompletados: number;
   aciertosGlobal: number;
+  /** Nota sobre 10 con la penalización del examen (cada fallo resta 1/4). */
+  notaMedia: number | null;
   tiempoPorTest: number | null;
   rachaActual: number;
 };
@@ -269,6 +271,7 @@ export function calcularResumen(resultados: TestResultRecord[]): ResumenEstadist
   const testsCompletados = resultados.length;
   const totalPreguntas = resultados.reduce((n, r) => n + r.totalPreguntas, 0);
   const totalAciertos = resultados.reduce((n, r) => n + r.aciertos, 0);
+  const totalFallos = resultados.reduce((n, r) => n + r.fallos, 0);
   const tiempos = resultados
     .map((r) => r.tiempoTotal)
     .filter((t): t is number => typeof t === "number" && t >= 0);
@@ -276,6 +279,10 @@ export function calcularResumen(resultados: TestResultRecord[]): ResumenEstadist
   return {
     testsCompletados,
     aciertosGlobal: totalPreguntas > 0 ? (totalAciertos / totalPreguntas) * 100 : 0,
+    notaMedia:
+      totalPreguntas > 0
+        ? (10 * (totalAciertos - totalFallos / 4)) / totalPreguntas
+        : null,
     tiempoPorTest: tiempos.length
       ? Math.round(tiempos.reduce((a, b) => a + b, 0) / tiempos.length)
       : null,
@@ -636,6 +643,7 @@ async function enriquecerFalladas(
 /** Función principal del dashboard. */
 export async function obtenerDashboardData(
   filtro: FiltroTiempo = "30dias",
+  bancosVigentes?: ReadonlySet<string>,
 ): Promise<DashboardData> {
   const cache = getLocalCache();
   const resultados = await getResultadosFromCache();
@@ -658,7 +666,12 @@ export async function obtenerDashboardData(
     ),
     fallosPorBanco: calcularFallosAgregadosPorBanco(filtrados, bancos),
     testsRecientes: obtenerTestsRecientes(filtrados, 50, bancos),
-    recomendacion: generarRecomendacion(rendimientoBancos, filtrados),
+    recomendacion: generarRecomendacion(
+      bancosVigentes
+        ? rendimientoBancos.filter((b) => bancosVigentes.has(b.banco))
+        : rendimientoBancos,
+      filtrados,
+    ),
     totalHistorial: resultados.length,
     totalPeriodo: filtrados.length,
   };

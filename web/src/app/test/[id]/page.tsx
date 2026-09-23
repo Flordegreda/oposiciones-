@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { getBancoForTest } from "@/lib/queries/bancos-cached";
 import { TestRunner } from "@/components/TestRunner";
+import { errorMessage } from "@/lib/error-message";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function TestPage({ params }: Props) {
   try {
     data = await getBancoForTest(id);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Error al cargar el test";
+    error = errorMessage(e, "Error al cargar el test");
   }
 
   if (!data && !error) notFound();

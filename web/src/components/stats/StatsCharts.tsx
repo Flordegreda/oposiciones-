@@ -258,14 +258,15 @@ export function TiempoMedioBancosChart({ data }: { data: TiempoMedioBanco[] }) {
     );
   }
 
-  const maxX = Math.max(60, ...data.map((d) => d.tiempoMedioSegundos));
+  const minutos = data.map((d) => Math.round((d.tiempoMedioSegundos / 60) * 10) / 10);
+  const maxX = Math.max(1, Math.ceil(Math.max(...minutos)));
 
   const chartData = {
     labels: data.map((d) => d.bancoNombre),
     datasets: [
       {
-        label: "Tiempo medio (s)",
-        data: data.map((d) => d.tiempoMedioSegundos),
+        label: "Tiempo medio (min)",
+        data: minutos,
         backgroundColor: "#6366f1",
         borderRadius: 6,
         barThickness: 18,
@@ -286,10 +287,10 @@ export function TiempoMedioBancosChart({ data }: { data: TiempoMedioBanco[] }) {
             tooltip: {
               callbacks: {
                 label: (ctx) => {
-                  const sec = ctx.parsed.x ?? 0;
+                  const row = data[ctx.dataIndex];
+                  const sec = row?.tiempoMedioSegundos ?? 0;
                   const m = Math.floor(sec / 60);
                   const s = sec % 60;
-                  const row = data[ctx.dataIndex];
                   const tiempo =
                     m > 0 ? `${m}m ${s.toString().padStart(2, "0")}s` : `${s}s`;
                   return row
@@ -303,8 +304,8 @@ export function TiempoMedioBancosChart({ data }: { data: TiempoMedioBanco[] }) {
             x: {
               min: 0,
               max: maxX,
-              title: { display: true, text: "Segundos", font: { size: 11 } },
-              ticks: { callback: (v) => `${v}s` },
+              title: { display: true, text: "Minutos", font: { size: 11 } },
+              ticks: { callback: (v) => `${v} min` },
               grid: { color: "rgba(148, 163, 184, 0.2)" },
             },
             y: {

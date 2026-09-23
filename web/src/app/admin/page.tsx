@@ -17,6 +17,7 @@ import { AdminSupuestosSetup } from "@/components/admin/AdminSupuestosSetup";
 import { getAdminPageData } from "@/lib/queries/bancos-cached";
 import { fetchMazosFichas, type MazoFichas } from "@/lib/queries/fichas";
 import { resultadosSchemaReady } from "@/lib/queries/schema";
+import { errorMessage } from "@/lib/error-message";
 
 import { JEX_SUBTITLE } from "@/lib/constants";
 
@@ -58,7 +59,7 @@ export default async function AdminPage({ searchParams }: PageProps) {
     resultadosOk = schemaResultados;
     mazosFichas = mazos;
   } catch (e) {
-    error = e instanceof Error ? e.message : "Error";
+    error = errorMessage(e, "Error al cargar el material");
   }
 
   const bancos = data?.bancos ?? [];
@@ -109,12 +110,6 @@ export default async function AdminPage({ searchParams }: PageProps) {
           <div className="card card-warning">
 
             <p className="error">{error}</p>
-
-            <p className="muted small">
-
-              Configura <code>.env.local</code> con Supabase (ver <code>.env.example</code>).
-
-            </p>
 
           </div>
 

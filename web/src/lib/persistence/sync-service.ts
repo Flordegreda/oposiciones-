@@ -223,7 +223,9 @@ export class SyncService {
     await cache.saveResultado(record);
     await cache.recomputeStats(record.usuarioId);
 
-    void this.syncNow("focus").then(() => this.setPhase("synced", "Resultado en la nube"));
+    void this.syncNow("focus").then(() => {
+      if (this.phase === "synced") this.setPhase("synced", "Resultado en la nube");
+    });
 
     return record;
   }
@@ -316,7 +318,7 @@ export class SyncService {
       });
 
       if (res.status === 404 || res.status === 503) {
-        this.setPhase("offline", "Solo local (activa resultados en Material)");
+        this.setPhase("offline", "El avance no se puede guardar en la base. Se queda en este dispositivo.");
         return;
       }
       if (!res.ok) throw new Error(`Pull falló (${res.status})`);
@@ -334,16 +336,21 @@ export class SyncService {
         dirty: false,
       });
 
-      await this.pushPending();
+      await this.pushPending(reason === "startup" || reason === "manual" ? "all" : "pending");
 
       if (merged.changed || checklistChanged || reason === "startup" || reason === "manual") {
         this.bumpRevision();
       }
       this.setPhase("synced", "Sincronizado");
-    } catch {
+    } catch (err) {
+      const offline = typeof navigator !== "undefined" && !navigator.onLine;
       this.setPhase(
-        typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error",
-        "No se pudo sincronizar",
+        offline ? "offline" : "error",
+        offline
+          ? "Sin conexión. El avance se queda en este dispositivo."
+          : err instanceof Error
+            ? err.message
+            : "No se ha podido subir el avance. En otro dispositivo no lo verás.",
       );
     }
   }
@@ -372,10 +379,12 @@ export class SyncService {
     };
   }
 
-  private async pushPending(): Promise<void> {
+  private async pushPending(scope: "pending" | "all" = "pending"): Promise<void> {
     const cache = getLocalCache();
-    const pending = (await cache.getPendingResultados()).filter((r) => !isProgresoBanco(r.banco));
-    const payload = [...pending.map(localToCloudPayload), this.progresoPayload()];
+    const rows = (
+      scope === "all" ? await cache.getAllResultados() : await cache.getPendingResultados()
+    ).filter((r) => !isProgresoBanco(r.banco));
+    const payload = [...rows.map(localToCloudPayload), this.progresoPayload()];
 
     this.setPhase("syncing", "Sincronizando…");
 
@@ -390,16 +399,21 @@ export class SyncService {
     );
 
     if (!res.ok) {
-      if (pending.length) {
-        await cache.upsertResultados(
-          pending.map((r) => ({ ...r, syncStatus: "error" as const })),
-        );
+      if (rows.length) {
+        await cache.upsertResultados(rows.map((r) => ({ ...r, syncStatus: "error" as const })));
       }
-      throw new Error(`Push falló (${res.status})`);
+      let detail = "";
+      try {
+        const body = (await res.json()) as { error?: string };
+        if (body.error) detail = `: ${body.error}`;
+      } catch {
+        /* el cuerpo no es JSON */
+      }
+      throw new Error(`No se ha podido subir el avance${detail}`);
     }
 
-    if (pending.length) {
-      await cache.markResultadosSynced(pending.map((r) => r.id));
+    if (rows.length) {
+      await cache.markResultadosSynced(rows.map((r) => r.id));
     }
     await cache.setMeta({
       lastPushAt: new Date().toISOString(),

@@ -50,7 +50,10 @@ export function SyncStatusIndicator({
   } else if (phase === "offline" || phase === "error") {
     status = (
       <p className="sync-status sync-status--warn" role="status">
-        {detail || (phase === "offline" ? "Modo local" : "Error de sync")}
+        {detail ||
+          (phase === "offline"
+            ? "Sin conexión. El avance se queda en este dispositivo."
+            : "No se ha podido subir el avance. En otro dispositivo no lo verás.")}
       </p>
     );
   } else if (localSaved) {

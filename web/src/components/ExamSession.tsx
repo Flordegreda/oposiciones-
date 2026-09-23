@@ -15,6 +15,21 @@ import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintB
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { fetchWithRetry } from "@/lib/retry";
 import { getSyncService, type PreguntaResultadoDetalle } from "@/lib/persistence";
+
+function newResultId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* contexto no seguro (http en el hostname del VPS) */
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+    const n = (Math.random() * 16) | 0;
+    const v = ch === "x" ? n : (n & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 import {
   calcularStatsRepaso,
   marcarRepasoCompletado,
@@ -271,7 +286,7 @@ export function ExamSession({
       Math.round((Date.now() - startedAtRef.current) / 1000),
     );
 
-    const resultId = crypto.randomUUID();
+    const resultId = newResultId();
     resultIdRef.current = resultId;
     setSavedResultId(resultId);
     void getSyncService()

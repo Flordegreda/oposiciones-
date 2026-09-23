@@ -446,14 +446,6 @@ export function TemarioChecklist({
             >
               📄 Exportar notas PDF
             </a>
-            <a
-              href="/imprimir/resultados?periodo=todo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
-            >
-              🖨️ Informe de tests
-            </a>
           </>
         )}
         {materiasOptions.length > 1 && (

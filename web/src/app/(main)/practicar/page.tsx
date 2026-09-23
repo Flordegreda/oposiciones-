@@ -2,6 +2,7 @@ import { MobileStudyHero } from "@/components/MobileStudyHero";
 import { PracticarTemario } from "@/components/PracticarTemario";
 import { getPracticarData } from "@/lib/queries/bancos-cached";
 import { statsFromPracticarSections } from "@/lib/practicar-stats";
+import { errorMessage } from "@/lib/error-message";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function PracticarPage() {
   try {
     ({ sections } = await getPracticarData());
   } catch (e) {
-    error = e instanceof Error ? e.message : "Error al cargar bancos";
+    error = errorMessage(e, "Error al cargar los tests");
   }
 
   const testStats = statsFromPracticarSections(sections);
@@ -24,10 +25,6 @@ export default async function PracticarPage() {
       {error && (
         <div className="card card-warning">
           <p className="error">{error}</p>
-          <p className="muted small">
-            Crea <code>.env.local</code> con las claves de Supabase (ver{" "}
-            <code>.env.example</code>).
-          </p>
         </div>
       )}
 

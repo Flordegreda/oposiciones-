@@ -44,7 +44,9 @@ export function AdminBackup({ schemaOk }: Props) {
       downloadJson(backup, `oposiciones-jex-backup-${date}.json`);
       const s = backup.stats;
       setLastStats(
-        s ? `${s.materias} materias · ${s.bancos} bancos · ${s.preguntas} preguntas` : null,
+        s
+          ? `${s.materias} materias · ${s.bancos} bancos · ${s.preguntas} preguntas · ${s.mazos ?? 0} mazos · ${s.fichas ?? 0} fichas`
+          : null,
       );
       setMsg("Copia de seguridad descargada.");
     } catch (e) {
@@ -100,6 +102,9 @@ export function AdminBackup({ schemaOk }: Props) {
         data.updated ? `${data.updated} actualizado(s)` : null,
         `${data.skipped ?? 0} omitido(s)`,
         data.materiasCreated ? `${data.materiasCreated} materia(s) nueva(s)` : null,
+        data.mazosInserted ? `${data.mazosInserted} mazo(s)` : null,
+        data.mazosUpdated ? `${data.mazosUpdated} mazo(s) actualizado(s)` : null,
+        data.fichasInserted ? `${data.fichasInserted} ficha(s)` : null,
       ].filter(Boolean);
 
       setMsg(`Restauración completada: ${parts.join(" · ")}.`);
@@ -126,7 +131,7 @@ export function AdminBackup({ schemaOk }: Props) {
       <div className="card card-elevated">
         <h2>Exportar base de datos</h2>
         <p className="muted small">
-          Descarga un JSON con <strong>todas las materias, bancos y preguntas</strong>.
+          Descarga un JSON con <strong>materias, bancos, preguntas, mazos y fichas</strong>.
         </p>
         {lastStats && (
           <p className="muted small" style={{ marginTop: "0.5rem" }}>
@@ -237,6 +242,17 @@ export function AdminBackup({ schemaOk }: Props) {
                   {preview.bancosVacios} banco(s) vacío(s) en el JSON — se ignorarán
                 </li>
               )}
+              {preview.mazosNuevos > 0 || preview.mazosExistentes > 0 || preview.fichasTotales > 0 ? (
+                <li>
+                  <strong>{preview.mazosNuevos}</strong> mazo(s) nuevo(s) ·{" "}
+                  <strong>{preview.fichasTotales}</strong> ficha(s)
+                  {preview.mazosExistentes > 0
+                    ? importMode === "append"
+                      ? ` · ${preview.mazosExistentes} mazo(s) ya existente(s) — se omitirán`
+                      : ` · ${preview.mazosExistentes} mazo(s) se sobrescribirán`
+                    : null}
+                </li>
+              ) : null}
               <li>
                 Total preguntas a importar: <strong>{preview.preguntasTotales}</strong>
               </li>
@@ -253,7 +269,10 @@ export function AdminBackup({ schemaOk }: Props) {
               <button
                 type="button"
                 className="btn-primary"
-                disabled={busy !== null || preview.preguntasTotales === 0}
+                disabled={
+                  busy !== null ||
+                  (preview.preguntasTotales === 0 && preview.fichasTotales === 0)
+                }
                 onClick={() => void confirmarImportacion()}
               >
                 {busy === "import" ? "Importando…" : "Confirmar restauración"}

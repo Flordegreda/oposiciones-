@@ -1,0 +1,53 @@
+# Stack local: Postgres + PostgREST + proxy /rest/v1 (sin app ni HTTPS)
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: jex
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: jexlocal
+    volumes:
+      - jex_pgdata_local:/var/lib/postgresql/data
+      - ./postgres/00-roles.local.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./postgres/01-base-schema.sql:/docker-entrypoint-initdb.d/01-base-schema.sql:ro
+      - ../web/supabase/APLICAR-AHORA.sql:/docker-entrypoint-initdb.d/02-preguntas.sql:ro
+      - ../web/supabase/SUPUESTOS.sql:/docker-entrypoint-initdb.d/03-supuestos.sql:ro
+      - ../web/supabase/PREGUNTAS-COUNTS-RPC.sql:/docker-entrypoint-initdb.d/04-rpc-counts.sql:ro
+      - ../web/supabase/FICHAS.sql:/docker-entrypoint-initdb.d/05-fichas.sql:ro
+      - ../web/supabase/FICHAS-COUNTS-RPC.sql:/docker-entrypoint-initdb.d/06-fichas-rpc.sql:ro
+      - ../web/supabase/RESULTADOS-TESTS.sql:/docker-entrypoint-initdb.d/07-resultados.sql:ro
+      - ./postgres/99-grants.sql:/docker-entrypoint-initdb.d/99-grants.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jex"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:jexlocalauth@db:5432/jex
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: jex_local_jwt_secret_do_not_use_in_production_64b______
+      PGRST_DB_EXTRA_SEARCH_PATH: public
+
+  rest:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - postgrest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+
+volumes:
+  jex_pgdata_local:
