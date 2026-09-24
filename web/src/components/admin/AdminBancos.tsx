@@ -10,6 +10,18 @@ import { materiaNombre, sortBancosByNombre } from "@/lib/banco-display";
 
 type Props = { bancos: BancoRow[] };
 
+function normalizar(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** «contratos», «contrato» y «contratación» comparten raíz «contrat». */
+function raiz(palabra: string): string {
+  return palabra.length > 4 ? palabra.replace(/(es|os|as|s|o|a|e)$/, "") : palabra;
+}
+
 export function AdminBancos({ bancos: initial }: Props) {
   const router = useRouter();
   const [bancos, setBancos] = useState(initial);
@@ -18,6 +30,8 @@ export function AdminBancos({ bancos: initial }: Props) {
   const [borrandoVarios, setBorrandoVarios] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [materiaId, setMateriaId] = useState<string | null>(null);
+  const [tipo, setTipo] = useState<"" | "teorico" | "practico">("");
+  const [tamano, setTamano] = useState<"" | "vacios" | "pequenos">("");
 
   useEffect(() => {
     setBancos(initial);
@@ -42,18 +56,25 @@ export function AdminBancos({ bancos: initial }: Props) {
   }, [bancos]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const palabras = normalizar(search)
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(raiz);
     let list = bancos;
     if (materiaId) list = list.filter((b) => b.materia_id === materiaId);
-    if (q) {
-      list = list.filter(
-        (b) =>
-          b.nombre.toLowerCase().includes(q) ||
-          materiaNombre(b.materias).toLowerCase().includes(q),
-      );
+    if (tipo) list = list.filter((b) => (b.tipo === "practico" ? "practico" : "teorico") === tipo);
+    if (tamano === "vacios") list = list.filter((b) => (b.numPreguntas ?? 0) === 0);
+    if (tamano === "pequenos") list = list.filter((b) => (b.numPreguntas ?? 0) <= 10);
+    if (palabras.length) {
+      list = list.filter((b) => {
+        const texto = normalizar(`${b.nombre} ${materiaNombre(b.materias)}`);
+        return palabras.every((p) => texto.includes(p));
+      });
     }
     return sortBancosByNombre(list);
-  }, [bancos, search, materiaId]);
+  }, [bancos, search, materiaId, tipo, tamano]);
+
+  const hayFiltro = Boolean(search.trim() || materiaId || tipo || tamano);
 
   const filteredTotals = useMemo(() => {
     let preguntas = 0;
@@ -254,34 +275,20 @@ export function AdminBancos({ bancos: initial }: Props) {
     }
   }
 
-  const showingAll = filtered.length === bancos.length && !search.trim() && !materiaId;
+  const showingAll = !hayFiltro;
 
   return (
     <div className="card card-elevated">
       <h2 className="admin-section-title">Tests por banco</h2>
       <p className="muted small">Edita, prueba o elimina cada bloque de preguntas.</p>
 
-      <label className="admin-filter">
-        Buscar banco
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Nombre, materia…"
-        />
-      </label>
-
-      <MateriaFilter materias={materias} value={materiaId} onChange={setMateriaId} />
-
-      {materiaId && filteredTotals.preguntas > 0 && (
-        <div className="form-actions" style={{ marginBottom: "1rem" }}>
-          <TestPrintButton
-            materiaId={materiaId}
-            title={materias.find((m) => m.id === materiaId)?.nombre ?? "Materia"}
-            label={`PDF materia (${filteredTotals.preguntas} preg.)`}
-          />
-        </div>
-      )}
-
+      <details style={{ margin: "0.75rem 0 1rem" }}>
+        <summary className="small" style={{ cursor: "pointer", fontWeight: 600 }}>
+          Herramientas de limpieza y consejos
+          {brokenBancos.length + stubBancos.length > 0 &&
+            ` · ${brokenBancos.length + stubBancos.length} banco(s) para revisar`}
+        </summary>
+        <div style={{ marginTop: "0.75rem" }}>
       {(brokenBancos.length > 0 || bancos.length > 0) && (
         <div className="info-box sim-info" style={{ marginBottom: "1rem" }}>
           <p style={{ margin: 0 }}>
@@ -338,6 +345,85 @@ export function AdminBancos({ bancos: initial }: Props) {
           >
             {cleaningJunk ? "Analizando…" : "Limpiar prueba y duplicados"}
           </button>
+        </div>
+      )}
+        </div>
+      </details>
+
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          gap: "0.75rem",
+          margin: "0 0 0.75rem",
+        }}
+      >
+        <label className="admin-filter" style={{ flex: "1 1 16rem", margin: 0 }}>
+          Buscar banco
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Ej.: contratos, ley 39, estatuto…"
+            autoComplete="off"
+          />
+        </label>
+        <MateriaFilter materias={materias} value={materiaId} onChange={setMateriaId} />
+        <label className="materia-filter-wrap">
+          <span className="materia-filter-label">Tipo</span>
+          <select
+            className="materia-filter-select"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as typeof tipo)}
+          >
+            <option value="">Todos</option>
+            <option value="teorico">Teórico</option>
+            <option value="practico">Práctico</option>
+          </select>
+        </label>
+        <label className="materia-filter-wrap">
+          <span className="materia-filter-label">Preguntas</span>
+          <select
+            className="materia-filter-select"
+            value={tamano}
+            onChange={(e) => setTamano(e.target.value as typeof tamano)}
+          >
+            <option value="">Cualquier número</option>
+            <option value="pequenos">10 o menos</option>
+            <option value="vacios">Sin preguntas</option>
+          </select>
+        </label>
+      </div>
+
+      <p className="muted small" style={{ margin: "0 0 0.75rem" }}>
+        Mostrando <strong>{filtered.length}</strong> de {bancos.length} bancos
+        {hayFiltro && (
+          <>
+            {" · "}
+            <button
+              type="button"
+              className="btn-link btn-sm"
+              onClick={() => {
+                setSearch("");
+                setMateriaId(null);
+                setTipo("");
+                setTamano("");
+              }}
+            >
+              Quitar filtros
+            </button>
+          </>
+        )}
+      </p>
+
+      {materiaId && filteredTotals.preguntas > 0 && (
+        <div className="form-actions" style={{ marginBottom: "1rem" }}>
+          <TestPrintButton
+            materiaId={materiaId}
+            title={materias.find((m) => m.id === materiaId)?.nombre ?? "Materia"}
+            label={`PDF materia (${filteredTotals.preguntas} preg.)`}
+          />
         </div>
       )}
 
