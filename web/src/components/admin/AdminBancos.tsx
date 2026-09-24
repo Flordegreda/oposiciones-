@@ -14,12 +14,22 @@ export function AdminBancos({ bancos: initial }: Props) {
   const router = useRouter();
   const [bancos, setBancos] = useState(initial);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [seleccion, setSeleccion] = useState<Set<string>>(() => new Set());
+  const [borrandoVarios, setBorrandoVarios] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [materiaId, setMateriaId] = useState<string | null>(null);
 
   useEffect(() => {
     setBancos(initial);
   }, [initial]);
+
+  useEffect(() => {
+    const vigentes = new Set(bancos.map((b) => b.id));
+    setSeleccion((prev) => {
+      const next = new Set([...prev].filter((id) => vigentes.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [bancos]);
 
   const materias = useMemo(() => {
     const map = new Map<string, string>();
@@ -180,6 +190,70 @@ export function AdminBancos({ bancos: initial }: Props) {
     router.refresh();
   }
 
+  function toggleSeleccion(id: string) {
+    setSeleccion((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const visiblesSeleccionados = filtered.filter((b) => seleccion.has(b.id)).length;
+  const todosVisiblesMarcados =
+    filtered.length > 0 && visiblesSeleccionados === filtered.length;
+
+  function toggleVisibles() {
+    setSeleccion((prev) => {
+      const next = new Set(prev);
+      if (todosVisiblesMarcados) filtered.forEach((b) => next.delete(b.id));
+      else filtered.forEach((b) => next.add(b.id));
+      return next;
+    });
+  }
+
+  async function eliminarSeleccionados() {
+    const elegidos = bancos.filter((b) => seleccion.has(b.id));
+    if (!elegidos.length) return;
+    const preguntas = elegidos.reduce((n, b) => n + (b.numPreguntas ?? 0), 0);
+    const lista = elegidos
+      .slice(0, 30)
+      .map((b) => `· ${b.nombre} (${b.numPreguntas ?? 0} preg.)`)
+      .join("\n");
+    const mas = elegidos.length > 30 ? `\n… y ${elegidos.length - 30} más` : "";
+    if (
+      !confirm(
+        `¿Eliminar ${elegidos.length} banco(s) y sus ${preguntas} preguntas?\n\n` +
+          `${lista}${mas}\n\nNo se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+
+    const borrados = new Set<string>();
+    const fallos: string[] = [];
+    for (let i = 0; i < elegidos.length; i++) {
+      const b = elegidos[i]!;
+      setBorrandoVarios(`${i + 1}/${elegidos.length}`);
+      try {
+        const res = await fetch(`/api/admin/bancos/${b.id}`, { method: "DELETE" });
+        if (res.ok) borrados.add(b.id);
+        else fallos.push(`${b.nombre}: ${(await res.json().catch(() => ({}))).error ?? res.status}`);
+      } catch (e) {
+        fallos.push(`${b.nombre}: ${e instanceof Error ? e.message : "error de red"}`);
+      }
+    }
+    setBorrandoVarios(null);
+    setBancos((list) => list.filter((b) => !borrados.has(b.id)));
+    router.refresh();
+    if (fallos.length) {
+      alert(
+        `Eliminados ${borrados.size} de ${elegidos.length}. No se pudieron eliminar:\n\n` +
+          fallos.slice(0, 15).join("\n"),
+      );
+    }
+  }
+
   const showingAll = filtered.length === bancos.length && !search.trim() && !materiaId;
 
   return (
@@ -272,9 +346,72 @@ export function AdminBancos({ bancos: initial }: Props) {
           {bancos.length === 0 ? "Sin bancos todavía." : "Ningún banco coincide."}
         </p>
       ) : (
+        <>
+        <div
+          className="form-actions"
+          style={{
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "0.65rem",
+            margin: "0 0 0.5rem",
+            padding: "0.6rem 0.75rem",
+            borderRadius: "0.75rem",
+            background: seleccion.size ? "rgba(220, 38, 38, 0.06)" : "rgba(0, 0, 0, 0.03)",
+          }}
+        >
+          <label style={{ display: "flex", alignItems: "center", gap: "0.45rem", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={todosVisiblesMarcados}
+              ref={(el) => {
+                if (el) el.indeterminate = visiblesSeleccionados > 0 && !todosVisiblesMarcados;
+              }}
+              onChange={toggleVisibles}
+            />
+            <span className="small">
+              {todosVisiblesMarcados ? "Desmarcar" : "Seleccionar"} los {filtered.length} visibles
+            </span>
+          </label>
+          {seleccion.size > 0 && (
+            <>
+              <span className="muted small">
+                {seleccion.size} seleccionado{seleccion.size !== 1 ? "s" : ""}
+              </span>
+              <button
+                type="button"
+                className="btn-link btn-sm"
+                disabled={borrandoVarios !== null}
+                onClick={() => setSeleccion(new Set())}
+              >
+                Quitar selección
+              </button>
+              <button
+                type="button"
+                className="btn-danger btn-sm"
+                disabled={borrandoVarios !== null}
+                onClick={() => void eliminarSeleccionados()}
+              >
+                {borrandoVarios
+                  ? `Eliminando ${borrandoVarios}…`
+                  : `Eliminar seleccionados (${seleccion.size})`}
+              </button>
+            </>
+          )}
+        </div>
         <ul className="admin-banco-list">
           {filtered.map((b) => (
-            <li key={b.id}>
+            <li
+              key={b.id}
+              style={seleccion.has(b.id) ? { background: "rgba(220, 38, 38, 0.05)" } : undefined}
+            >
+              <input
+                type="checkbox"
+                aria-label={`Seleccionar ${b.nombre}`}
+                checked={seleccion.has(b.id)}
+                disabled={borrandoVarios !== null}
+                onChange={() => toggleSeleccion(b.id)}
+                style={{ width: "1.1rem", height: "1.1rem", flexShrink: 0, cursor: "pointer" }}
+              />
               <div className="admin-banco-info">
                 <span className="materia-tag">{materiaNombre(b.materias)}</span>
                 <Link href={`/admin/bancos/${b.id}`}>
@@ -304,6 +441,7 @@ export function AdminBancos({ bancos: initial }: Props) {
             </li>
           ))}
         </ul>
+        </>
       )}
 
       {!showingAll && (
