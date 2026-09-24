@@ -4,6 +4,25 @@ import { getSupabase } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string }> };
 
+export async function GET(_req: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params;
+    const { data, error } = await getSupabase()
+      .from("preguntas")
+      .select("id, banco_id, enunciado, opciones, respuesta, explicacion")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!data) return NextResponse.json({ error: "Pregunta no encontrada" }, { status: 404 });
+    return NextResponse.json(data);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Error" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
