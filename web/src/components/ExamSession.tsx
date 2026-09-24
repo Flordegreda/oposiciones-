@@ -12,6 +12,7 @@ import {
   originalOptionToDisplay,
 } from "@/lib/exam-utils";
 import { TestPrintButton, type PrintablePregunta } from "@/components/TestPrintButton";
+import { EditarPreguntaModal } from "@/components/EditarPreguntaModal";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 import { fetchWithRetry } from "@/lib/retry";
 import { getSyncService, type PreguntaResultadoDetalle } from "@/lib/persistence";
@@ -131,6 +132,10 @@ export function ExamSession({
   const [localSaved, setLocalSaved] = useState(false);
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
   const [voiding, setVoiding] = useState(false);
+  const [edits, setEdits] = useState<Map<string, { enunciado: string; opciones: string[] }>>(
+    () => new Map(),
+  );
+  const [editIndex, setEditIndex] = useState<number | null>(null);
 
   const isRepaso = tipo === "repaso_fallos";
 
@@ -141,9 +146,20 @@ export function ExamSession({
     [optionMapsProp, active],
   );
 
-  const originalOpciones = useMemo(
+  const originalOpcionesBase = useMemo(
     () => originalOpcionesProp ?? active.map((q) => [...q.opciones]),
     [originalOpcionesProp, active],
+  );
+
+  const originalOpciones = useMemo(
+    () =>
+      originalOpcionesBase.map((o, i) => edits.get(active[i]?.id ?? "")?.opciones ?? o),
+    [originalOpcionesBase, edits, active],
+  );
+
+  const enunciadoDe = useCallback(
+    (q: PublicExamPregunta) => edits.get(q.id)?.enunciado ?? q.enunciado,
+    [edits],
   );
 
   useEffect(() => {
@@ -178,7 +194,7 @@ export function ExamSession({
         const orig = originalOpciones[qi] ?? q.opciones;
         const resp = meta?.respuesta ?? 0;
         return {
-          enunciado: q.enunciado,
+          enunciado: enunciadoDe(q),
           opciones: orig,
           respuesta: resp,
           explicacion: meta?.explicacion,
@@ -187,7 +203,7 @@ export function ExamSession({
           supuestoTexto: q.supuestoTexto,
         };
       }),
-    [active, answerMeta, originalOpciones],
+    [active, answerMeta, originalOpciones, enunciadoDe],
   );
   const canPrintWithKey = phase === "result" && answerMeta.size > 0;
 
@@ -272,7 +288,7 @@ export function ExamSession({
       }
       detallePreguntas.push({
         preguntaId: realId,
-        enunciado: q.enunciado,
+        enunciado: enunciadoDe(q),
         correcta: Boolean(correcta),
         respondida,
         seleccion: selected,
@@ -326,6 +342,7 @@ export function ExamSession({
     title,
     tipo,
     isRepaso,
+    enunciadoDe,
   ]);
 
   const stopTimer = useCallback(() => {
@@ -496,6 +513,29 @@ export function ExamSession({
   const flagged = flags[index] ?? false;
   const dudosaCount = flags.filter(Boolean).length;
 
+  const editando = editIndex !== null ? active[editIndex] : undefined;
+  const editorModal = editando ? (
+    <EditarPreguntaModal
+      preguntaId={realPreguntaId(editando.id)}
+      avisoRespuesta={examMode && phase === "test"}
+      onClose={() => setEditIndex(null)}
+      onSaved={(p) => {
+        setEdits((prev) =>
+          new Map(prev).set(editando.id, { enunciado: p.enunciado, opciones: p.opciones }),
+        );
+        setAnswerMeta((prev) =>
+          prev.has(editando.id)
+            ? new Map(prev).set(editando.id, {
+                respuesta: p.respuesta,
+                explicacion: p.explicacion ?? undefined,
+              })
+            : prev,
+        );
+        setEditIndex(null);
+      }}
+    />
+  ) : null;
+
   if (phase === "result") {
     const failCount = answered - okCount;
     const skipCount = total - answered;
@@ -523,6 +563,7 @@ export function ExamSession({
 
     return (
       <div className="card result-panel">
+        {editorModal}
         <h2>
           Resultado
           {examMode ? " — modo examen" : ""}
@@ -617,8 +658,15 @@ export function ExamSession({
                           ⚑{" "}
                         </span>
                       )}
-                      {q.enunciado}
+                      {enunciadoDe(q)}
                     </span>
+                    <button
+                      type="button"
+                      className="btn-link btn-sm"
+                      onClick={() => setEditIndex(i)}
+                    >
+                      ✏️ Editar
+                    </button>
                     {ans !== null && !isOk && meta !== undefined && (
                       <span className="result-breakdown-fix">
                         ✓ {orig[meta.respuesta]}
@@ -661,6 +709,7 @@ export function ExamSession({
 
   return (
     <div className="card test-card">
+      {editorModal}
       <div className="test-header-bar">
         <div>
           <p className="test-meta" style={{ margin: 0 }}>
@@ -674,6 +723,14 @@ export function ExamSession({
           {canPrintWithKey && (
             <TestPrintButton title={title} preguntas={printable} />
           )}
+          <button
+            type="button"
+            className="btn-link btn-sm"
+            title="Corregir esta pregunta en el banco"
+            onClick={() => setEditIndex(index)}
+          >
+            ✏️ Editar
+          </button>
           <button
             type="button"
             className="btn-link btn-sm btn-link--danger"
@@ -762,11 +819,13 @@ export function ExamSession({
         </div>
       )}
 
-      <p className="test-question">{current.enunciado}</p>
+      <p className="test-question">{enunciadoDe(current)}</p>
       <ul className="options">
         {current.opciones.map((opt, i) => {
           let cls = "option-btn";
           const map = optionMaps[index] ?? [];
+          const editadas = edits.get(current.id)?.opciones;
+          const texto = editadas ? (editadas[map[i] ?? i] ?? opt) : opt;
           const correctDisplay =
             currentMeta !== undefined
               ? originalOptionToDisplay(map, currentMeta.respuesta)
@@ -788,7 +847,7 @@ export function ExamSession({
                 onClick={() => selectOption(i)}
               >
                 <span className="option-letter">{LETTERS[i]}</span>
-                <span className="option-text">{opt}</span>
+                <span className="option-text">{texto}</span>
               </button>
             </li>
           );
