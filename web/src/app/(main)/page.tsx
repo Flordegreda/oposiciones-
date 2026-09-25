@@ -37,7 +37,7 @@ export default async function HomePage() {
     <>
       <section className="hero hero--compact">
         <h1 className="page-title">Resumen</h1>
-        <p className="lead lead--compact">Avance y material</p>
+        <p className="lead lead--compact">Qué toca hoy</p>
       </section>
 
       {error && (
