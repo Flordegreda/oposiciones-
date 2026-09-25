@@ -12,8 +12,8 @@ type Props = {
 export function PrintTemarioToolbar({
   soloPendientes = true,
   showToggle = true,
-  backHref = "/",
-  backLabel = "← Volver al resumen",
+  backHref = "/estadisticas",
+  backLabel = "← Volver a estadísticas",
 }: Props) {
   return (
     <div className="print-toolbar no-print">

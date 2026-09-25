@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { DeviceSyncPanel } from "@/components/DeviceSyncPanel";
+import { MobileContinue } from "@/components/MobileContinue";
+import { PwaInstallHint } from "@/components/PwaInstallHint";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { EstadisticasDashboard } from "@/components/stats/EstadisticasDashboard";
@@ -56,6 +59,9 @@ export default async function EstadisticasPage({
           </p>
         </section>
 
+        <PwaInstallHint />
+        <MobileContinue />
+
         <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
           <EstadisticasDashboard
             bancoNombres={bancoNombres}
@@ -65,6 +71,8 @@ export default async function EstadisticasPage({
             bloqueInicial={typeof bloque === "string" ? bloque : ""}
           />
         </div>
+
+        <DeviceSyncPanel />
       </main>
       <footer className="site-footer">
         <p>{JEX_SUBTITLE}</p>

@@ -5,11 +5,6 @@ import { usePathname } from "next/navigation";
 
 const items = [
   {
-    href: "/",
-    label: "Resumen",
-    match: (p: string) => p === "/",
-  },
-  {
     href: "/practicar",
     label: "Tests",
     match: (p: string) => p === "/practicar" || p.startsWith("/test/"),

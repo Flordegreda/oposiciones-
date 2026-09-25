@@ -94,8 +94,8 @@ export function ResultadosPrintView() {
       <>
         <PrintTemarioToolbar
           showToggle={false}
-          backHref="/"
-          backLabel="← Volver al resumen"
+          backHref="/estadisticas"
+          backLabel="← Volver a estadísticas"
         />
         <p className="print-sheet-meta">Cargando tus tests…</p>
       </>
@@ -106,8 +106,8 @@ export function ResultadosPrintView() {
     <>
       <PrintTemarioToolbar
         showToggle={false}
-        backHref="/"
-        backLabel="← Volver al resumen"
+        backHref="/estadisticas"
+        backLabel="← Volver a estadísticas"
       />
       <article className="print-document print-checklist-doc">
         <header className="print-sheet-head">
