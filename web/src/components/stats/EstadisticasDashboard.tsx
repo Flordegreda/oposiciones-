@@ -88,11 +88,13 @@ const FILTROS: { id: FiltroTiempo; label: string }[] = [
   { id: "todo", label: "Todo el historial" },
 ];
 
-export function EstadisticasDashboard({ bancoIds }: { bancoIds?: string[] } = {}) {
+export function EstadisticasDashboard({
+  bancoNombres,
+}: { bancoNombres?: Record<string, string> } = {}) {
   const router = useRouter();
   const bancosVigentes = useMemo(
-    () => (bancoIds ? new Set(bancoIds) : undefined),
-    [bancoIds],
+    () => (bancoNombres ? new Set(Object.keys(bancoNombres)) : undefined),
+    [bancoNombres],
   );
   const { phase, revision, syncNow } = usePersistence();
   const [filtro, setFiltro] = useState<FiltroTiempo>("30dias");
@@ -109,7 +111,7 @@ export function EstadisticasDashboard({ bancoIds }: { bancoIds?: string[] } = {}
     setLoading(true);
     setError(null);
     try {
-      const dash = await obtenerDashboardData(filtro, bancosVigentes);
+      const dash = await obtenerDashboardData(filtro, bancosVigentes, bancoNombres);
       setData(dash);
       const meta = await getLocalCache().getMeta();
       setLastSync(meta.lastPullAt || meta.lastPushAt);
@@ -118,7 +120,7 @@ export function EstadisticasDashboard({ bancoIds }: { bancoIds?: string[] } = {}
     } finally {
       setLoading(false);
     }
-  }, [filtro, bancosVigentes]);
+  }, [filtro, bancosVigentes, bancoNombres]);
 
   useEffect(() => {
     void load();
@@ -434,7 +436,8 @@ export function EstadisticasDashboard({ bancoIds }: { bancoIds?: string[] } = {}
                     Preguntas más falladas
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Top 10 por banco · peores primero · periodo seleccionado
+                    Top 10 por banco · peores primero · cuenta las preguntas que fallaste la
+                    última vez; al acertarlas desaparecen
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -462,8 +465,8 @@ export function EstadisticasDashboard({ bancoIds }: { bancoIds?: string[] } = {}
               </div>
               {(data?.fallosPorBanco.length ?? 0) === 0 ? (
                 <p className="text-sm text-slate-500">
-                  Aún no hay datos por banco con detalle de preguntas. Completa
-                  tests nuevos para alimentar esta tabla.
+                  No tienes preguntas falladas pendientes en este periodo. Las que
+                  fallas aparecen aquí hasta que las aciertas.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
@@ -475,7 +478,7 @@ export function EstadisticasDashboard({ bancoIds }: { bancoIds?: string[] } = {}
                         <th className="min-w-[140px] px-3 py-2.5 font-medium">
                           % aciertos
                         </th>
-                        <th className="px-3 py-2.5 font-medium">Fallidas</th>
+                        <th className="px-3 py-2.5 font-medium">Pendientes</th>
                         <th className="hidden px-3 py-2.5 font-medium sm:table-cell">
                           Respondidas
                         </th>
