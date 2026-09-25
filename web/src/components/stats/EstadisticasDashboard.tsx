@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePersistence } from "@/components/PersistenceProvider";
+import { Anillo } from "@/components/stats/Anillo";
 import { FichasEstadisticas } from "@/components/stats/FichasEstadisticas";
 import { EvolucionDiariaChart } from "@/components/stats/StatsCharts";
 import {
@@ -23,6 +24,7 @@ import { getChecklistMarks } from "@/lib/persistence/checklist-service";
 import type { TestResultRecord } from "@/lib/persistence/types";
 import type { MateriaSection } from "@/lib/queries/bancos";
 import type { MazoFichasSection } from "@/lib/queries/fichas";
+import { getSeguirItems, type SeguirItem } from "@/lib/study-continue";
 import {
   construirTemarioChecklist,
   type MateriaCatalogo,
@@ -30,7 +32,11 @@ import {
 } from "@/lib/temario-checklist";
 
 const OBJETIVO_DEFAULT = 70;
+const TESTS_VISIBLES = 6;
+const SEMANAS_ACTIVIDAD = 15;
 const nf = new Intl.NumberFormat("es-ES");
+
+const CARD = "rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5";
 
 function formatFecha(iso: string): string {
   try {
@@ -44,6 +50,18 @@ function formatFecha(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+function formatFechaCorta(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const hoy = new Date();
+  const ayer = new Date();
+  ayer.setDate(hoy.getDate() - 1);
+  const hora = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === hoy.toDateString()) return `hoy ${hora}`;
+  if (d.toDateString() === ayer.toDateString()) return `ayer ${hora}`;
+  return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
 }
 
 function formatTiempo(sec: number | null): string {
@@ -60,36 +78,8 @@ function truncate(text: string, max: number): string {
   return `${t.slice(0, max - 1)}…`;
 }
 
-type Tone = "blue" | "orange" | "red" | "green" | "slate";
-
-function kpiTone(kind: Tone) {
-  switch (kind) {
-    case "blue":
-      return "border-blue-100 bg-white shadow-sm";
-    case "orange":
-      return "border-orange-100 bg-white shadow-sm";
-    case "red":
-      return "border-red-100 bg-white shadow-sm";
-    case "green":
-      return "border-emerald-100 bg-white shadow-sm";
-    case "slate":
-      return "border-slate-200 bg-white shadow-sm";
-  }
-}
-
-function kpiValueColor(kind: Tone) {
-  switch (kind) {
-    case "blue":
-      return "text-blue-600";
-    case "orange":
-      return "text-orange-500";
-    case "red":
-      return "text-red-500";
-    case "green":
-      return "text-emerald-600";
-    case "slate":
-      return "text-slate-400";
-  }
+function diaLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function progressColor(pct: number): string {
@@ -98,18 +88,18 @@ function progressColor(pct: number): string {
   return "bg-red-500";
 }
 
-function notaTone(v: number | null | undefined): Tone {
-  if (v == null) return "slate";
-  if (v >= 7) return "green";
-  if (v >= 5) return "orange";
-  return "red";
+function notaHex(v: number | null | undefined): string {
+  if (v == null) return "#cbd5e1";
+  if (v >= 7) return "#10b981";
+  if (v >= 5) return "#f59e0b";
+  return "#ef4444";
 }
 
-function notaTextClass(v: number | null | undefined): string {
-  if (v == null) return "text-slate-400";
-  if (v >= 7) return "text-emerald-600";
-  if (v >= 5) return "text-amber-600";
-  return "text-red-600";
+function notaChip(v: number | null | undefined): string {
+  if (v == null) return "bg-slate-100 text-slate-400";
+  if (v >= 7) return "bg-emerald-50 text-emerald-700";
+  if (v >= 5) return "bg-amber-50 text-amber-700";
+  return "bg-red-50 text-red-700";
 }
 
 const FILTROS: { id: FiltroTiempo; label: string }[] = [
@@ -120,8 +110,7 @@ const FILTROS: { id: FiltroTiempo; label: string }[] = [
 ];
 
 type EstadoFiltro = "todo" | "pendiente" | "hecho" | "fallos";
-type OrdenBancos = "temario" | "nota" | "pendientes";
-type OrdenMaterias = "nombre" | "nota" | "avance";
+type Orden = "temario" | "nota" | "pendientes" | "avance";
 
 type FilaBanco = {
   id: string;
@@ -163,15 +152,20 @@ export function EstadisticasDashboard({
   const [objetivoPct, setObjetivoPct] = useState(OBJETIVO_DEFAULT);
   const [data, setData] = useState<DashboardData | null>(null);
   const [todos, setTodos] = useState<TestResultRecord[]>([]);
+  const [seguir, setSeguir] = useState<SeguirItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<TestReciente | null>(null);
+  const [verTodosTests, setVerTodosTests] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [estado, setEstado] = useState<EstadoFiltro>("todo");
-  const [ordenBancos, setOrdenBancos] = useState<OrdenBancos>("temario");
-  const [ordenMaterias, setOrdenMaterias] = useState<OrdenMaterias>("nombre");
+  const [orden, setOrden] = useState<Orden>("temario");
+
+  useEffect(() => {
+    setSeguir(getSeguirItems());
+  }, []);
 
   const bancoAMateria = useMemo(() => {
     const m = new Map<string, string>();
@@ -189,10 +183,11 @@ export function EstadisticasDashboard({
     (id: string) => {
       setBloque(id);
       setEstado("todo");
+      setOrden("temario");
       router.replace(id ? `/estadisticas?bloque=${encodeURIComponent(id)}` : "/estadisticas", {
         scroll: false,
       });
-      if (id) window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [router],
   );
@@ -243,9 +238,9 @@ export function EstadisticasDashboard({
     return sugerenciasGlobales(checklist.materias, totalPendientes);
   }, [materiaSel, pendientesPorBanco, checklist.materias, totalPendientes]);
 
-  const bancosCriticos = useMemo(
+  const hayCriticos = useMemo(
     () =>
-      (data?.fallosPorBanco ?? []).filter(
+      (data?.fallosPorBanco ?? []).some(
         (b) => b.porcentajeAciertos < UMBRAL_BANCO_CRITICO && b.totalFallidas > 0,
       ),
     [data?.fallosPorBanco],
@@ -298,13 +293,10 @@ export function EstadisticasDashboard({
             ? f.pendientes > 0
             : true,
     );
-    if (ordenBancos === "nota") {
-      visibles.sort((a, b) => (a.nota ?? 99) - (b.nota ?? 99));
-    } else if (ordenBancos === "pendientes") {
-      visibles.sort((a, b) => b.pendientes - a.pendientes);
-    }
+    if (orden === "nota") visibles.sort((a, b) => (a.nota ?? 99) - (b.nota ?? 99));
+    else if (orden === "pendientes") visibles.sort((a, b) => b.pendientes - a.pendientes);
     return visibles;
-  }, [materiaSel, data, bancosVigentes, pendientesPorBanco, estado, ordenBancos]);
+  }, [materiaSel, data, bancosVigentes, pendientesPorBanco, estado, orden]);
 
   const rendMaterias = useMemo(
     () => (bloque ? null : calcularRendimientoPorMateria(filtrarPorFecha(todos, filtro), bancoAMateria)),
@@ -329,17 +321,21 @@ export function EstadisticasDashboard({
             ? (pendientesPorMateria.get(m.materiaId) ?? 0) > 0
             : true,
     );
-    if (ordenMaterias === "nota") {
+    if (orden === "nota") {
       visibles.sort(
         (a, b) =>
           (rendMaterias?.get(a.materiaId)?.notaMedia ?? 99) -
           (rendMaterias?.get(b.materiaId)?.notaMedia ?? 99),
       );
-    } else if (ordenMaterias === "avance") {
+    } else if (orden === "avance") {
       visibles.sort((a, b) => a.pctHecho - b.pctHecho);
+    } else if (orden === "pendientes") {
+      visibles.sort(
+        (a, b) => (pendientesPorMateria.get(b.materiaId) ?? 0) - (pendientesPorMateria.get(a.materiaId) ?? 0),
+      );
     }
     return visibles;
-  }, [materias, estado, ordenMaterias, rendMaterias, pendientesPorMateria]);
+  }, [materias, estado, orden, rendMaterias, pendientesPorMateria]);
 
   const mazosBloque = useMemo(() => {
     const all = fichaSections.flatMap((s) => s.mazos);
@@ -423,81 +419,71 @@ export function EstadisticasDashboard({
   const resumen = data?.resumen;
   const hayPeriodo = (data?.totalPeriodo ?? 0) > 0;
   const avance = materiaSel ?? checklist;
+  const totalItems = materiaSel ? materiaSel.total : checklist.totalItems;
   const preguntasBloque = (materiaSel ? materiaSel.items : materias.flatMap((m) => m.items))
     .filter((i) => i.kind === "test")
     .reduce((s, i) => s + i.count, 0);
-  const nombreBloque = materiaSel?.materiaNombre ?? "todo el temario";
+  const nombreBloque = materiaSel?.materiaNombre ?? "Todo el temario";
   const periodoLabel = FILTROS.find((f) => f.id === filtro)?.label.toLowerCase() ?? "";
-  const aciertosTone: Tone = !hayPeriodo
-    ? "slate"
-    : (resumen?.aciertosGlobal ?? 0) >= 75
-      ? "green"
-      : (resumen?.aciertosGlobal ?? 0) >= 60
-        ? "orange"
-        : "red";
+  const nota = hayPeriodo ? (resumen?.notaMedia ?? null) : null;
+  const tests = data?.testsRecientes ?? [];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-1 pb-8 sm:px-0">
-      {/* Controles */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-          <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-600 sm:min-w-[18rem]">
-            <span className="font-medium text-slate-700">Bloque</span>
-            <select
-              className="rounded-xl border border-blue-200 bg-blue-50/60 px-3 py-2 font-medium text-slate-900 outline-none focus:border-blue-400"
-              value={bloque}
-              onChange={(e) => elegirBloque(e.target.value)}
-            >
-              <option value="">Todos los bloques</option>
-              {materias.map((m) => (
-                <option key={m.materiaId} value={m.materiaId}>
-                  {m.materiaNombre} · {m.pctHecho}% hecho
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-600">
-            <span className="font-medium text-slate-700">Periodo</span>
-            <select
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 outline-none focus:border-blue-400"
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value as FiltroTiempo)}
-            >
-              {FILTROS.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-            <span
-              className={`inline-block h-2 w-2 rounded-full ${
-                phase === "synced"
-                  ? "bg-emerald-500"
-                  : phase === "syncing" || syncing
-                    ? "bg-amber-400"
-                    : "bg-slate-300"
-              }`}
-            />
-            {phase === "syncing" || syncing
-              ? "Sincronizando…"
-              : lastSync
-                ? `Sincronizado · ${formatFecha(lastSync)}`
-                : "Sin sincronizar aún"}
-          </span>
+    <div className="mx-auto max-w-6xl space-y-5 px-1 pb-8 sm:px-0">
+      {/* Barra de control */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-sm sm:gap-3 sm:p-3">
+        <select
+          aria-label="Bloque"
+          className="min-w-0 flex-1 rounded-xl border border-blue-200 bg-blue-50/70 px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 sm:max-w-sm"
+          value={bloque}
+          onChange={(e) => elegirBloque(e.target.value)}
+        >
+          <option value="">Todos los bloques</option>
+          {materias.map((m) => (
+            <option key={m.materiaId} value={m.materiaId}>
+              {m.materiaNombre} · {m.pctHecho}%
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Periodo"
+          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400"
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value as FiltroTiempo)}
+        >
+          {FILTROS.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        {materiaSel && (
           <button
             type="button"
-            onClick={() => void handleSync()}
-            disabled={syncing || phase === "syncing"}
-            className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
+            onClick={() => elegirBloque("")}
+            className="rounded-xl px-2.5 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
           >
-            {syncing ? "Sincronizando…" : "Actualizar"}
+            ✕ Quitar bloque
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={() => void handleSync()}
+          disabled={syncing || phase === "syncing"}
+          title={lastSync ? `Sincronizado · ${formatFecha(lastSync)}` : "Sin sincronizar aún"}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+        >
+          <span
+            className={`inline-block h-2 w-2 rounded-full ${
+              phase === "syncing" || syncing
+                ? "bg-amber-400"
+                : phase === "synced"
+                  ? "bg-emerald-500"
+                  : "bg-slate-300"
+            }`}
+          />
+          {syncing || phase === "syncing" ? "Sincronizando…" : "Actualizar"}
+        </button>
       </div>
 
       {error && (
@@ -512,176 +498,117 @@ export function EstadisticasDashboard({
         <EmptySinHistorial />
       ) : (
         <>
-          {materiaSel && (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold text-slate-900">{materiaSel.materiaNombre}</h2>
-              <button
-                type="button"
-                onClick={() => elegirBloque("")}
-                className="rounded-lg px-2 py-1 text-sm text-blue-700 hover:bg-blue-50"
-              >
-                ← Todos los bloques
-              </button>
-            </div>
-          )}
+          {/* Panel principal */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            {/* Avance */}
+            <section className={CARD}>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Avance · {nombreBloque}
+              </p>
+              <div className="flex items-center gap-4">
+                <Anillo pct={avance.pctHecho} color="#2563eb">
+                  <span className="text-3xl font-bold tabular-nums text-slate-900">{avance.pctHecho}%</span>
+                  <span className="text-[10px] uppercase tracking-wide text-slate-500">hecho</span>
+                </Anillo>
+                <div className="flex-1 space-y-3">
+                  <Progreso label="Tests" hechos={avance.testsHechos} total={avance.testsTotal} color="bg-blue-500" />
+                  <Progreso label="Fichas" hechos={avance.fichasHechas} total={avance.fichasTotal} color="bg-emerald-500" />
+                  <p className="text-xs text-slate-500">
+                    {avance.hechos} de {totalItems} bancos y mazos · {nf.format(preguntasBloque)} preguntas
+                  </p>
+                </div>
+              </div>
+            </section>
 
-          {/* Avance del temario */}
-          <section aria-label="Avance del temario" className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Avance · {nombreBloque}
-            </p>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <KpiCard
-                title="Temario hecho"
-                value={`${avance.pctHecho}%`}
-                sub={`${avance.hechos} de ${materiaSel ? materiaSel.total : checklist.totalItems} bancos y mazos`}
-                tone={avance.pctHecho >= 75 ? "green" : avance.pctHecho > 0 ? "blue" : "slate"}
-                bar={avance.pctHecho}
-              />
-              <KpiCard
-                title="Tests hechos"
-                value={`${avance.testsHechos} / ${avance.testsTotal}`}
-                sub={`${nf.format(preguntasBloque)} preguntas en total`}
-                tone="blue"
-              />
-              <KpiCard
-                title="Fichas repasadas"
-                value={`${avance.fichasHechas} / ${avance.fichasTotal}`}
-                sub="mazos marcados como hechos"
-                tone="blue"
-              />
-              <KpiCard
-                title="Fallos pendientes"
-                value={nf.format(totalPendientes)}
-                sub="preguntas que fallaste la última vez"
-                tone={totalPendientes > 0 ? "red" : "green"}
-              />
-            </div>
-          </section>
+            {/* Nota */}
+            <section className={CARD}>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Rendimiento · {periodoLabel}
+              </p>
+              <div className="flex items-center gap-4">
+                <Anillo pct={nota !== null ? Math.max(0, nota) * 10 : 0} color={notaHex(nota)}>
+                  <span className="text-3xl font-bold tabular-nums" style={{ color: nota !== null ? notaHex(nota) : "#94a3b8" }}>
+                    {nota !== null ? formatNotaSobre10(nota) : "—"}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wide text-slate-500">nota media</span>
+                </Anillo>
+                <dl className="grid flex-1 grid-cols-2 gap-x-3 gap-y-2.5">
+                  <MiniStat label="Aciertos" value={hayPeriodo ? `${(resumen?.aciertosGlobal ?? 0).toFixed(0)}%` : "—"} />
+                  <MiniStat label="Tests" value={String(resumen?.testsCompletados ?? 0)} />
+                  <MiniStat
+                    label="Por test"
+                    value={resumen?.tiempoPorTest != null ? formatTiempo(resumen.tiempoPorTest) : "—"}
+                  />
+                  <MiniStat
+                    label="Racha"
+                    value={`${resumen?.rachaActual ?? 0} día${(resumen?.rachaActual ?? 0) === 1 ? "" : "s"}`}
+                  />
+                </dl>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                {hayPeriodo ? (
+                  "Nota de examen: cada fallo resta 1/4 de acierto"
+                ) : (
+                  <>
+                    Sin preguntas de este bloque en el periodo.{" "}
+                    {filtro !== "todo" && (
+                      <button type="button" className="font-medium text-blue-700 hover:underline" onClick={() => setFiltro("todo")}>
+                        Ver todo el historial
+                      </button>
+                    )}
+                  </>
+                )}
+              </p>
+            </section>
 
-          {/* Rendimiento del periodo */}
-          <section aria-label="Rendimiento" className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Rendimiento · {periodoLabel}
-            </p>
-            {!hayPeriodo ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-                <span>
-                  No has hecho preguntas de {nombreBloque} en este periodo.
-                </span>
-                <div className="flex gap-2">
-                  {filtro !== "todo" && (
-                    <button
-                      type="button"
-                      onClick={() => setFiltro("todo")}
-                      className="rounded-xl border border-slate-200 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      Ver todo el historial
-                    </button>
-                  )}
-                  {sugerencias[0] && (
+            {/* Qué estudiar */}
+            <section className={`${CARD} order-first border-blue-200 bg-gradient-to-br from-blue-50 to-white lg:order-none`}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">
+                {materiaSel ? `Qué estudiar en ${materiaSel.materiaNombre}` : "Qué estudiar ahora"}
+              </p>
+              <ol className="space-y-1.5">
+                {seguir.slice(0, materiaSel ? 0 : 1).map((s) => (
+                  <PasoEstudio key={s.href} href={s.href} titulo={`Sigue: ${s.title}`} detalle={s.hint} destacado />
+                ))}
+                {sugerencias.slice(0, 4).map((s) => (
+                  <PasoEstudio key={s.href + s.titulo} href={s.href} titulo={s.titulo} detalle={s.detalle} />
+                ))}
+              </ol>
+              {totalPendientes > 0 && !materiaSel && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href="/repaso-fallos?modo=maraton"
+                    className="rounded-lg bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-800 no-underline hover:bg-orange-200"
+                  >
+                    🏃 Maratón de fallos
+                  </Link>
+                  {hayCriticos && (
                     <Link
-                      href={sugerencias[0].href}
-                      className="rounded-xl bg-blue-600 px-3 py-1.5 font-medium text-white hover:bg-blue-700"
+                      href="/repaso-fallos?modo=criticos"
+                      className="rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800 no-underline hover:bg-red-200"
                     >
-                      {sugerencias[0].titulo}
+                      ⚠️ Bancos críticos
                     </Link>
                   )}
                 </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                <KpiCard
-                  title="Nota media"
-                  value={formatNotaSobre10(resumen?.notaMedia)}
-                  sub="sobre 10, restando fallos/4"
-                  tone={notaTone(resumen?.notaMedia)}
-                />
-                <KpiCard
-                  title="Aciertos"
-                  value={`${(resumen?.aciertosGlobal ?? 0).toFixed(1)}%`}
-                  sub="sin penalizar"
-                  tone={aciertosTone}
-                />
-                <KpiCard
-                  title="Tests"
-                  value={String(resumen?.testsCompletados ?? 0)}
-                  sub={materiaSel ? "con preguntas del bloque" : "completados"}
-                  tone="blue"
-                />
-                <KpiCard
-                  title="Tiempo por test"
-                  value={resumen?.tiempoPorTest != null ? formatTiempo(resumen.tiempoPorTest) : "—"}
-                  tone="orange"
-                />
-                <KpiCard
-                  title="Racha"
-                  value={`${resumen?.rachaActual ?? 0} día${(resumen?.rachaActual ?? 0) === 1 ? "" : "s"}`}
-                  sub="estudiando seguido"
-                  tone={(resumen?.rachaActual ?? 0) > 0 ? "green" : "orange"}
-                />
-              </div>
-            )}
-          </section>
-
-          {/* Siguiente paso */}
-          {sugerencias.length > 0 && (
-            <section className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-blue-700">
-                {materiaSel ? `Siguiente en ${materiaSel.materiaNombre}` : "Para aprobar"}
-              </h2>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                {sugerencias.map((s) => (
-                  <Link
-                    key={s.href + s.titulo}
-                    href={s.href}
-                    className="flex flex-col gap-0.5 rounded-xl border border-slate-200 px-3 py-2.5 text-slate-800 no-underline transition hover:border-blue-300 hover:bg-blue-50/50"
-                  >
-                    <span className="text-sm font-semibold">{s.titulo}</span>
-                    <span className="text-xs text-slate-500">{s.detalle}</span>
-                  </Link>
-                ))}
-              </div>
+              )}
             </section>
-          )}
+          </div>
 
-          {/* Tabla principal: materias o bancos del bloque */}
-          <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
+          {/* Mapa de bloques / bancos del bloque */}
+          <section className={CARD}>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 className="text-lg font-semibold text-slate-800">
-                  {materiaSel ? "Bancos del bloque" : "Bloques"}
+                <h2 className="text-base font-semibold text-slate-800">
+                  {materiaSel ? `Bancos de ${materiaSel.materiaNombre}` : "Mapa de bloques"}
                 </h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-slate-500">
                   {materiaSel
-                    ? `Nota, aciertos y tiempo: ${periodoLabel} · pendientes: fallos sin acertar todavía`
-                    : `Pulsa un bloque para ver su detalle · nota y aciertos: ${periodoLabel}`}
+                    ? `Barra: % de aciertos (${periodoLabel}) · en rojo, fallos sin acertar todavía`
+                    : "Barra azul: temario hecho · círculo: nota del periodo · pulsa un bloque para entrar"}
                 </p>
               </div>
-              {!materiaSel && (
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800 shadow-sm transition hover:bg-red-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-                    disabled={bancosCriticos.length === 0}
-                    onClick={() => router.push("/repaso-fallos?modo=criticos")}
-                  >
-                    ⚠️ Repasar bancos críticos (&lt;{UMBRAL_BANCO_CRITICO}%)
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-medium text-orange-800 shadow-sm transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-                    disabled={totalPendientes === 0}
-                    onClick={() => router.push("/repaso-fallos?modo=maraton")}
-                  >
-                    🏃 Maratón de fallos
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5">
-              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {(
                   [
                     ["todo", "Todos"],
@@ -695,7 +622,7 @@ export function EstadisticasDashboard({
                     type="button"
                     aria-pressed={estado === id}
                     onClick={() => setEstado(id)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
                       estado === id
                         ? "border-blue-600 bg-blue-600 text-white"
                         : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
@@ -704,37 +631,24 @@ export function EstadisticasDashboard({
                     {label}
                   </button>
                 ))}
+                <select
+                  aria-label="Ordenar"
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700"
+                  value={orden}
+                  onChange={(e) => setOrden(e.target.value as Orden)}
+                >
+                  <option value="temario">{materiaSel ? "Orden del temario" : "Alfabético"}</option>
+                  <option value="nota">Peor nota primero</option>
+                  <option value="pendientes">Más fallos primero</option>
+                  {!materiaSel && <option value="avance">Menos avance primero</option>}
+                </select>
               </div>
-              <label className="flex items-center gap-2 text-xs text-slate-500">
-                Ordenar
-                {materiaSel ? (
-                  <select
-                    className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-700"
-                    value={ordenBancos}
-                    onChange={(e) => setOrdenBancos(e.target.value as OrdenBancos)}
-                  >
-                    <option value="temario">Orden del temario</option>
-                    <option value="nota">Peor nota primero</option>
-                    <option value="pendientes">Más fallos pendientes</option>
-                  </select>
-                ) : (
-                  <select
-                    className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-700"
-                    value={ordenMaterias}
-                    onChange={(e) => setOrdenMaterias(e.target.value as OrdenMaterias)}
-                  >
-                    <option value="nombre">Alfabético</option>
-                    <option value="nota">Peor nota primero</option>
-                    <option value="avance">Menos avance primero</option>
-                  </select>
-                )}
-              </label>
             </div>
 
             {materiaSel ? (
-              <TablaBancos filas={filasBancos} />
+              <MapaBancos filas={filasBancos} />
             ) : (
-              <TablaMaterias
+              <MapaMaterias
                 filas={filasMaterias}
                 rend={rendMaterias}
                 pendientes={pendientesPorMateria}
@@ -743,18 +657,15 @@ export function EstadisticasDashboard({
             )}
           </section>
 
-          {/* Evolución */}
-          {hayPeriodo && (
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          {/* Evolución + actividad */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <section className={`${CARD} lg:col-span-2`}>
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h2 className="mb-1 text-lg font-semibold text-slate-800">Evolución diaria</h2>
-                  <p className="text-sm text-slate-500">
-                    % de aciertos por día
-                    {materiaSel ? ` en ${materiaSel.materiaNombre}` : ""} · línea: media del periodo
-                  </p>
+                  <h2 className="text-base font-semibold text-slate-800">Evolución</h2>
+                  <p className="text-xs text-slate-500">% de aciertos por día · {periodoLabel}</p>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-slate-600">
+                <label className="flex items-center gap-1.5 text-xs text-slate-500">
                   Objetivo
                   <input
                     type="number"
@@ -765,91 +676,58 @@ export function EstadisticasDashboard({
                       const n = Number(e.target.value);
                       if (Number.isFinite(n)) setObjetivoPct(Math.min(100, Math.max(0, n)));
                     }}
-                    className="w-16 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-800 outline-none focus:border-blue-400"
+                    className="w-14 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-800"
                   />
                   %
                 </label>
               </div>
-              <EvolucionDiariaChart
-                data={data?.evolucion ?? []}
-                mediaPeriodo={data?.mediaPeriodo}
-                objetivoPct={objetivoPct}
-              />
+              {hayPeriodo ? (
+                <EvolucionDiariaChart
+                  data={data?.evolucion ?? []}
+                  mediaPeriodo={data?.mediaPeriodo}
+                  objetivoPct={objetivoPct}
+                />
+              ) : (
+                <p className="py-10 text-center text-sm text-slate-400">Sin actividad en este periodo.</p>
+              )}
             </section>
-          )}
+            <Actividad resultados={todos} racha={resumen?.rachaActual ?? 0} />
+          </div>
 
-          {/* Tabla tests */}
-          {hayPeriodo && (
-            <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-              <div className="border-b border-slate-100 px-4 py-4 sm:px-5">
-                <h2 className="text-lg font-semibold text-slate-800">
-                  Tus tests{materiaSel ? ` con preguntas de ${materiaSel.materiaNombre}` : ""}
-                </h2>
-                <p className="text-sm text-slate-500">
-                  Más recientes primero · pulsa una fila para ver el detalle · la neta penaliza
-                  incorrectas (−1/4)
-                  {materiaSel ? " · en simulacros solo cuentan las preguntas de este bloque" : ""}
+          {/* Fichas + últimos tests */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FichasEstadisticas key={bloque || "todos"} mazos={mazosBloque} />
+            <section className={CARD}>
+              <div className="mb-3 flex items-baseline justify-between gap-2">
+                <h2 className="text-base font-semibold text-slate-800">Últimos tests</h2>
+                {tests.length > TESTS_VISIBLES && (
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-blue-700 hover:underline"
+                    onClick={() => setVerTodosTests(true)}
+                  >
+                    Ver todos ({tests.length}) →
+                  </button>
+                )}
+              </div>
+              {tests.length === 0 ? (
+                <p className="text-sm text-slate-500">Ningún test en este periodo.</p>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {tests.slice(0, TESTS_VISIBLES).map((t) => (
+                    <FilaTest key={t.id} test={t} onClick={() => setDetalle(t)} />
+                  ))}
+                </ul>
+              )}
+              {materiaSel && tests.length > 0 && (
+                <p className="mt-2 text-xs text-slate-400">
+                  En simulacros solo cuentan las preguntas de este bloque.
                 </p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Test</th>
-                      <th className="px-4 py-3 font-medium">Aciertos</th>
-                      <th className="px-4 py-3 font-medium">Fallos</th>
-                      <th className="px-4 py-3 font-medium">Neta /10</th>
-                      <th className="min-w-[140px] px-4 py-3 font-medium">% bruto</th>
-                      <th className="px-4 py-3 font-medium">Tiempo</th>
-                      <th className="px-4 py-3 font-medium">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data?.testsRecientes ?? []).map((t) => (
-                      <tr
-                        key={t.id}
-                        className="cursor-pointer border-t border-slate-100 transition hover:bg-blue-50/40"
-                        onClick={() => setDetalle(t)}
-                      >
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-slate-800">{t.test}</div>
-                          <div className="text-xs text-slate-500">{t.bancoNombre}</div>
-                        </td>
-                        <td className="px-4 py-3 tabular-nums text-slate-700">
-                          {t.aciertos}/{t.totalPreguntas}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums text-slate-700">{t.fallos}</td>
-                        <td className="px-4 py-3 tabular-nums font-medium text-slate-800">
-                          {formatNotaSobre10(examNotaSobre10(t.aciertos, t.fallos, t.totalPreguntas))}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="mb-1 text-xs font-medium text-slate-600">
-                            {t.porcentaje.toFixed(0)}%
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                            <div
-                              className={`h-full rounded-full ${progressColor(t.porcentaje)}`}
-                              style={{ width: `${Math.min(100, t.porcentaje)}%` }}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 tabular-nums text-slate-600">
-                          {formatTiempo(t.tiempoTotal)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                          {formatFecha(t.fecha)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              )}
             </section>
-          )}
+          </div>
         </>
       )}
-
-      <FichasEstadisticas key={bloque || "todos"} mazos={mazosBloque} />
 
       {/* Informes y copias */}
       <details className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
@@ -857,44 +735,19 @@ export function EstadisticasDashboard({
           Informes, impresión y copias
         </summary>
         <div className="mt-3 flex flex-wrap gap-2">
-          <a
-            href={`/imprimir/resultados?periodo=${filtro}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
+          <a href={`/imprimir/resultados?periodo=${filtro}`} target="_blank" rel="noopener noreferrer" className={BTN}>
             Imprimir informe de tests
           </a>
-          <a
-            href="/imprimir/temario/resultados"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
+          <a href="/imprimir/temario/resultados" target="_blank" rel="noopener noreferrer" className={BTN}>
             Notas por materia (PDF)
           </a>
-          <a
-            href="/imprimir/temario"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
+          <a href="/imprimir/temario" target="_blank" rel="noopener noreferrer" className={BTN}>
             Imprimir inventario del temario
           </a>
-          <button
-            type="button"
-            onClick={() => void handleExportLocal()}
-            disabled={syncing || phase === "syncing"}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-          >
+          <button type="button" onClick={() => void handleExportLocal()} disabled={syncing || phase === "syncing"} className={BTN}>
             Exportar JSON
           </button>
-          <button
-            type="button"
-            onClick={() => void handlePushAll()}
-            disabled={syncing || phase === "syncing"}
-            className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 shadow-sm transition hover:bg-blue-100 disabled:opacity-60"
-          >
+          <button type="button" onClick={() => void handlePushAll()} disabled={syncing || phase === "syncing"} className={BTN}>
             Subir historial local
           </button>
         </div>
@@ -903,6 +756,23 @@ export function EstadisticasDashboard({
           «Exportar JSON» sirve para importarlos en la app de escritorio.
         </p>
       </details>
+
+      {verTodosTests && (
+        <Modal titulo={`Tests · ${periodoLabel}`} onClose={() => setVerTodosTests(false)}>
+          <ul className="divide-y divide-slate-100">
+            {tests.map((t) => (
+              <FilaTest
+                key={t.id}
+                test={t}
+                onClick={() => {
+                  setVerTodosTests(false);
+                  setDetalle(t);
+                }}
+              />
+            ))}
+          </ul>
+        </Modal>
+      )}
 
       {detalle && (
         <TestDetalleModal
@@ -916,118 +786,78 @@ export function EstadisticasDashboard({
   );
 }
 
-function BarraPct({ pct }: { pct: number | null }) {
-  if (pct === null) return <span className="text-xs text-slate-400">—</span>;
+const BTN =
+  "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60";
+
+function Progreso({ label, hechos, total, color }: { label: string; hechos: number; total: number; color: string }) {
+  const p = total > 0 ? Math.round((hechos / total) * 100) : 0;
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-2 min-w-[64px] flex-1 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full ${progressColor(pct)}`}
-          style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
-        />
+    <div>
+      <div className="mb-1 flex justify-between text-xs">
+        <span className="font-medium text-slate-600">{label}</span>
+        <span className="tabular-nums text-slate-500">
+          {hechos}/{total}
+        </span>
       </div>
-      <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-600">
-        {pct.toFixed(0)}%
-      </span>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${p}%` }} />
+      </div>
     </div>
   );
 }
 
-function TablaBancos({ filas }: { filas: FilaBanco[] }) {
-  const router = useRouter();
-  if (!filas.length) {
-    return <p className="px-5 pb-5 text-sm text-slate-500">Ningún banco con este filtro.</p>;
-  }
+function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th className="px-4 py-2.5 font-medium">Banco</th>
-            <th className="px-3 py-2.5 font-medium">Intentos</th>
-            <th className="min-w-[130px] px-3 py-2.5 font-medium">% aciertos</th>
-            <th className="px-3 py-2.5 font-medium">Nota</th>
-            <th className="hidden px-3 py-2.5 font-medium md:table-cell">Tiempo medio</th>
-            <th className="px-3 py-2.5 font-medium">Pendientes</th>
-            <th className="px-3 py-2.5 font-medium">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filas.map((f) => (
-            <tr key={f.id} className="border-t border-slate-100 align-middle">
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap items-center gap-1.5 font-medium text-slate-800">
-                  {f.abrible ? (
-                    <Link
-                      href={`/test/${f.id}`}
-                      className="text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-[var(--primary)] hover:decoration-current"
-                      title="Abrir el test"
-                    >
-                      {f.nombre}
-                    </Link>
-                  ) : (
-                    <span>{f.nombre}</span>
-                  )}
-                  {!f.hecho && (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                      Sin empezar
-                    </span>
-                  )}
-                  {f.porcentaje !== null && f.porcentaje < UMBRAL_BANCO_CRITICO && (
-                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                      Crítico
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {[f.tipo, f.preguntas !== null ? `${nf.format(f.preguntas)} preguntas` : "simulacros y repasos"]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </div>
-              </td>
-              <td className="px-3 py-3 tabular-nums text-slate-600">{f.intentos || "—"}</td>
-              <td className="px-3 py-3">
-                <BarraPct pct={f.porcentaje} />
-              </td>
-              <td className={`px-3 py-3 font-semibold tabular-nums ${notaTextClass(f.nota)}`}>
-                {f.nota !== null ? formatNotaSobre10(f.nota) : "—"}
-              </td>
-              <td className="hidden px-3 py-3 tabular-nums text-slate-600 md:table-cell">
-                {formatTiempo(f.tiempo)}
-              </td>
-              <td className={`px-3 py-3 tabular-nums ${f.pendientes ? "font-semibold text-red-600" : "text-slate-400"}`}>
-                {f.pendientes || "—"}
-              </td>
-              <td className="px-3 py-3">
-                {f.pendientes > 0 ? (
-                  <button
-                    type="button"
-                    className="whitespace-nowrap rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-red-700"
-                    onClick={() => {
-                      const q = new URLSearchParams({ modo: "banco", banco: f.id, nombre: f.nombre });
-                      router.push(`/repaso-fallos?${q}`);
-                    }}
-                  >
-                    Repasar fallos
-                  </button>
-                ) : f.abrible ? (
-                  <Link
-                    href={`/test/${f.id}`}
-                    className="whitespace-nowrap rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white no-underline transition hover:bg-blue-700"
-                  >
-                    {f.hecho ? "Repetir" : "Empezar"}
-                  </Link>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <dt className="text-[11px] uppercase tracking-wide text-slate-500">{label}</dt>
+      <dd className="text-base font-semibold tabular-nums text-slate-800">{value}</dd>
     </div>
   );
 }
 
-function TablaMaterias({
+function PasoEstudio({
+  href,
+  titulo,
+  detalle,
+  destacado,
+}: {
+  href: string;
+  titulo: string;
+  detalle: string;
+  destacado?: boolean;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className={`group flex items-center justify-between gap-2 rounded-xl px-3 py-2 no-underline transition ${
+          destacado ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-slate-800 ring-1 ring-slate-200 hover:ring-blue-300"
+        }`}
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold">{titulo}</span>
+          <span className={`block truncate text-xs ${destacado ? "text-blue-100" : "text-slate-500"}`}>{detalle}</span>
+        </span>
+        <span aria-hidden className={destacado ? "text-white" : "text-blue-600"}>
+          →
+        </span>
+      </Link>
+    </li>
+  );
+}
+
+function NotaCirculo({ nota }: { nota: number | null }) {
+  return (
+    <span
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums ${notaChip(nota)}`}
+      title={nota !== null ? `Nota ${formatNotaSobre10(nota)}` : "Sin nota en el periodo"}
+    >
+      {nota !== null ? formatNotaSobre10(nota) : "—"}
+    </span>
+  );
+}
+
+function MapaMaterias({
   filas,
   rend,
   pendientes,
@@ -1038,71 +868,239 @@ function TablaMaterias({
   pendientes: Map<string, number>;
   onElegir: (id: string) => void;
 }) {
-  if (!filas.length) {
-    return <p className="px-5 pb-5 text-sm text-slate-500">Ningún bloque con este filtro.</p>;
-  }
+  if (!filas.length) return <p className="text-sm text-slate-500">Ningún bloque con este filtro.</p>;
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th className="px-4 py-2.5 font-medium">Bloque</th>
-            <th className="min-w-[130px] px-3 py-2.5 font-medium">Avance</th>
-            <th className="hidden px-3 py-2.5 font-medium sm:table-cell">Tests</th>
-            <th className="hidden px-3 py-2.5 font-medium sm:table-cell">Fichas</th>
-            <th className="min-w-[110px] px-3 py-2.5 font-medium">% aciertos</th>
-            <th className="px-3 py-2.5 font-medium">Nota</th>
-            <th className="px-3 py-2.5 font-medium">Pendientes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filas.map((m) => {
-            const r = rend?.get(m.materiaId);
-            const pend = pendientes.get(m.materiaId) ?? 0;
-            return (
-              <tr
-                key={m.materiaId}
-                className="cursor-pointer border-t border-slate-100 align-middle transition hover:bg-blue-50/40"
-                onClick={() => onElegir(m.materiaId)}
-              >
-                <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    className="text-left font-medium text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-[var(--primary)]"
-                  >
-                    {m.materiaNombre}
-                  </button>
-                </td>
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 min-w-[64px] flex-1 overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full bg-blue-500" style={{ width: `${m.pctHecho}%` }} />
-                    </div>
-                    <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-600">
-                      {m.pctHecho}%
-                    </span>
-                  </div>
-                </td>
-                <td className="hidden px-3 py-3 tabular-nums text-slate-600 sm:table-cell">
-                  {m.testsTotal ? `${m.testsHechos}/${m.testsTotal}` : "—"}
-                </td>
-                <td className="hidden px-3 py-3 tabular-nums text-slate-600 sm:table-cell">
-                  {m.fichasTotal ? `${m.fichasHechas}/${m.fichasTotal}` : "—"}
-                </td>
-                <td className="px-3 py-3">
-                  <BarraPct pct={r?.porcentaje ?? null} />
-                </td>
-                <td className={`px-3 py-3 font-semibold tabular-nums ${notaTextClass(r?.notaMedia)}`}>
-                  {r ? formatNotaSobre10(r.notaMedia) : "—"}
-                </td>
-                <td className={`px-3 py-3 tabular-nums ${pend ? "font-semibold text-red-600" : "text-slate-400"}`}>
-                  {pend || "—"}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <ul className="grid gap-2 md:grid-cols-2">
+      {filas.map((m) => {
+        const r = rend?.get(m.materiaId);
+        const pend = pendientes.get(m.materiaId) ?? 0;
+        return (
+          <li key={m.materiaId}>
+            <button
+              type="button"
+              onClick={() => onElegir(m.materiaId)}
+              className="flex w-full items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5 text-left transition hover:border-blue-200 hover:bg-blue-50/40"
+            >
+              <NotaCirculo nota={r?.notaMedia ?? null} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-semibold text-slate-800">{m.materiaNombre}</span>
+                  <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-600">{m.pctHecho}%</span>
+                </span>
+                <span className="mt-1 block h-2 overflow-hidden rounded-full bg-slate-100">
+                  <span className="block h-full rounded-full bg-blue-500" style={{ width: `${m.pctHecho}%` }} />
+                </span>
+                <span className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-slate-500">
+                  {m.testsTotal > 0 && <span>Tests {m.testsHechos}/{m.testsTotal}</span>}
+                  {m.fichasTotal > 0 && <span>Fichas {m.fichasHechas}/{m.fichasTotal}</span>}
+                  {r && <span>{r.porcentaje.toFixed(0)}% aciertos</span>}
+                  {pend > 0 && <span className="font-semibold text-red-600">{pend} fallos</span>}
+                </span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function MapaBancos({ filas }: { filas: FilaBanco[] }) {
+  const router = useRouter();
+  if (!filas.length) return <p className="text-sm text-slate-500">Ningún banco con este filtro.</p>;
+  return (
+    <ul className="grid gap-2 md:grid-cols-2">
+      {filas.map((f) => (
+        <li key={f.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
+          <NotaCirculo nota={f.nota} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              {f.abrible ? (
+                <Link href={`/test/${f.id}`} className="truncate text-sm font-semibold text-slate-800 hover:text-[var(--primary)]">
+                  {f.nombre}
+                </Link>
+              ) : (
+                <span className="truncate text-sm font-semibold text-slate-800">{f.nombre}</span>
+              )}
+              {f.porcentaje !== null ? (
+                <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-600">{f.porcentaje.toFixed(0)}%</span>
+              ) : (
+                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                  {f.hecho ? "fuera del periodo" : "sin empezar"}
+                </span>
+              )}
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
+              {f.porcentaje !== null && (
+                <div
+                  className={`h-full rounded-full ${progressColor(f.porcentaje)}`}
+                  style={{ width: `${Math.min(100, Math.max(0, f.porcentaje))}%` }}
+                />
+              )}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-slate-500">
+              <span>{f.preguntas !== null ? `${nf.format(f.preguntas)} preg.` : "simulacros y repasos"}</span>
+              {f.intentos > 0 && <span>{f.intentos} intento{f.intentos === 1 ? "" : "s"}</span>}
+              {f.tiempo !== null && <span>{formatTiempo(f.tiempo)} de media</span>}
+              {f.pendientes > 0 && <span className="font-semibold text-red-600">{f.pendientes} fallos</span>}
+            </div>
+          </div>
+          {f.pendientes > 0 ? (
+            <button
+              type="button"
+              title="Repasar fallos"
+              className="shrink-0 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+              onClick={() => {
+                const q = new URLSearchParams({ modo: "banco", banco: f.id, nombre: f.nombre });
+                router.push(`/repaso-fallos?${q}`);
+              }}
+            >
+              Repasar
+            </button>
+          ) : f.abrible ? (
+            <Link
+              href={`/test/${f.id}`}
+              className="shrink-0 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white no-underline hover:bg-blue-700"
+            >
+              {f.hecho ? "Repetir" : "Empezar"}
+            </Link>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Actividad({ resultados, racha }: { resultados: TestResultRecord[]; racha: number }) {
+  const { semanas, diasActivos, maxDia } = useMemo(() => {
+    const porDia = new Map<string, number>();
+    for (const r of resultados) {
+      const k = diaLocal(new Date(r.fecha));
+      porDia.set(k, (porDia.get(k) ?? 0) + 1);
+    }
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const inicio = new Date(hoy);
+    inicio.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7) - (SEMANAS_ACTIVIDAD - 1) * 7);
+    const semanas: { key: string; n: number; futuro: boolean; label: string }[][] = [];
+    let activos = 0;
+    let max = 0;
+    for (let w = 0; w < SEMANAS_ACTIVIDAD; w++) {
+      const col: { key: string; n: number; futuro: boolean; label: string }[] = [];
+      for (let d = 0; d < 7; d++) {
+        const dia = new Date(inicio);
+        dia.setDate(inicio.getDate() + w * 7 + d);
+        const key = diaLocal(dia);
+        const n = porDia.get(key) ?? 0;
+        if (n > 0) activos += 1;
+        max = Math.max(max, n);
+        col.push({
+          key,
+          n,
+          futuro: dia > hoy,
+          label: dia.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }),
+        });
+      }
+      semanas.push(col);
+    }
+    return { semanas, diasActivos: activos, maxDia: max };
+  }, [resultados]);
+
+  const tono = (n: number) =>
+    n === 0 ? "bg-slate-100" : n === 1 ? "bg-emerald-200" : n <= 3 ? "bg-emerald-400" : "bg-emerald-600";
+
+  return (
+    <section className={CARD}>
+      <h2 className="text-base font-semibold text-slate-800">Días de estudio</h2>
+      <p className="mb-3 text-xs text-slate-500">
+        Últimas {SEMANAS_ACTIVIDAD} semanas · todos los bloques
+      </p>
+      <div className="flex gap-[3px]" role="img" aria-label={`${diasActivos} días con tests`}>
+        {semanas.map((col, i) => (
+          <div key={i} className="flex flex-1 flex-col gap-[3px]">
+            {col.map((c) => (
+              <span
+                key={c.key}
+                title={c.futuro ? "" : `${c.label}: ${c.n} test${c.n === 1 ? "" : "s"}`}
+                className={`aspect-square w-full rounded-[3px] ${c.futuro ? "bg-transparent" : tono(c.n)}`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-xl bg-slate-50 p-2">
+          <p className="text-lg font-bold tabular-nums text-slate-800">{racha}</p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-500">racha</p>
+        </div>
+        <div className="rounded-xl bg-slate-50 p-2">
+          <p className="text-lg font-bold tabular-nums text-slate-800">{diasActivos}</p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-500">días activos</p>
+        </div>
+        <div className="rounded-xl bg-slate-50 p-2">
+          <p className="text-lg font-bold tabular-nums text-slate-800">{maxDia}</p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-500">máx. en un día</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FilaTest({ test: t, onClick }: { test: TestReciente; onClick: () => void }) {
+  const nota = examNotaSobre10(t.aciertos, t.fallos, t.totalPreguntas);
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center gap-3 py-2 text-left transition hover:bg-slate-50"
+      >
+        <NotaCirculo nota={nota} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-slate-800">{t.test}</span>
+          <span className="block truncate text-xs text-slate-500">
+            {t.aciertos}/{t.totalPreguntas} aciertos · {t.fallos} fallos · {formatTiempo(t.tiempoTotal)}
+          </span>
+        </span>
+        <span className="shrink-0 text-xs text-slate-400">{formatFechaCorta(t.fecha)}</span>
+      </button>
+    </li>
+  );
+}
+
+function Modal({
+  titulo,
+  onClose,
+  children,
+}: {
+  titulo: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <h3 className="text-lg font-semibold text-slate-800">{titulo}</h3>
+          <button
+            type="button"
+            className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100"
+            onClick={onClose}
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
@@ -1130,35 +1128,6 @@ function EmptySinHistorial() {
   );
 }
 
-function KpiCard({
-  title,
-  value,
-  sub,
-  tone,
-  bar,
-}: {
-  title: string;
-  value: string;
-  sub?: string;
-  tone: Tone;
-  bar?: number;
-}) {
-  return (
-    <div className={`rounded-2xl border p-4 ${kpiTone(tone)}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{title}</p>
-      <p className={`mt-2 text-2xl font-bold tabular-nums sm:text-3xl ${kpiValueColor(tone)}`}>
-        {value}
-      </p>
-      {bar !== undefined && (
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.min(100, bar)}%` }} />
-        </div>
-      )}
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
-    </div>
-  );
-}
-
 function TestDetalleModal({
   test,
   onClose,
@@ -1176,106 +1145,82 @@ function TestDetalleModal({
       : "/practicar";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-800">{test.test}</h3>
-            <p className="text-sm text-slate-500">{test.bancoNombre}</p>
-          </div>
-          <button
-            type="button"
-            className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
+    <Modal titulo={test.test} onClose={onClose}>
+      <p className="-mt-2 mb-4 text-sm text-slate-500">{test.bancoNombre}</p>
+      <dl className="mb-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-xl bg-slate-50 p-3">
+          <dt className="text-xs text-slate-500">Nota neta</dt>
+          <dd className="font-semibold text-slate-800">
+            {formatNotaSobre10(examNotaSobre10(test.aciertos, test.fallos, test.totalPreguntas))}
+            /10 · neto {formatNeto(test.aciertos, test.fallos)}
+          </dd>
         </div>
-
-        <dl className="mb-4 grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-xl bg-slate-50 p-3">
-            <dt className="text-xs text-slate-500">Nota neta</dt>
-            <dd className="font-semibold text-slate-800">
-              {formatNotaSobre10(examNotaSobre10(test.aciertos, test.fallos, test.totalPreguntas))}
-              /10 · neto {formatNeto(test.aciertos, test.fallos)}
-            </dd>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-3">
-            <dt className="text-xs text-slate-500">Aciertos / fallos</dt>
-            <dd className="font-semibold text-slate-800">
-              {test.aciertos} aciertos · {test.fallos} fallos ·{" "}
-              {Math.max(0, test.totalPreguntas - test.aciertos - test.fallos)} en blanco
-            </dd>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-3">
-            <dt className="text-xs text-slate-500">Acierto bruto</dt>
-            <dd className="font-semibold text-slate-800">
-              {test.aciertos}/{test.totalPreguntas} ({test.porcentaje.toFixed(0)}%)
-            </dd>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-3">
-            <dt className="text-xs text-slate-500">Tiempo</dt>
-            <dd className="font-semibold text-slate-800">{formatTiempo(test.tiempoTotal)}</dd>
-          </div>
-          <div className="col-span-2 rounded-xl bg-slate-50 p-3">
-            <dt className="text-xs text-slate-500">Fecha</dt>
-            <dd className="font-semibold text-slate-800">{formatFecha(test.fecha)}</dd>
-          </div>
-        </dl>
-
-        {test.detallePreguntas && test.detallePreguntas.length > 0 && (
-          <ul className="mb-4 max-h-56 space-y-2 overflow-auto text-sm">
-            {test.detallePreguntas.map((d, i) => (
-              <li
-                key={d.preguntaId}
-                className={`rounded-lg border px-3 py-2 ${
-                  !d.respondida
-                    ? "border-slate-100 bg-slate-50"
-                    : d.correcta
-                      ? "border-emerald-100 bg-emerald-50/60"
-                      : "border-red-100 bg-red-50/60"
-                }`}
-              >
-                <span className="mr-1 text-xs text-slate-400">{i + 1}.</span>
-                {truncate(d.enunciado, 100)}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={bancoHref}
-            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Abrir banco
-          </Link>
-          <button
-            type="button"
-            className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
-            disabled={voiding}
-            onClick={() => void onVoid?.(test.id)}
-          >
-            {voiding ? "Anulando…" : "Anular intento"}
-          </button>
-          <button
-            type="button"
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-            onClick={onClose}
-          >
-            Cerrar
-          </button>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <dt className="text-xs text-slate-500">Aciertos / fallos</dt>
+          <dd className="font-semibold text-slate-800">
+            {test.aciertos} aciertos · {test.fallos} fallos ·{" "}
+            {Math.max(0, test.totalPreguntas - test.aciertos - test.fallos)} en blanco
+          </dd>
         </div>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <dt className="text-xs text-slate-500">Acierto bruto</dt>
+          <dd className="font-semibold text-slate-800">
+            {test.aciertos}/{test.totalPreguntas} ({test.porcentaje.toFixed(0)}%)
+          </dd>
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <dt className="text-xs text-slate-500">Tiempo</dt>
+          <dd className="font-semibold text-slate-800">{formatTiempo(test.tiempoTotal)}</dd>
+        </div>
+        <div className="col-span-2 rounded-xl bg-slate-50 p-3">
+          <dt className="text-xs text-slate-500">Fecha</dt>
+          <dd className="font-semibold text-slate-800">{formatFecha(test.fecha)}</dd>
+        </div>
+      </dl>
+
+      {test.detallePreguntas && test.detallePreguntas.length > 0 && (
+        <ul className="mb-4 max-h-56 space-y-2 overflow-auto text-sm">
+          {test.detallePreguntas.map((d, i) => (
+            <li
+              key={d.preguntaId}
+              className={`rounded-lg border px-3 py-2 ${
+                !d.respondida
+                  ? "border-slate-100 bg-slate-50"
+                  : d.correcta
+                    ? "border-emerald-100 bg-emerald-50/60"
+                    : "border-red-100 bg-red-50/60"
+              }`}
+            >
+              <span className="mr-1 text-xs text-slate-400">{i + 1}.</span>
+              {truncate(d.enunciado, 100)}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href={bancoHref}
+          className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Abrir banco
+        </Link>
+        <button
+          type="button"
+          className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+          disabled={voiding}
+          onClick={() => void onVoid?.(test.id)}
+        >
+          {voiding ? "Anulando…" : "Anular intento"}
+        </button>
+        <button
+          type="button"
+          className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          onClick={onClose}
+        >
+          Cerrar
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }

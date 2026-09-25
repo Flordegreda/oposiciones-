@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { DeviceSyncPanel } from "@/components/DeviceSyncPanel";
-import { MobileContinue } from "@/components/MobileContinue";
 import { PwaInstallHint } from "@/components/PwaInstallHint";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
@@ -52,17 +51,13 @@ export default async function EstadisticasPage({
       <SiteHeader />
       <main className="site-main">
         <section className="hero hero--compact">
-          <p className="hero-eyebrow">Tu progreso</p>
-          <h1 className="page-title">Estadísticas</h1>
-          <p className="lead lead--compact">
-            Elige un bloque para ver lo que llevas: avance, notas, fallos pendientes y fichas
-          </p>
+          <h1 className="page-title">Tu progreso</h1>
+          <p className="lead lead--compact">Elige un bloque y mira lo que llevas y qué te toca</p>
         </section>
 
         <PwaInstallHint />
-        <MobileContinue />
 
-        <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
+        <div className="rounded-2xl bg-[#f8fafc] p-2 sm:p-4">
           <EstadisticasDashboard
             bancoNombres={bancoNombres}
             testSections={practicar?.sections ?? []}
