@@ -12,6 +12,7 @@ import {
   filtrarPorFecha,
   getResultadosFromCache,
   obtenerDashboardData,
+  recortarPorBloque,
   UMBRAL_BANCO_CRITICO,
   type DashboardData,
   type FiltroTiempo,
@@ -31,7 +32,6 @@ import {
 } from "@/lib/temario-checklist";
 
 const OBJETIVO_DEFAULT = 70;
-const SEMANAS_ACTIVIDAD = 15;
 const nf = new Intl.NumberFormat("es-ES");
 
 const CARD = "rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5";
@@ -203,6 +203,10 @@ export function EstadisticasDashboard({
     [testSections, fichaSections, todos, allMaterias, revision],
   );
   const materias = useMemo(() => checklist.materias.filter((m) => m.total > 0), [checklist]);
+  const resultadosBloque = useMemo(
+    () => (bloqueIds ? recortarPorBloque(todos, bloqueIds) : todos),
+    [todos, bloqueIds],
+  );
   const materiaSel = bloque ? checklist.materias.find((m) => m.materiaId === bloque) : undefined;
 
   const pendientesPorBanco = useMemo(() => {
@@ -654,7 +658,13 @@ export function EstadisticasDashboard({
 
           {/* Actividad + fichas */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <Actividad resultados={todos} racha={resumen?.rachaActual ?? 0} />
+            <Ritmo
+              resultados={resultadosBloque}
+              todos={todos}
+              bloqueIds={bloqueIds}
+              testsPendientes={Math.max(0, avance.testsTotal - avance.testsHechos)}
+              nombreBloque={nombreBloque}
+            />
             <FichasEstadisticas key={bloque || "todos"} mazos={mazosBloque} />
           </div>
         </>
@@ -881,76 +891,168 @@ function MapaBancos({ filas }: { filas: FilaBanco[] }) {
   );
 }
 
-function Actividad({ resultados, racha }: { resultados: TestResultRecord[]; racha: number }) {
-  const { semanas, diasActivos, maxDia } = useMemo(() => {
-    const porDia = new Map<string, number>();
-    for (const r of resultados) {
-      const k = diaLocal(new Date(r.fecha));
-      porDia.set(k, (porDia.get(k) ?? 0) + 1);
-    }
+type Ventana = { preguntas: number; aciertos: number; fallos: number };
+
+function sumarVentana(resultados: TestResultRecord[], desde: number, hasta: number): Ventana {
+  const v = { preguntas: 0, aciertos: 0, fallos: 0 };
+  for (const r of resultados) {
+    const t = Date.parse(r.fecha);
+    if (t < desde || t >= hasta) continue;
+    v.preguntas += r.totalPreguntas;
+    v.aciertos += r.aciertos;
+    v.fallos += r.fallos;
+  }
+  return v;
+}
+
+function pctVentana(v: Ventana): number | null {
+  return v.preguntas > 0 ? (100 * v.aciertos) / v.preguntas : null;
+}
+
+function Delta({ ahora, antes, sufijo = "" }: { ahora: number | null; antes: number | null; sufijo?: string }) {
+  if (ahora === null || antes === null) return null;
+  const d = ahora - antes;
+  if (Math.abs(d) < 0.5) return <span className="text-xs text-slate-400">= que la anterior</span>;
+  const sube = d > 0;
+  return (
+    <span className={`text-xs font-semibold ${sube ? "text-emerald-600" : "text-red-600"}`}>
+      {sube ? "▲" : "▼"} {Math.abs(Math.round(d))}
+      {sufijo} vs semana anterior
+    </span>
+  );
+}
+
+function Ritmo({
+  resultados,
+  todos,
+  bloqueIds,
+  testsPendientes,
+  nombreBloque,
+}: {
+  /** Resultados ya recortados al bloque (preguntas del bloque). */
+  resultados: TestResultRecord[];
+  /** Historial completo, para saber cuándo empezaste cada banco. */
+  todos: TestResultRecord[];
+  bloqueIds?: ReadonlySet<string>;
+  testsPendientes: number;
+  nombreBloque: string;
+}) {
+  const r = useMemo(() => {
+    const DIA = 86_400_000;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    const inicio = new Date(hoy);
-    inicio.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7) - (SEMANAS_ACTIVIDAD - 1) * 7);
-    const semanas: { key: string; n: number; futuro: boolean; label: string }[][] = [];
-    let activos = 0;
-    let max = 0;
-    for (let w = 0; w < SEMANAS_ACTIVIDAD; w++) {
-      const col: { key: string; n: number; futuro: boolean; label: string }[] = [];
-      for (let d = 0; d < 7; d++) {
-        const dia = new Date(inicio);
-        dia.setDate(inicio.getDate() + w * 7 + d);
-        const key = diaLocal(dia);
-        const n = porDia.get(key) ?? 0;
-        if (n > 0) activos += 1;
-        max = Math.max(max, n);
-        col.push({
-          key,
-          n,
-          futuro: dia > hoy,
-          label: dia.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }),
-        });
-      }
-      semanas.push(col);
-    }
-    return { semanas, diasActivos: activos, maxDia: max };
-  }, [resultados]);
+    const finHoy = hoy.getTime() + DIA;
+    const semana = sumarVentana(resultados, finHoy - 7 * DIA, finHoy);
+    const anterior = sumarVentana(resultados, finHoy - 14 * DIA, finHoy - 7 * DIA);
 
-  const tono = (n: number) =>
-    n === 0 ? "bg-slate-100" : n === 1 ? "bg-emerald-200" : n <= 3 ? "bg-emerald-400" : "bg-emerald-600";
+    const porDia = new Map<string, number>();
+    for (const x of resultados) {
+      const k = diaLocal(new Date(x.fecha));
+      porDia.set(k, (porDia.get(k) ?? 0) + x.totalPreguntas);
+    }
+    const dias: { key: string; n: number; label: string }[] = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(hoy.getTime() - i * DIA);
+      const key = diaLocal(d);
+      dias.push({
+        key,
+        n: porDia.get(key) ?? 0,
+        label: d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric" }),
+      });
+    }
+    let activos30 = 0;
+    for (let i = 0; i < 30; i++) {
+      if (porDia.has(diaLocal(new Date(hoy.getTime() - i * DIA)))) activos30 += 1;
+    }
+
+    const primerIntento = new Map<string, number>();
+    for (const x of todos) {
+      if (bloqueIds ? !bloqueIds.has(x.banco) : !/^[0-9a-f-]{36}$/i.test(x.banco)) continue;
+      const t = Date.parse(x.fecha);
+      const prev = primerIntento.get(x.banco);
+      if (prev === undefined || t < prev) primerIntento.set(x.banco, t);
+    }
+    const nuevos28 = [...primerIntento.values()].filter((t) => t >= finHoy - 28 * DIA).length;
+    const porSemana = nuevos28 / 4;
+    const semanasFin = porSemana > 0 ? Math.ceil(testsPendientes / porSemana) : null;
+    const fechaFin =
+      semanasFin !== null
+        ? new Date(hoy.getTime() + semanasFin * 7 * DIA).toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : null;
+
+    return {
+      semana,
+      anterior,
+      dias,
+      max: Math.max(1, ...dias.map((d) => d.n)),
+      activos30,
+      porSemana,
+      semanasFin,
+      fechaFin,
+    };
+  }, [resultados, todos, bloqueIds, testsPendientes]);
+
+  const pctAhora = pctVentana(r.semana);
+  const pctAntes = pctVentana(r.anterior);
 
   return (
     <section className={CARD}>
-      <h2 className="text-base font-semibold text-slate-800">Días de estudio</h2>
-      <p className="mb-3 text-xs text-slate-500">
-        Últimas {SEMANAS_ACTIVIDAD} semanas · todos los bloques
-      </p>
-      <div className="flex gap-[3px]" role="img" aria-label={`${diasActivos} días con tests`}>
-        {semanas.map((col, i) => (
-          <div key={i} className="flex flex-1 flex-col gap-[3px]">
-            {col.map((c) => (
-              <span
-                key={c.key}
-                title={c.futuro ? "" : `${c.label}: ${c.n} test${c.n === 1 ? "" : "s"}`}
-                className={`aspect-square w-full rounded-[3px] ${c.futuro ? "bg-transparent" : tono(c.n)}`}
-              />
-            ))}
-          </div>
-        ))}
+      <h2 className="text-base font-semibold text-slate-800">Tu ritmo</h2>
+      <p className="mb-3 text-xs text-slate-500">{nombreBloque} · últimos 7 días</p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-slate-50 p-3">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">Preguntas</p>
+          <p className="text-2xl font-bold tabular-nums text-slate-900">{nf.format(r.semana.preguntas)}</p>
+          <Delta ahora={r.semana.preguntas} antes={r.anterior.preguntas} />
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">Aciertos</p>
+          <p className="text-2xl font-bold tabular-nums text-slate-900">
+            {pctAhora !== null ? `${pctAhora.toFixed(0)}%` : "—"}
+          </p>
+          <Delta ahora={pctAhora} antes={pctAntes} sufijo=" pts" />
+        </div>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-xl bg-slate-50 p-2">
-          <p className="text-lg font-bold tabular-nums text-slate-800">{racha}</p>
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">racha</p>
+
+      <div className="mt-4">
+        <div className="mb-1 flex justify-between text-[11px] text-slate-500">
+          <span>Preguntas por día · 14 días</span>
+          <span>
+            {r.activos30} de 30 días con estudio
+          </span>
         </div>
-        <div className="rounded-xl bg-slate-50 p-2">
-          <p className="text-lg font-bold tabular-nums text-slate-800">{diasActivos}</p>
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">días activos</p>
+        <div className="flex h-20 items-end gap-1" role="img" aria-label="Preguntas respondidas por día">
+          {r.dias.map((d) => (
+            <div key={d.key} className="flex h-full flex-1 flex-col justify-end" title={`${d.label}: ${d.n} preguntas`}>
+              <div
+                className={`w-full rounded-t ${d.n ? "bg-blue-500" : "bg-slate-100"}`}
+                style={{ height: d.n ? `${Math.max(6, (d.n / r.max) * 100)}%` : "4px" }}
+              />
+            </div>
+          ))}
         </div>
-        <div className="rounded-xl bg-slate-50 p-2">
-          <p className="text-lg font-bold tabular-nums text-slate-800">{maxDia}</p>
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">máx. en un día</p>
-        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm text-slate-700">
+        {testsPendientes === 0 ? (
+          <span>Has empezado todos los tests de {nombreBloque}. Toca subir nota y repasar fallos.</span>
+        ) : r.semanasFin !== null ? (
+          <span>
+            Empiezas unos <strong>{r.porSemana.toFixed(1).replace(".", ",")} bancos nuevos por semana</strong>. A
+            este ritmo te quedan <strong>{r.semanasFin} semana{r.semanasFin === 1 ? "" : "s"}</strong> para
+            haber hecho los {testsPendientes} tests que faltan (hacia el {r.fechaFin}).
+          </span>
+        ) : (
+          <span>
+            Llevas 4 semanas sin empezar ningún banco nuevo y quedan <strong>{testsPendientes}</strong> por
+            hacer. Mira «Qué estudiar ahora».
+          </span>
+        )}
       </div>
     </section>
   );
