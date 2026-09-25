@@ -31,7 +31,7 @@ import {
   type TemarioMateriaResumen,
 } from "@/lib/temario-checklist";
 
-const OBJETIVO_DEFAULT = 70;
+const OBJETIVO_DEFAULT = 7;
 const nf = new Intl.NumberFormat("es-ES");
 
 const CARD = "rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5";
@@ -68,19 +68,27 @@ function progressColor(pct: number): string {
   return "bg-red-500";
 }
 
-function notaHex(v: number | null | undefined): string {
+function notaHex(v: number | null | undefined, objetivo: number): string {
   if (v == null) return "#cbd5e1";
-  if (v >= 7) return "#10b981";
+  if (v >= objetivo) return "#10b981";
   if (v >= 5) return "#f59e0b";
   return "#ef4444";
 }
 
-function notaChip(v: number | null | undefined): string {
+function notaChip(v: number | null | undefined, objetivo: number): string {
   if (v == null) return "bg-slate-100 text-slate-400";
-  if (v >= 7) return "bg-emerald-50 text-emerald-700";
+  if (v >= objetivo) return "bg-emerald-50 text-emerald-700";
   if (v >= 5) return "bg-amber-50 text-amber-700";
   return "bg-red-50 text-red-700";
 }
+
+/** % de aciertos (respondiendo todo) que da esa nota restando fallos/4. */
+function pctParaNota(nota: number): number {
+  return Math.min(100, ((nota / 10 + 0.25) / 1.25) * 100);
+}
+
+const OBJETIVO_KEY = "jex-objetivo-nota";
+const OBJETIVOS = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
 
 const FILTROS: { id: FiltroTiempo; label: string }[] = [
   { id: "7dias", label: "Últimos 7 días" },
@@ -129,7 +137,15 @@ export function EstadisticasDashboard({
   const { phase, revision, syncNow } = usePersistence();
   const [bloque, setBloque] = useState(bloqueInicial);
   const [filtro, setFiltro] = useState<FiltroTiempo>("30dias");
-  const [objetivoPct, setObjetivoPct] = useState(OBJETIVO_DEFAULT);
+  const [objetivo, setObjetivo] = useState(OBJETIVO_DEFAULT);
+  useEffect(() => {
+    const guardado = Number(window.localStorage.getItem(OBJETIVO_KEY));
+    if (OBJETIVOS.includes(guardado)) setObjetivo(guardado);
+  }, []);
+  const cambiarObjetivo = (n: number) => {
+    setObjetivo(n);
+    window.localStorage.setItem(OBJETIVO_KEY, String(n));
+  };
   const [data, setData] = useState<DashboardData | null>(null);
   const [todos, setTodos] = useState<TestResultRecord[]>([]);
   const [seguir, setSeguir] = useState<SeguirItem[]>([]);
@@ -422,6 +438,21 @@ export function EstadisticasDashboard({
             </option>
           ))}
         </select>
+        <label className="inline-flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-sm font-medium text-orange-900">
+          🎯 Mi objetivo
+          <select
+            aria-label="Nota objetivo"
+            className="rounded-lg border border-orange-200 bg-white px-1.5 py-0.5 font-semibold text-slate-900 outline-none"
+            value={objetivo}
+            onChange={(e) => cambiarObjetivo(Number(e.target.value))}
+          >
+            {OBJETIVOS.map((n) => (
+              <option key={n} value={n}>
+                {formatNotaSobre10(n)}
+              </option>
+            ))}
+          </select>
+        </label>
         {materiaSel && (
           <button
             type="button"
@@ -491,8 +522,8 @@ export function EstadisticasDashboard({
                 Rendimiento · {periodoLabel}
               </p>
               <div className="flex items-center gap-4">
-                <Anillo pct={nota !== null ? Math.max(0, nota) * 10 : 0} color={notaHex(nota)}>
-                  <span className="text-3xl font-bold tabular-nums" style={{ color: nota !== null ? notaHex(nota) : "#94a3b8" }}>
+                <Anillo pct={nota !== null ? Math.max(0, nota) * 10 : 0} color={notaHex(nota, objetivo)}>
+                  <span className="text-3xl font-bold tabular-nums" style={{ color: nota !== null ? notaHex(nota, objetivo) : "#94a3b8" }}>
                     {nota !== null ? formatNotaSobre10(nota) : "—"}
                   </span>
                   <span className="text-[10px] uppercase tracking-wide text-slate-500">nota media</span>
@@ -511,8 +542,19 @@ export function EstadisticasDashboard({
                 </dl>
               </div>
               <p className="mt-3 text-xs text-slate-500">
-                {hayPeriodo ? (
-                  "Nota de examen: cada fallo resta 1/4 de acierto"
+                {hayPeriodo && nota !== null ? (
+                  nota >= objetivo ? (
+                    <span className="font-semibold text-emerald-700">
+                      ✓ Cumples tu objetivo de {formatNotaSobre10(objetivo)}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-orange-700">
+                        Te faltan {formatNotaSobre10(objetivo - nota)} puntos para tu {formatNotaSobre10(objetivo)}
+                      </span>
+                      {" · "}necesitas ~{Math.ceil(pctParaNota(objetivo))}% de aciertos
+                    </>
+                  )
                 ) : (
                   <>
                     Sin preguntas de este bloque en el periodo.{" "}
@@ -611,9 +653,10 @@ export function EstadisticasDashboard({
             </div>
 
             {materiaSel ? (
-              <MapaBancos filas={filasBancos} />
+              <MapaBancos filas={filasBancos} objetivo={objetivo} />
             ) : (
               <MapaMaterias
+                objetivo={objetivo}
                 filas={filasMaterias}
                 rend={rendMaterias}
                 pendientes={pendientesPorMateria}
@@ -627,29 +670,17 @@ export function EstadisticasDashboard({
               <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <h2 className="text-base font-semibold text-slate-800">Evolución</h2>
-                  <p className="text-xs text-slate-500">% de aciertos por día · {periodoLabel}</p>
+                  <p className="text-xs text-slate-500">
+                    % de aciertos por día · {periodoLabel} · línea naranja: el{" "}
+                    {Math.ceil(pctParaNota(objetivo))}% que da un {formatNotaSobre10(objetivo)}
+                  </p>
                 </div>
-                <label className="flex items-center gap-1.5 text-xs text-slate-500">
-                  Objetivo
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={objetivoPct}
-                    onChange={(e) => {
-                      const n = Number(e.target.value);
-                      if (Number.isFinite(n)) setObjetivoPct(Math.min(100, Math.max(0, n)));
-                    }}
-                    className="w-14 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-800"
-                  />
-                  %
-                </label>
               </div>
               {hayPeriodo ? (
                 <EvolucionDiariaChart
                   data={data?.evolucion ?? []}
                   mediaPeriodo={data?.mediaPeriodo}
-                  objetivoPct={objetivoPct}
+                  objetivoPct={Math.ceil(pctParaNota(objetivo))}
                 />
               ) : (
                 <p className="py-10 text-center text-sm text-slate-400">Sin actividad en este periodo.</p>
@@ -766,10 +797,10 @@ function PasoEstudio({
   );
 }
 
-function NotaCirculo({ nota }: { nota: number | null }) {
+function NotaCirculo({ nota, objetivo }: { nota: number | null; objetivo: number }) {
   return (
     <span
-      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums ${notaChip(nota)}`}
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums ${notaChip(nota, objetivo)}`}
       title={nota !== null ? `Nota ${formatNotaSobre10(nota)}` : "Sin nota en el periodo"}
     >
       {nota !== null ? formatNotaSobre10(nota) : "—"}
@@ -782,7 +813,9 @@ function MapaMaterias({
   rend,
   pendientes,
   onElegir,
+  objetivo,
 }: {
+  objetivo: number;
   filas: TemarioMateriaResumen[];
   rend: ReturnType<typeof calcularRendimientoPorMateria> | null;
   pendientes: Map<string, number>;
@@ -801,7 +834,7 @@ function MapaMaterias({
               onClick={() => onElegir(m.materiaId)}
               className="flex w-full items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5 text-left transition hover:border-blue-200 hover:bg-blue-50/40"
             >
-              <NotaCirculo nota={r?.notaMedia ?? null} />
+              <NotaCirculo nota={r?.notaMedia ?? null} objetivo={objetivo} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-sm font-semibold text-slate-800">{m.materiaNombre}</span>
@@ -825,14 +858,14 @@ function MapaMaterias({
   );
 }
 
-function MapaBancos({ filas }: { filas: FilaBanco[] }) {
+function MapaBancos({ filas, objetivo }: { filas: FilaBanco[]; objetivo: number }) {
   const router = useRouter();
   if (!filas.length) return <p className="text-sm text-slate-500">Ningún banco con este filtro.</p>;
   return (
     <ul className="grid gap-2 md:grid-cols-2">
       {filas.map((f) => (
         <li key={f.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5">
-          <NotaCirculo nota={f.nota} />
+          <NotaCirculo nota={f.nota} objetivo={objetivo} />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               {f.abrible ? (
