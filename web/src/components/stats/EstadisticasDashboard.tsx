@@ -15,9 +15,8 @@ import {
   UMBRAL_BANCO_CRITICO,
   type DashboardData,
   type FiltroTiempo,
-  type TestReciente,
 } from "@/lib/persistence/estadisticas-service";
-import { examNotaSobre10, formatNotaSobre10, formatNeto } from "@/lib/exam-utils";
+import { formatNotaSobre10 } from "@/lib/exam-utils";
 import { sugerenciasBloque, sugerenciasGlobales, type Sugerencia } from "@/lib/para-aprobar";
 import { getLocalCache, getSyncService } from "@/lib/persistence";
 import { getChecklistMarks } from "@/lib/persistence/checklist-service";
@@ -32,7 +31,6 @@ import {
 } from "@/lib/temario-checklist";
 
 const OBJETIVO_DEFAULT = 70;
-const TESTS_VISIBLES = 6;
 const SEMANAS_ACTIVIDAD = 15;
 const nf = new Intl.NumberFormat("es-ES");
 
@@ -52,30 +50,12 @@ function formatFecha(iso: string): string {
   }
 }
 
-function formatFechaCorta(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  const hoy = new Date();
-  const ayer = new Date();
-  ayer.setDate(hoy.getDate() - 1);
-  const hora = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  if (d.toDateString() === hoy.toDateString()) return `hoy ${hora}`;
-  if (d.toDateString() === ayer.toDateString()) return `ayer ${hora}`;
-  return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
-}
-
 function formatTiempo(sec: number | null): string {
   if (sec === null || sec < 0) return "—";
   if (sec < 60) return `${sec}s`;
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}m ${s.toString().padStart(2, "0")}s`;
-}
-
-function truncate(text: string, max: number): string {
-  const t = text.replace(/\s+/g, " ").trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
 }
 
 function diaLocal(d: Date): string {
@@ -156,15 +136,17 @@ export function EstadisticasDashboard({
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
-  const [detalle, setDetalle] = useState<TestReciente | null>(null);
-  const [verTodosTests, setVerTodosTests] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voidingId, setVoidingId] = useState<string | null>(null);
   const [estado, setEstado] = useState<EstadoFiltro>("todo");
   const [orden, setOrden] = useState<Orden>("temario");
 
   useEffect(() => {
-    setSeguir(getSeguirItems());
+    setSeguir(
+      getSeguirItems().filter((s) => {
+        const m = /(\d+)\s+de\s+(\d+)/.exec(s.hint);
+        return !m || m[1] !== m[2];
+      }),
+    );
   }, []);
 
   const bancoAMateria = useMemo(() => {
@@ -395,27 +377,6 @@ export function EstadisticasDashboard({
     }
   }
 
-  async function handleVoidResult(id: string) {
-    if (
-      !window.confirm(
-        "¿Anular este intento? Se borrará de las estadísticas y del plan de temario.",
-      )
-    ) {
-      return;
-    }
-    setVoidingId(id);
-    setError(null);
-    try {
-      await getSyncService().voidResult(id);
-      setDetalle(null);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo anular el intento");
-    } finally {
-      setVoidingId(null);
-    }
-  }
-
   const resumen = data?.resumen;
   const hayPeriodo = (data?.totalPeriodo ?? 0) > 0;
   const avance = materiaSel ?? checklist;
@@ -426,10 +387,10 @@ export function EstadisticasDashboard({
   const nombreBloque = materiaSel?.materiaNombre ?? "Todo el temario";
   const periodoLabel = FILTROS.find((f) => f.id === filtro)?.label.toLowerCase() ?? "";
   const nota = hayPeriodo ? (resumen?.notaMedia ?? null) : null;
-  const tests = data?.testsRecientes ?? [];
-
   return (
-    <div className="mx-auto max-w-6xl space-y-5 px-1 pb-8 sm:px-0">
+    <div className="panel-progreso mx-auto max-w-6xl space-y-5 px-1 pb-8 sm:px-0">
+      {/* El color global de los enlaces (sin capa) pisaría las utilidades de Tailwind. */}
+      <style>{".panel-progreso a,.panel-progreso a:hover{color:revert-layer}"}</style>
       {/* Barra de control */}
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-sm sm:gap-3 sm:p-3">
         <select
@@ -566,7 +527,7 @@ export function EstadisticasDashboard({
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">
                 {materiaSel ? `Qué estudiar en ${materiaSel.materiaNombre}` : "Qué estudiar ahora"}
               </p>
-              <ol className="space-y-1.5">
+              <ol className="m-0 list-none space-y-1.5 p-0">
                 {seguir.slice(0, materiaSel ? 0 : 1).map((s) => (
                   <PasoEstudio key={s.href} href={s.href} titulo={`Sigue: ${s.title}`} detalle={s.hint} destacado />
                 ))}
@@ -657,9 +618,8 @@ export function EstadisticasDashboard({
             )}
           </section>
 
-          {/* Evolución + actividad */}
-          <div className="grid gap-4 lg:grid-cols-3">
-            <section className={`${CARD} lg:col-span-2`}>
+          {/* Evolución */}
+          <section className={CARD}>
               <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <h2 className="text-base font-semibold text-slate-800">Evolución</h2>
@@ -690,41 +650,12 @@ export function EstadisticasDashboard({
               ) : (
                 <p className="py-10 text-center text-sm text-slate-400">Sin actividad en este periodo.</p>
               )}
-            </section>
-            <Actividad resultados={todos} racha={resumen?.rachaActual ?? 0} />
-          </div>
+          </section>
 
-          {/* Fichas + últimos tests */}
+          {/* Actividad + fichas */}
           <div className="grid gap-4 lg:grid-cols-2">
+            <Actividad resultados={todos} racha={resumen?.rachaActual ?? 0} />
             <FichasEstadisticas key={bloque || "todos"} mazos={mazosBloque} />
-            <section className={CARD}>
-              <div className="mb-3 flex items-baseline justify-between gap-2">
-                <h2 className="text-base font-semibold text-slate-800">Últimos tests</h2>
-                {tests.length > TESTS_VISIBLES && (
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-blue-700 hover:underline"
-                    onClick={() => setVerTodosTests(true)}
-                  >
-                    Ver todos ({tests.length}) →
-                  </button>
-                )}
-              </div>
-              {tests.length === 0 ? (
-                <p className="text-sm text-slate-500">Ningún test en este periodo.</p>
-              ) : (
-                <ul className="divide-y divide-slate-100">
-                  {tests.slice(0, TESTS_VISIBLES).map((t) => (
-                    <FilaTest key={t.id} test={t} onClick={() => setDetalle(t)} />
-                  ))}
-                </ul>
-              )}
-              {materiaSel && tests.length > 0 && (
-                <p className="mt-2 text-xs text-slate-400">
-                  En simulacros solo cuentan las preguntas de este bloque.
-                </p>
-              )}
-            </section>
           </div>
         </>
       )}
@@ -756,32 +687,6 @@ export function EstadisticasDashboard({
           «Exportar JSON» sirve para importarlos en la app de escritorio.
         </p>
       </details>
-
-      {verTodosTests && (
-        <Modal titulo={`Tests · ${periodoLabel}`} onClose={() => setVerTodosTests(false)}>
-          <ul className="divide-y divide-slate-100">
-            {tests.map((t) => (
-              <FilaTest
-                key={t.id}
-                test={t}
-                onClick={() => {
-                  setVerTodosTests(false);
-                  setDetalle(t);
-                }}
-              />
-            ))}
-          </ul>
-        </Modal>
-      )}
-
-      {detalle && (
-        <TestDetalleModal
-          test={detalle}
-          voiding={voidingId === detalle.id}
-          onClose={() => setDetalle(null)}
-          onVoid={handleVoidResult}
-        />
-      )}
     </div>
   );
 }
@@ -827,18 +732,23 @@ function PasoEstudio({
   destacado?: boolean;
 }) {
   return (
-    <li>
+    <li className="list-none">
       <Link
         href={href}
-        className={`group flex items-center justify-between gap-2 rounded-xl px-3 py-2 no-underline transition ${
-          destacado ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-slate-800 ring-1 ring-slate-200 hover:ring-blue-300"
+        className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 no-underline transition ${
+          destacado ? "bg-blue-600 hover:bg-blue-700" : "bg-white ring-1 ring-slate-200 hover:ring-blue-300"
         }`}
+        style={{ color: destacado ? "#ffffff" : "#1e293b", textDecoration: "none" }}
       >
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold">{titulo}</span>
-          <span className={`block truncate text-xs ${destacado ? "text-blue-100" : "text-slate-500"}`}>{detalle}</span>
+          <span className="block truncate text-sm font-semibold" style={{ color: destacado ? "#ffffff" : "#1e293b" }}>
+            {titulo}
+          </span>
+          <span className="block truncate text-xs" style={{ color: destacado ? "#dbeafe" : "#64748b" }}>
+            {detalle}
+          </span>
         </span>
-        <span aria-hidden className={destacado ? "text-white" : "text-blue-600"}>
+        <span aria-hidden style={{ color: destacado ? "#ffffff" : "#2563eb" }}>
           →
         </span>
       </Link>
@@ -1046,65 +956,6 @@ function Actividad({ resultados, racha }: { resultados: TestResultRecord[]; rach
   );
 }
 
-function FilaTest({ test: t, onClick }: { test: TestReciente; onClick: () => void }) {
-  const nota = examNotaSobre10(t.aciertos, t.fallos, t.totalPreguntas);
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex w-full items-center gap-3 py-2 text-left transition hover:bg-slate-50"
-      >
-        <NotaCirculo nota={nota} />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-slate-800">{t.test}</span>
-          <span className="block truncate text-xs text-slate-500">
-            {t.aciertos}/{t.totalPreguntas} aciertos · {t.fallos} fallos · {formatTiempo(t.tiempoTotal)}
-          </span>
-        </span>
-        <span className="shrink-0 text-xs text-slate-400">{formatFechaCorta(t.fecha)}</span>
-      </button>
-    </li>
-  );
-}
-
-function Modal({
-  titulo,
-  onClose,
-  children,
-}: {
-  titulo: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <h3 className="text-lg font-semibold text-slate-800">{titulo}</h3>
-          <button
-            type="button"
-            className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function EmptySinHistorial() {
   return (
     <div className="stats-empty flex flex-col items-center justify-center rounded-2xl border border-slate-200/80 bg-white px-6 py-14 text-center shadow-sm sm:py-16">
@@ -1125,102 +976,5 @@ function EmptySinHistorial() {
         Ir a Tests
       </Link>
     </div>
-  );
-}
-
-function TestDetalleModal({
-  test,
-  onClose,
-  onVoid,
-  voiding,
-}: {
-  test: TestReciente;
-  onClose: () => void;
-  onVoid?: (id: string) => Promise<void> | void;
-  voiding?: boolean;
-}) {
-  const bancoHref =
-    test.banco && test.banco !== "simulacro" && test.banco !== "desconocido"
-      ? `/test/${test.banco}`
-      : "/practicar";
-
-  return (
-    <Modal titulo={test.test} onClose={onClose}>
-      <p className="-mt-2 mb-4 text-sm text-slate-500">{test.bancoNombre}</p>
-      <dl className="mb-4 grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-xl bg-slate-50 p-3">
-          <dt className="text-xs text-slate-500">Nota neta</dt>
-          <dd className="font-semibold text-slate-800">
-            {formatNotaSobre10(examNotaSobre10(test.aciertos, test.fallos, test.totalPreguntas))}
-            /10 · neto {formatNeto(test.aciertos, test.fallos)}
-          </dd>
-        </div>
-        <div className="rounded-xl bg-slate-50 p-3">
-          <dt className="text-xs text-slate-500">Aciertos / fallos</dt>
-          <dd className="font-semibold text-slate-800">
-            {test.aciertos} aciertos · {test.fallos} fallos ·{" "}
-            {Math.max(0, test.totalPreguntas - test.aciertos - test.fallos)} en blanco
-          </dd>
-        </div>
-        <div className="rounded-xl bg-slate-50 p-3">
-          <dt className="text-xs text-slate-500">Acierto bruto</dt>
-          <dd className="font-semibold text-slate-800">
-            {test.aciertos}/{test.totalPreguntas} ({test.porcentaje.toFixed(0)}%)
-          </dd>
-        </div>
-        <div className="rounded-xl bg-slate-50 p-3">
-          <dt className="text-xs text-slate-500">Tiempo</dt>
-          <dd className="font-semibold text-slate-800">{formatTiempo(test.tiempoTotal)}</dd>
-        </div>
-        <div className="col-span-2 rounded-xl bg-slate-50 p-3">
-          <dt className="text-xs text-slate-500">Fecha</dt>
-          <dd className="font-semibold text-slate-800">{formatFecha(test.fecha)}</dd>
-        </div>
-      </dl>
-
-      {test.detallePreguntas && test.detallePreguntas.length > 0 && (
-        <ul className="mb-4 max-h-56 space-y-2 overflow-auto text-sm">
-          {test.detallePreguntas.map((d, i) => (
-            <li
-              key={d.preguntaId}
-              className={`rounded-lg border px-3 py-2 ${
-                !d.respondida
-                  ? "border-slate-100 bg-slate-50"
-                  : d.correcta
-                    ? "border-emerald-100 bg-emerald-50/60"
-                    : "border-red-100 bg-red-50/60"
-              }`}
-            >
-              <span className="mr-1 text-xs text-slate-400">{i + 1}.</span>
-              {truncate(d.enunciado, 100)}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href={bancoHref}
-          className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Abrir banco
-        </Link>
-        <button
-          type="button"
-          className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
-          disabled={voiding}
-          onClick={() => void onVoid?.(test.id)}
-        >
-          {voiding ? "Anulando…" : "Anular intento"}
-        </button>
-        <button
-          type="button"
-          className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          onClick={onClose}
-        >
-          Cerrar
-        </button>
-      </div>
-    </Modal>
   );
 }
