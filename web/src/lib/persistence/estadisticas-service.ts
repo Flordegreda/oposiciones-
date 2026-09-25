@@ -38,6 +38,11 @@ export type RendimientoBanco = {
   banco: string;
   bancoNombre: string;
   porcentaje: number;
+  /** Nota sobre 10 con penalización (aciertos − fallos/4) de todas sus preguntas. */
+  notaMedia: number | null;
+  aciertos: number;
+  fallos: number;
+  preguntas: number;
   totalTests: number;
   /** Días desde el último test de este banco (null si desconocido). */
   diasSinPracticar: number | null;
@@ -377,6 +382,7 @@ export function calcularRendimientoPorBanco(
     string,
     {
       aciertos: number;
+      fallos: number;
       total: number;
       tests: number;
       title: string;
@@ -387,12 +393,14 @@ export function calcularRendimientoPorBanco(
   for (const r of resultados) {
     const cur = map.get(r.banco) ?? {
       aciertos: 0,
+      fallos: 0,
       total: 0,
       tests: 0,
       title: r.test,
       ultimoTest: null,
     };
     cur.aciertos += r.aciertos;
+    cur.fallos += r.fallos;
     cur.total += r.totalPreguntas;
     cur.tests += 1;
     cur.title = r.test;
@@ -407,6 +415,10 @@ export function calcularRendimientoPorBanco(
         banco,
         bancoNombre: bancoNombreFrom(banco, v.title, bancos),
         porcentaje,
+        notaMedia: v.total > 0 ? (10 * (v.aciertos - v.fallos / 4)) / v.total : null,
+        aciertos: v.aciertos,
+        fallos: v.fallos,
+        preguntas: v.total,
         totalTests: v.tests,
         diasSinPracticar: v.ultimoTest ? diasDesde(v.ultimoTest) : null,
         color: colorPorPorcentaje(porcentaje),
@@ -669,6 +681,102 @@ async function enriquecerFalladas(
   }
 }
 
+/**
+ * Deja cada resultado solo con las preguntas del bloque (materia) elegido.
+ * Un simulacro con 20 preguntas de contratos cuenta como 20 preguntas de contratos.
+ */
+export function recortarPorBloque(
+  resultados: TestResultRecord[],
+  bloque: ReadonlySet<string>,
+  bancos: BancoCacheEntry[] = [],
+): TestResultRecord[] {
+  const out: TestResultRecord[] = [];
+  for (const r of resultados) {
+    const detalle = r.detallePreguntas;
+    if (!detalle?.length) {
+      if (bloque.has(r.banco)) out.push(r);
+      continue;
+    }
+    const propias = detalle.filter((d) => {
+      const banco = bancoDeDetallePregunta(d, r, bancos);
+      return banco !== null && bloque.has(banco);
+    });
+    if (!propias.length) continue;
+    if (propias.length === detalle.length) {
+      out.push(r);
+      continue;
+    }
+    const aciertos = propias.filter((d) => d.respondida && d.correcta).length;
+    const fallos = propias.filter((d) => d.respondida && !d.correcta).length;
+    out.push({
+      ...r,
+      totalPreguntas: propias.length,
+      aciertos,
+      fallos,
+      tiempoTotal:
+        typeof r.tiempoTotal === "number"
+          ? Math.round((r.tiempoTotal * propias.length) / detalle.length)
+          : r.tiempoTotal,
+      detallePreguntas: propias,
+    });
+  }
+  return out;
+}
+
+export type RendimientoMateria = {
+  tests: number;
+  preguntas: number;
+  aciertos: number;
+  fallos: number;
+  porcentaje: number;
+  notaMedia: number;
+};
+
+/** Rendimiento por materia contando cada pregunta en la materia de su banco. */
+export function calcularRendimientoPorMateria(
+  resultados: TestResultRecord[],
+  bancoAMateria: ReadonlyMap<string, string>,
+): Map<string, RendimientoMateria> {
+  const acc = new Map<string, { tests: Set<string>; preguntas: number; aciertos: number; fallos: number }>();
+  const sumar = (materia: string, id: string, preguntas: number, aciertos: number, fallos: number) => {
+    const cur = acc.get(materia) ?? { tests: new Set<string>(), preguntas: 0, aciertos: 0, fallos: 0 };
+    cur.tests.add(id);
+    cur.preguntas += preguntas;
+    cur.aciertos += aciertos;
+    cur.fallos += fallos;
+    acc.set(materia, cur);
+  };
+
+  for (const r of resultados) {
+    const detalle = r.detallePreguntas;
+    if (!detalle?.length) {
+      const materia = bancoAMateria.get(r.banco);
+      if (materia) sumar(materia, r.id, r.totalPreguntas, r.aciertos, r.fallos);
+      continue;
+    }
+    for (const d of detalle) {
+      const banco = bancoDeDetallePregunta(d, r);
+      const materia = banco ? bancoAMateria.get(banco) : undefined;
+      if (!materia) continue;
+      sumar(materia, r.id, 1, d.respondida && d.correcta ? 1 : 0, d.respondida && !d.correcta ? 1 : 0);
+    }
+  }
+
+  const out = new Map<string, RendimientoMateria>();
+  for (const [materia, v] of acc) {
+    if (v.preguntas === 0) continue;
+    out.set(materia, {
+      tests: v.tests.size,
+      preguntas: v.preguntas,
+      aciertos: v.aciertos,
+      fallos: v.fallos,
+      porcentaje: (100 * v.aciertos) / v.preguntas,
+      notaMedia: (10 * (v.aciertos - v.fallos / 4)) / v.preguntas,
+    });
+  }
+  return out;
+}
+
 /** La caché local puede no tener todos los bancos; el servidor manda en el nombre. */
 function conNombresDelServidor(
   bancos: BancoCacheEntry[],
@@ -694,17 +802,19 @@ export async function obtenerDashboardData(
   filtro: FiltroTiempo = "30dias",
   bancosVigentes?: ReadonlySet<string>,
   bancoNombres?: Record<string, string>,
+  bloque?: ReadonlySet<string>,
 ): Promise<DashboardData> {
   const cache = getLocalCache();
-  const resultados = await getResultadosFromCache();
-  const filtrados = filtrarPorFecha(resultados, filtro);
+  const todos = await getResultadosFromCache();
   const bancos = conNombresDelServidor(
     await cache.getBancos().catch(() => [] as BancoCacheEntry[]),
     bancoNombres,
   );
+  const resultados = bloque ? recortarPorBloque(todos, bloque, bancos) : todos;
+  const filtrados = filtrarPorFecha(resultados, filtro);
   const diasEvo = diasParaEvolucion(filtro);
   const evolucion = calcularEvolucionDiaria(filtrados, diasEvo);
-  const resumen = calcularResumen(filtrados);
+  const resumen = { ...calcularResumen(filtrados), rachaActual: calcularRacha(todos) };
   const rendimientoBancos = calcularRendimientoPorBanco(filtrados, bancos);
 
   return {
@@ -717,7 +827,7 @@ export async function obtenerDashboardData(
     preguntasFalladas: await enriquecerFalladas(
       obtenerPreguntasMasFalladas(filtrados, 10, bancos),
     ),
-    fallosPorBanco: calcularFallosAgregadosPorBanco(filtrados, bancos),
+    fallosPorBanco: calcularFallosAgregadosPorBanco(resultados, bancos),
     testsRecientes: obtenerTestsRecientes(filtrados, 50, bancos),
     recomendacion: generarRecomendacion(
       bancosVigentes
@@ -725,7 +835,7 @@ export async function obtenerDashboardData(
         : rendimientoBancos,
       filtrados,
     ),
-    totalHistorial: resultados.length,
+    totalHistorial: todos.length,
     totalPeriodo: filtrados.length,
   };
 }

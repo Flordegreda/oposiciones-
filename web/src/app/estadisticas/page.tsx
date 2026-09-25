@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { EstadisticasDashboard } from "@/components/stats/EstadisticasDashboard";
-import { FichasEstadisticas } from "@/components/stats/FichasEstadisticas";
 import { JEX_SUBTITLE } from "@/lib/constants";
-import { fetchMazosFichas, type MazoFichas } from "@/lib/queries/fichas";
+import { getPracticarData } from "@/lib/queries/bancos-cached";
+import { getMateriasWithCounts } from "@/lib/queries/bancos";
+import { fetchMazosGrouped } from "@/lib/queries/fichas";
 import { getSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -23,16 +24,26 @@ async function bancosVigentes(): Promise<Record<string, string> | undefined> {
   }
 }
 
-async function mazosConFichas(): Promise<MazoFichas[]> {
+async function orVacio<T>(p: Promise<T>, vacio: T): Promise<T> {
   try {
-    return (await fetchMazosFichas({ activeOnly: true })).filter((m) => m.numFichas > 0);
+    return await p;
   } catch {
-    return [];
+    return vacio;
   }
 }
 
-export default async function EstadisticasPage() {
-  const [bancoNombres, mazos] = await Promise.all([bancosVigentes(), mazosConFichas()]);
+export default async function EstadisticasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bloque?: string }>;
+}) {
+  const [{ bloque }, bancoNombres, practicar, allMaterias, fichaSections] = await Promise.all([
+    searchParams,
+    bancosVigentes(),
+    orVacio(getPracticarData(), null),
+    orVacio(getMateriasWithCounts(), []),
+    orVacio(fetchMazosGrouped(), []),
+  ]);
   return (
     <div className="site site--mobile-nav">
       <SiteHeader />
@@ -41,15 +52,19 @@ export default async function EstadisticasPage() {
           <p className="hero-eyebrow">Tu progreso</p>
           <h1 className="page-title">Estadísticas</h1>
           <p className="lead lead--compact">
-            KPIs, evolución y bancos — datos locales con sync a la nube
+            Elige un bloque para ver lo que llevas: avance, notas, fallos pendientes y fichas
           </p>
         </section>
 
         <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
-          <EstadisticasDashboard bancoNombres={bancoNombres} />
+          <EstadisticasDashboard
+            bancoNombres={bancoNombres}
+            testSections={practicar?.sections ?? []}
+            fichaSections={fichaSections}
+            allMaterias={allMaterias}
+            bloqueInicial={typeof bloque === "string" ? bloque : ""}
+          />
         </div>
-
-        <FichasEstadisticas mazos={mazos} />
       </main>
       <footer className="site-footer">
         <p>{JEX_SUBTITLE}</p>
