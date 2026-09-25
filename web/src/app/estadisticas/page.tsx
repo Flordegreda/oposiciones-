@@ -13,11 +13,11 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-async function bancoIdsVigentes(): Promise<string[] | undefined> {
+async function bancosVigentes(): Promise<Record<string, string> | undefined> {
   try {
-    const { data, error } = await getSupabase().from("bancos").select("id");
+    const { data, error } = await getSupabase().from("bancos").select("id, nombre");
     if (error) return undefined;
-    return (data ?? []).map((b) => String(b.id));
+    return Object.fromEntries((data ?? []).map((b) => [String(b.id), String(b.nombre ?? "")]));
   } catch {
     return undefined;
   }
@@ -32,7 +32,7 @@ async function mazosConFichas(): Promise<MazoFichas[]> {
 }
 
 export default async function EstadisticasPage() {
-  const [bancoIds, mazos] = await Promise.all([bancoIdsVigentes(), mazosConFichas()]);
+  const [bancoNombres, mazos] = await Promise.all([bancosVigentes(), mazosConFichas()]);
   return (
     <div className="site site--mobile-nav">
       <SiteHeader />
@@ -46,7 +46,7 @@ export default async function EstadisticasPage() {
         </section>
 
         <div className="rounded-2xl bg-[#f8fafc] p-3 sm:p-5">
-          <EstadisticasDashboard bancoIds={bancoIds} />
+          <EstadisticasDashboard bancoNombres={bancoNombres} />
         </div>
 
         <FichasEstadisticas mazos={mazos} />

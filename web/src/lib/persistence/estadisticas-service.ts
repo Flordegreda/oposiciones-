@@ -90,6 +90,7 @@ export type FallosAgregadosBanco = {
   bancoNombre: string;
   porcentajeAciertos: number;
   totalRespondidas: number;
+  /** Preguntas distintas cuya última respuesta fue incorrecta. */
   totalFallidas: number;
   totalAciertos: number;
 };
@@ -509,6 +510,8 @@ export function obtenerPreguntasMasFalladas(
       total: number;
       banco: string;
       title: string;
+      ultimaFecha: string;
+      ultimaCorrecta: boolean;
     }
   >();
 
@@ -526,17 +529,26 @@ export function obtenerPreguntasMasFalladas(
         total: 0,
         banco,
         title: r.test,
+        ultimaFecha: "",
+        ultimaCorrecta: false,
       };
       cur.total += 1;
       if (!d.correcta) cur.fallos += 1;
-      if (d.enunciado) cur.texto = d.enunciado;
+      if (r.fecha > cur.ultimaFecha) {
+        cur.ultimaFecha = r.fecha;
+        cur.ultimaCorrecta = d.correcta;
+        if (d.enunciado) cur.texto = d.enunciado;
+      } else if (r.fecha === cur.ultimaFecha && d.correcta) {
+        cur.ultimaCorrecta = true;
+      }
       cur.banco = banco;
       map.set(d.preguntaId, cur);
     }
   }
 
+  // Solo las que siguen pendientes: la última vez que la respondiste, la fallaste.
   return [...map.entries()]
-    .filter(([, v]) => v.fallos > 0)
+    .filter(([, v]) => v.fallos > 0 && !v.ultimaCorrecta)
     .map(([preguntaId, v]) => ({
       preguntaId,
       texto: v.texto,
@@ -557,7 +569,13 @@ export function calcularFallosAgregadosPorBanco(
 ): FallosAgregadosBanco[] {
   const map = new Map<
     string,
-    { aciertos: number; fallos: number; respondidas: number; title: string }
+    {
+      aciertos: number;
+      respondidas: number;
+      title: string;
+      tituloPropio: boolean;
+      ultima: Map<string, { fecha: string; correcta: boolean }>;
+    }
   >();
 
   for (const r of resultados) {
@@ -569,13 +587,23 @@ export function calcularFallosAgregadosPorBanco(
       if (!banco) continue;
       const cur = map.get(banco) ?? {
         aciertos: 0,
-        fallos: 0,
         respondidas: 0,
         title: r.test,
+        tituloPropio: r.banco === banco,
+        ultima: new Map(),
       };
+      if (!cur.tituloPropio && r.banco === banco) {
+        cur.title = r.test;
+        cur.tituloPropio = true;
+      }
       cur.respondidas += 1;
       if (d.correcta) cur.aciertos += 1;
-      else cur.fallos += 1;
+      const prev = cur.ultima.get(d.preguntaId);
+      if (!prev || r.fecha > prev.fecha) {
+        cur.ultima.set(d.preguntaId, { fecha: r.fecha, correcta: d.correcta });
+      } else if (r.fecha === prev.fecha && d.correcta) {
+        prev.correcta = true;
+      }
       map.set(banco, cur);
     }
   }
@@ -587,9 +615,10 @@ export function calcularFallosAgregadosPorBanco(
       porcentajeAciertos:
         v.respondidas > 0 ? (v.aciertos / v.respondidas) * 100 : 0,
       totalRespondidas: v.respondidas,
-      totalFallidas: v.fallos,
+      totalFallidas: [...v.ultima.values()].filter((u) => !u.correcta).length,
       totalAciertos: v.aciertos,
     }))
+    .filter((b) => b.totalFallidas > 0)
     .sort((a, b) => a.porcentajeAciertos - b.porcentajeAciertos);
 }
 
@@ -640,15 +669,39 @@ async function enriquecerFalladas(
   }
 }
 
+/** La caché local puede no tener todos los bancos; el servidor manda en el nombre. */
+function conNombresDelServidor(
+  bancos: BancoCacheEntry[],
+  nombres?: Record<string, string>,
+): BancoCacheEntry[] {
+  if (!nombres) return bancos;
+  const vistos = new Set<string>();
+  const out = bancos.map((b) => {
+    vistos.add(b.id);
+    const nombre = nombres[b.id];
+    return nombre ? { ...b, nombre } : b;
+  });
+  for (const [id, nombre] of Object.entries(nombres)) {
+    if (!vistos.has(id) && nombre) {
+      out.push({ id, nombre, tipo: "", materiaId: "", cachedAt: "" });
+    }
+  }
+  return out;
+}
+
 /** Función principal del dashboard. */
 export async function obtenerDashboardData(
   filtro: FiltroTiempo = "30dias",
   bancosVigentes?: ReadonlySet<string>,
+  bancoNombres?: Record<string, string>,
 ): Promise<DashboardData> {
   const cache = getLocalCache();
   const resultados = await getResultadosFromCache();
   const filtrados = filtrarPorFecha(resultados, filtro);
-  const bancos = await cache.getBancos().catch(() => [] as BancoCacheEntry[]);
+  const bancos = conNombresDelServidor(
+    await cache.getBancos().catch(() => [] as BancoCacheEntry[]),
+    bancoNombres,
+  );
   const diasEvo = diasParaEvolucion(filtro);
   const evolucion = calcularEvolucionDiaria(filtrados, diasEvo);
   const resumen = calcularResumen(filtrados);
